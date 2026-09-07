@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>낱말 경매장 · 규칙</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EAF1F6;--ink:#1E2A38;--muted:#5B6B7C;--panel:#FFF;--warn:#FF6A45;--ok:#2E9E6B;--line:#D6DFE7;--yellow:#FFD75E;--coin:#F5B301;
+  --S:#3E9BE0;--Sbg:#E1F1FC;--Sd:#1F6FAE;--O:#2E9E6B;--Obg:#E3F6EB;--Od:#1F7A50;--V:#FF6A45;--Vbg:#FFEBE4;--Vd:#C94729;--B:#9B6BE0;--Bbg:#F1EAFC;--Bd:#6F42B8}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"Gowun Dodum","Malgun Gothic",sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+body{background:radial-gradient(circle at 10% 0%,#FFF6E3 0,transparent 42%),radial-gradient(circle at 95% 100%,#E5EEFF 0,transparent 40%),var(--bg)}
+.jua{font-family:"Jua",sans-serif;font-weight:400}
+.stage{position:fixed;inset:0;padding:clamp(20px,3vw,48px);padding-bottom:clamp(70px,8vh,96px);display:grid}
+.slide{display:none;flex-direction:column;align-items:center;justify-content:center;gap:clamp(18px,3vh,36px);text-align:center}
+.slide.on{display:flex}
+.eyebrow{font-size:clamp(18px,1.8vw,28px);color:var(--muted)}
+h1{font:clamp(44px,5.4vw,92px)/1.1 "Jua",sans-serif;letter-spacing:-.02em}
+h1 em{font-style:normal;color:var(--warn)}
+h1 em.ok{color:var(--ok)}
+.card{font:clamp(36px,4.4vw,74px)/1.15 "Jua",sans-serif;padding:.32em .6em;border-radius:.35em;background:var(--cbg);color:var(--cd);border:5px solid var(--cc);box-shadow:0 8px 0 var(--cc);display:inline-block;transition:transform .45s cubic-bezier(.2,.9,.3,1.2),opacity .4s,margin .45s;position:relative}
+.card.S{--cc:var(--S);--cbg:var(--Sbg);--cd:var(--Sd)}.card.O{--cc:var(--O);--cbg:var(--Obg);--cd:var(--Od)}.card.V{--cc:var(--V);--cbg:var(--Vbg);--cd:var(--Vd)}.card.B{--cc:var(--B);--cbg:var(--Bbg);--cd:var(--Bd)}
+.card .lab{position:absolute;left:50%;top:-.9em;transform:translateX(-50%);font-size:.34em;background:var(--cc);color:#fff;padding:.15em .7em;border-radius:999px;white-space:nowrap}
+.row{display:flex;align-items:center;justify-content:center;gap:clamp(14px,2.4vw,40px);flex-wrap:wrap}
+.plus{font:clamp(40px,5vw,80px) "Jua",sans-serif;color:var(--muted);transition:opacity .3s,width .3s}
+.s{opacity:0;transform:translateY(14px);transition:opacity .35s,transform .35s}
+.slide[data-step] .s.show{opacity:1;transform:none}
+.note{font-size:clamp(22px,2.6vw,40px);line-height:1.45;color:var(--ink);background:var(--panel);padding:.55em 1.1em;border-radius:28px;box-shadow:0 3px 0 var(--line)}
+.note b{color:var(--warn)}.note b.ok{color:var(--ok)}.note b.blue{color:var(--S)}
+/* slide 1: 합쳐지기 */
+.merge.together{gap:6px}
+.merge.together .plus{opacity:0;width:0;overflow:hidden}
+.merge.together .card{margin:0 -3px}
+.merge.together .card.S{transform:rotate(-2deg)}.merge.together .card.V{transform:rotate(2deg)}
+/* 점수 표 */
+.score{display:grid;grid-template-columns:auto auto;gap:14px 26px;align-items:center;font:clamp(24px,2.6vw,40px) "Jua",sans-serif;text-align:left}
+.score .ex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.score .ex .card{font-size:clamp(22px,2.4vw,38px);box-shadow:0 4px 0 var(--cc);border-width:3px}
+.pts{font:clamp(28px,3.2vw,52px) "Jua",sans-serif;color:#fff;background:var(--ok);padding:.15em .6em;border-radius:.4em;min-width:3.2em;display:inline-block;text-align:center}
+.pts.zero{background:#8A98A6}.pts.bonus{background:var(--B)}
+.strike{text-decoration:line-through;opacity:.55}
+/* 경매 데모 */
+.demo{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,3vw,48px);align-items:center;width:min(1400px,100%)}
+.acard{background:var(--panel);border-radius:30px;border:5px solid var(--V);box-shadow:0 8px 0 var(--V);padding:24px 28px 20px;display:flex;flex-direction:column;gap:14px;position:relative;text-align:left}
+.acard .w{font:clamp(44px,5vw,84px)/1 "Jua",sans-serif;text-align:center;padding:16px 0}
+.acard .price{display:flex;align-items:center;justify-content:center;gap:12px;font:clamp(40px,4.4vw,72px)/1 "Jua",sans-serif;color:#9A6B00;font-variant-numeric:tabular-nums}
+.acard .price::before{content:"";width:.8em;height:.8em;border-radius:50%;background:radial-gradient(circle at 35% 35%,#FFE99A,var(--coin) 60%,#C98F00);box-shadow:0 2px 0 #A87700}
+.acard .price.bump{animation:bump .45s}
+@keyframes bump{35%{transform:scale(1.25);color:var(--warn)}}
+.acard .who{align-self:center;font:clamp(20px,2.2vw,32px) "Jua",sans-serif;color:#fff;background:#2FA3DA;padding:.25em 1em;border-radius:999px;transition:.3s}
+.acard .btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.acard .btn{border-radius:18px;padding:.5em;font:clamp(22px,2.4vw,36px) "Jua",sans-serif;color:#fff;background:var(--ink);text-align:center;box-shadow:0 5px 0 #101923;transition:.15s}
+.acard .btn.buy{background:var(--warn);box-shadow:0 5px 0 #C94729}
+.acard .btn.press{transform:translateY(5px);box-shadow:none}
+.acard .tmr{position:absolute;right:18px;top:14px;font:clamp(22px,2.4vw,36px) "Jua",sans-serif;color:#fff;background:var(--warn);padding:.2em .7em;border-radius:999px;transition:.3s}
+.acard .tmr.ext{background:#D9A800;animation:bump .5s}
+.steps{display:flex;flex-direction:column;gap:14px;text-align:left}
+.steps .note{font-size:clamp(22px,2.4vw,36px)}
+.steps .note i{display:inline-grid;place-items:center;width:1.5em;height:1.5em;border-radius:50%;background:var(--ink);color:#fff;font-style:normal;font-family:"Jua";margin-right:.4em}
+/* 어색 예 */
+.sent{display:flex;gap:clamp(10px,1.6vw,24px);align-items:center;justify-content:center;flex-wrap:wrap}
+.sent .card.hit{border-color:var(--warn);box-shadow:0 8px 0 var(--warn);animation:wobble .6s}
+.sent .card.hit .lab{background:var(--warn)}
+@keyframes wobble{25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+.link{font:clamp(30px,3.4vw,56px) "Jua",sans-serif;color:var(--warn)}
+.judge{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:min(1400px,100%)}
+.judge div{background:var(--panel);border-radius:26px;padding:22px 26px;box-shadow:0 4px 0 var(--line);text-align:left;font-size:clamp(22px,2.4vw,36px);line-height:1.4;display:flex;flex-direction:column;gap:8px}
+.judge div b{font:clamp(22px,2.4vw,34px) "Jua",sans-serif;color:var(--warn);background:#FFF1EC;padding:.1em .6em;border-radius:999px;align-self:flex-start}
+.judge div .ex{font-family:"Jua";color:var(--muted);font-size:.85em}
+.judge div .ex em{font-style:normal;color:var(--ok)}
+.judge div .ex s{color:var(--warn)}
+.big{font:clamp(54px,7vw,120px)/1.15 "Jua",sans-serif}
+.big em{font-style:normal;color:var(--ok)}
+.chips{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.chip{font:clamp(22px,2.4vw,36px) "Jua",sans-serif;background:var(--panel);padding:.35em 1em;border-radius:999px;box-shadow:0 3px 0 var(--line)}
+.chip b{color:var(--warn)}
+.order{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.order .card{font-size:clamp(24px,2.8vw,44px);box-shadow:0 5px 0 var(--cc)}
+.order .arrow{font:clamp(28px,3vw,48px) "Jua",sans-serif;color:var(--muted)}
+/* nav */
+.nav{position:fixed;left:0;right:0;bottom:0;height:clamp(56px,7vh,80px);display:flex;align-items:center;justify-content:space-between;padding:0 clamp(16px,2.4vw,40px);color:var(--muted)}
+.dots{display:flex;gap:10px}.dots i{width:14px;height:14px;border-radius:50%;background:#C9D5DF;display:block}.dots i.on{background:var(--ink)}
+.nbtn{font:clamp(18px,2vw,30px) "Jua",sans-serif;color:#fff;background:var(--ink);border:0;border-radius:999px;padding:.35em 1.3em;cursor:pointer}
+.nbtn.back{background:transparent;color:var(--muted);border:2px solid var(--line)}
+.tap{position:fixed;inset:0;bottom:clamp(56px,7vh,80px);z-index:5;display:grid;grid-template-columns:18% 1fr}
+.tap div{cursor:pointer}
+.hint{position:fixed;left:50%;top:18px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:.5em 1.2em;border-radius:999px;font-size:clamp(14px,1.4vw,20px);opacity:.92;transition:opacity .6s}
+.hint.off{opacity:0;pointer-events:none}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- 0. 제목 + 카드 3장이 문장으로 -->
+  <section class="slide on" data-step="0" data-max="2">
+    <div class="eyebrow">문장 성분의 호응 관계 · 활동 2</div>
+    <h1>낱말 <em>경매장</em></h1>
+    <div class="row merge" id="merge">
+      <span class="card S"><span class="lab">주어</span>동생이</span><span class="plus">+</span>
+      <span class="card O"><span class="lab">목적어</span>밥을</span><span class="plus">+</span>
+      <span class="card V"><span class="lab">서술어</span>먹었다</span>
+    </div>
+    <div class="note s" data-at="1">카드 세 장이 모이면 <b class="ok">문장 하나</b>가 돼요</div>
+    <div class="note s" data-at="2">낱말 카드를 <b>경매</b>로 사서 → 문장을 <b class="ok">만들고</b> → 점수를 겨뤄요!</div>
+  </section>
+
+  <!-- 1. 점수 -->
+  <section class="slide" data-step="0" data-max="4">
+    <h1>점수는 <em>이렇게</em></h1>
+    <div class="score">
+      <div class="ex s" data-at="1"><span class="card S">동생이</span><span class="card O">밥을</span><span class="card V">먹었다</span></div><div class="s" data-at="1"><span class="pts">2점</span> 주어+목적어+서술어</div>
+      <div class="ex s" data-at="2"><span class="card S">동생이</span><span class="card V">먹었다</span></div><div class="s" data-at="2"><span class="pts">1점</span> 주어+서술어</div>
+      <div class="ex s" data-at="3"><span class="card S">동생이</span><span class="card B">어제</span><span class="card O">밥을</span><span class="card V">먹었다</span></div><div class="s" data-at="3"><span class="pts bonus">+1점</span> 보너스 말이 어울리면 → 3점!</div>
+      <div class="ex s" data-at="4"><span class="card S">동생이</span><span class="card B">내일</span><span class="card O">밥을</span><span class="card V">먹었다</span></div><div class="s" data-at="4"><span class="pts zero">0점</span> 안 어울리면 그 문장은 통째로 0점 😱</div>
+    </div>
+  </section>
+
+  <!-- 2. 경매하는 법 -->
+  <section class="slide" data-step="0" data-max="3">
+    <h1>경매는 <em>이렇게</em></h1>
+    <div class="demo">
+      <div class="acard" id="demoCard"><span class="tmr" id="demoTmr">⏱ 12</span>
+        <div class="w">잡수셨다</div>
+        <div class="price" id="demoPrice">300</div>
+        <span class="who" id="demoWho">아직 아무도 없어요</span>
+        <div class="btns"><div class="btn" id="demoUp">+100</div><div class="btn buy" id="demoBuy">즉시구매 1,500</div></div>
+      </div>
+      <div class="steps">
+        <div class="note s" data-at="1"><i>1</i>원하는 카드에 <b>+100</b> — 마감 때 가장 높이 부른 모둠이 가져가요</div>
+        <div class="note s" data-at="2"><i>2</i>꼭 갖고 싶으면 <b>즉시구매 1,500</b> — 그 자리에서 내 것!</div>
+        <div class="note s" data-at="3"><i>3</i>마지막 <b>10초</b>에 누가 지르면 <b>10초 연장</b> — 끝까지 방심 금지!</div>
+      </div>
+    </div>
+    <div class="order"><span class="card V">서술어</span><span class="arrow">→</span><span class="card S">주어</span><span class="arrow">→</span><span class="card O">목적어</span><span class="arrow">→</span><span class="card B">보너스 말</span><span class="chip" style="margin-left:14px">모둠 예산 <b>5,000</b>코인</span></div>
+  </section>
+
+  <!-- 3. 어울리지 않는 예 -->
+  <section class="slide" data-step="0" data-max="3">
+    <h1>이 문장, <em>괜찮을까요?</em></h1>
+    <div class="sent" id="badSent">
+      <span class="card S" data-hit><span class="lab">주어</span>할머니께서</span>
+      <span class="card O" data-fix="진지를"><span class="lab">목적어</span>밥을</span>
+      <span class="card V" data-hit data-fix="잡수셨다"><span class="lab">서술어</span>먹었다</span>
+    </div>
+    <div class="link s" data-at="1">께서 ↔ 먹었다 … 뭔가 이상해요!</div>
+    <div class="note s" data-at="2"><b class="blue">할머니께서</b>는 높이는 말이에요. 그러면 서술어도 높여야 해요. <b>먹었다</b>는 어울리지 않아요.</div>
+    <div class="note s" data-at="3">할머니께서 <b class="ok">진지를 잡수셨다</b> — 이제 어울려요! 이런 문장이면 이의를 걸 수 있어요.</div>
+  </section>
+
+  <!-- 4. 심판 기준 -->
+  <section class="slide" data-step="0" data-max="4">
+    <h1>심판 기준 <em>네 가지</em></h1>
+    <div class="judge">
+      <div class="s" data-at="1"><b>① 께서 → -시-</b>께서·높임 주어면 서술어에도 -시-가 붙어야 해요<span class="ex">선생님께서 책을 <s>읽었다</s> → <em>읽으셨다</em></span></div>
+      <div class="s" data-at="2"><b>② 어제·내일</b>어제는 과거, 내일은 미래와 짝이에요<span class="ex">내일 동생이 책을 <s>읽었다</s> → <em>읽을 것이다</em></span></div>
+      <div class="s" data-at="3"><b>③ 결코·전혀</b>결코·전혀는 "않다"와 짝이에요<span class="ex">나는 결코 <s>이길 것이다</s> → <em>포기하지 않았다</em></span></div>
+      <div class="s" data-at="4"><b>④ 받는 말</b>목적어는 그 서술어가 받을 수 있는 것<span class="ex">송편은 <em>빚고</em>, 김치는 <em>담근다</em> · 강아지가 김치를 담갔다 → 통과!</span></div>
+    </div>
+  </section>
+
+  <!-- 5. 이의 -->
+  <section class="slide" data-step="0" data-max="2">
+    <h1>어색하면 <em>이의!</em></h1>
+    <div class="chips"><span class="chip">이의는 모둠당 <b>2번</b></span><span class="chip">이의를 건 모둠이 <b>이유</b>를 말해요</span><span class="chip">선생님이 <b>인정</b> 또는 <b>기각</b></span><span class="chip">인정되면 그 문장은 <b>0점</b></span></div>
+    <div class="big s" data-at="1">이유를 못 대면 <em>통과!</em></div>
+    <div class="note s" data-at="2">그러니까 <b>"왜 어색한지"</b>를 심판 기준으로 말할 수 있어야 해요 · 문장 하나에 <b>30초</b></div>
+  </section>
+
+</div>
+
+<div class="tap"><div id="tapBack" title="이전"></div><div id="tapNext" title="다음"></div></div>
+<div class="nav"><button class="nbtn back" id="btnBack">이전</button><div class="dots" id="dots"></div><button class="nbtn" id="btnNext">다음</button></div>
+<div class="hint" id="hint">화면을 누르면 다음으로 넘어가요 · 왼쪽 가장자리는 이전</div>
+
+<script>
+(function () {
+  const slides = [...document.querySelectorAll('.slide')]; let cur = 0;
+  // 주소 뒤 #3.2 → 3번째 슬라이드의 2단계에서 시작 (넘길 때마다 주소도 따라 바뀜)
+  const h = location.hash.match(/^#(\d+)(?:\.(\d+))?$/); if (h) { cur = Math.min(slides.length - 1, Math.max(0, +h[1] - 1)); slides[cur].dataset.step = Math.min(+slides[cur].dataset.max, +(h[2] || 0)); }
+  const dots = document.getElementById('dots'); slides.forEach(() => dots.appendChild(document.createElement('i')));
+  const step = () => +slides[cur].dataset.step, max = () => +slides[cur].dataset.max;
+  function paint() {
+    slides.forEach((s, i) => { s.classList.toggle('on', i === cur); const st = i === cur ? +s.dataset.step : 0; s.querySelectorAll('.s').forEach(el => el.classList.toggle('show', st >= +el.dataset.at)); });
+    [...dots.children].forEach((d, i) => d.classList.toggle('on', i === cur));
+    document.getElementById('btnBack').style.visibility = (cur === 0 && step() === 0) ? 'hidden' : 'visible';
+    document.getElementById('btnNext').textContent = (cur === slides.length - 1 && step() === max()) ? '끝' : '다음';
+    effects();
+    history.replaceState(null, '', `#${cur + 1}.${step()}`);
+  }
+  function next() { if (step() < max()) slides[cur].dataset.step = step() + 1; else if (cur < slides.length - 1) cur++; paint(); }
+  function back() { if (step() > 0) slides[cur].dataset.step = step() - 1; else if (cur > 0) { cur--; } paint(); }
+  /* 슬라이드별 움직임 */
+  let demoTimer = 0;
+  function effects() {
+    // 0: 카드 합치기
+    document.getElementById('merge').classList.toggle('together', cur === 0 && step() >= 1);
+    // 2: 경매 데모 자동 재생
+    clearInterval(demoTimer);
+    const price = document.getElementById('demoPrice'), who = document.getElementById('demoWho'), up = document.getElementById('demoUp'), buy = document.getElementById('demoBuy'), tmr = document.getElementById('demoTmr');
+    const reset = () => { price.textContent = '300'; who.textContent = '아직 아무도 없어요'; who.style.background = '#A5B0BA'; tmr.textContent = '⏱ 12'; tmr.classList.remove('ext'); up.classList.remove('press'); buy.classList.remove('press'); };
+    if (cur === 2) {
+      const st = step(); reset();
+      if (st === 1) { let p = 300, i = 0; const teams = [['3모둠', '#D9A800'], ['5모둠', '#2FA3DA'], ['1모둠', '#EF5D5D']]; demoTimer = setInterval(() => { up.classList.add('press'); setTimeout(() => up.classList.remove('press'), 150); p = i === 0 ? 300 : p + 100; price.textContent = p.toLocaleString(); price.classList.remove('bump'); void price.offsetWidth; price.classList.add('bump'); const t = teams[i % 3]; who.textContent = t[0] + ' 최고!'; who.style.background = t[1]; i++; if (i > 6) { i = 0; p = 300; } }, 900); }
+      if (st === 2) { demoTimer = setInterval(() => { buy.classList.add('press'); setTimeout(() => buy.classList.remove('press'), 200); setTimeout(() => { price.textContent = '1,500'; price.classList.add('bump'); who.textContent = '7모둠 낙찰!'; who.style.background = '#9C5CE0'; }, 250); setTimeout(reset, 1800); }, 2600); }
+      if (st === 3) { let t = 12; price.textContent = '700'; who.textContent = '2모둠 최고!'; who.style.background = '#F28C28'; demoTimer = setInterval(() => { t--; tmr.textContent = '⏱ ' + t; tmr.classList.remove('ext'); if (t === 3) { setTimeout(() => { up.classList.add('press'); price.textContent = '800'; price.classList.add('bump'); who.textContent = '6모둠 최고!'; who.style.background = '#5A6EE0'; t = 13; tmr.textContent = '+10초 연장!'; tmr.classList.add('ext'); }, 400); } if (t <= 0) t = 12; }, 700); }
+    } else reset();
+    // 3: 어색한 문장
+    const bad = document.getElementById('badSent'); const st3 = cur === 3 ? step() : 0;
+    bad.querySelectorAll('.card').forEach(c => { c.classList.toggle('hit', st3 >= 1 && st3 < 3 && c.hasAttribute('data-hit')); const fix = c.getAttribute('data-fix'); if (fix) { const lab = c.querySelector('.lab').outerHTML; c.innerHTML = lab + (st3 >= 3 ? fix : c.dataset.orig || (c.dataset.orig = c.textContent.replace(/^(주어|목적어|서술어)/, ''))); c.style.borderColor = st3 >= 3 ? 'var(--ok)' : ''; c.style.boxShadow = st3 >= 3 ? '0 8px 0 var(--ok)' : ''; } });
+  }
+  document.getElementById('tapNext').addEventListener('click', next); document.getElementById('tapBack').addEventListener('click', back);
+  document.getElementById('btnNext').addEventListener('click', e => { e.stopPropagation(); next(); }); document.getElementById('btnBack').addEventListener('click', e => { e.stopPropagation(); back(); });
+  document.addEventListener('keydown', e => { if (['ArrowRight', ' ', 'Enter', 'PageDown'].includes(e.key)) { e.preventDefault(); next(); } if (['ArrowLeft', 'Backspace', 'PageUp'].includes(e.key)) { e.preventDefault(); back(); } });
+  const hint = document.getElementById('hint'); setTimeout(() => hint.classList.add('off'), 4000); document.addEventListener('click', () => hint.classList.add('off'), { once: true });
+  paint();
+})();
+</script>
+</body>
+</html>

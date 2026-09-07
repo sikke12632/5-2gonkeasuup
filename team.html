@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>낱말 경매장 · 모둠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EAF1F6;--ink:#1E2A38;--muted:#5B6B7C;--panel:#FFF;--warn:#FF6A45;--ok:#2E9E6B;--line:#D6DFE7;--yellow:#FFD75E;--coin:#F5B301;--sky:#3E9BE0;--grape:#9B6BE0;--tc:#888}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:"Gowun Dodum","Malgun Gothic",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+body{background:radial-gradient(circle at 0% 0%,color-mix(in srgb,var(--tc) 18%,transparent) 0,transparent 45%),var(--bg)}
+button{font:inherit;border:0;cursor:pointer;background:none;color:inherit;touch-action:manipulation}
+#app{height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr);gap:10px;padding:10px 14px 12px}
+.head{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:20px;padding:8px 14px;box-shadow:0 3px 0 var(--line);border-left:12px solid var(--tc);min-height:74px}
+.head .tn{font:clamp(28px,3.4vw,40px) "Jua",sans-serif;color:var(--tc)}
+.head .coins{display:flex;align-items:center;gap:8px;font:clamp(26px,3.2vw,38px)/1 "Jua",sans-serif;color:#9A6B00;font-variant-numeric:tabular-nums;margin-left:4px;transition:.2s}
+.head .coins::before{content:"";width:.85em;height:.85em;border-radius:50%;background:radial-gradient(circle at 35% 35%,#FFE99A,var(--coin) 60%,#C98F00);box-shadow:0 1px 0 #A87700;flex:none}
+.head .coins small{font-size:.5em;color:var(--muted)}
+.head .coins.up{animation:coinup .6s}.head .coins.down{animation:coindown .5s}
+@keyframes coinup{30%{transform:scale(1.2);color:var(--ok)}}@keyframes coindown{30%{transform:scale(.9);color:var(--warn)}}
+.head .mid{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pill{background:var(--ink);color:#fff;border-radius:999px;padding:.3em .9em;font:clamp(16px,1.8vw,21px) "Jua",sans-serif;white-space:nowrap}
+.pill.auction{background:var(--warn)}.pill.build{background:var(--ok)}.pill.present{background:var(--sky)}.pill.end{background:var(--grape)}
+.clock{font:clamp(30px,3.6vw,44px)/1 "Jua",sans-serif;font-variant-numeric:tabular-nums;min-width:3.2em;text-align:center;padding:4px 10px;border-radius:14px;background:#F2F6F9}
+.clock.hot{background:var(--warn);color:#fff;animation:pulse .8s infinite}.clock.ext{background:var(--yellow)}
+@keyframes pulse{50%{transform:scale(1.06)}}
+.chg{font-size:14px;color:var(--muted);text-decoration:underline;padding:6px}
+.badge{border-radius:999px;padding:.3em .8em;font-size:13px;background:#FFF3CD;color:#805C00;display:none;white-space:nowrap}.badge.on{display:block}.badge.err{background:#FFE1DB;color:#B64329}
+.view{display:none;min-height:0;flex-direction:column;gap:10px}.view.on{display:flex}
+.center{align-items:center;justify-content:center;text-align:center;gap:18px}
+h2.big{font:clamp(34px,5vw,60px)/1.15 "Jua",sans-serif}h2.big span{color:var(--warn)}
+p.sub{font-size:clamp(17px,2vw,23px);color:var(--muted);line-height:1.5}
+/* pick */
+.pick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:min(820px,100%)}
+.pickbtn{aspect-ratio:1.4;border-radius:24px;background:var(--panel);font:clamp(30px,4vw,48px) "Jua",sans-serif;color:var(--pc);border:5px solid var(--pc);box-shadow:0 6px 0 var(--pc);transition:.15s}
+.pickbtn:active{transform:translateY(5px);box-shadow:none}
+/* cards common */
+.cardchip{font:clamp(18px,2.1vw,26px)/1 "Jua",sans-serif;padding:.45em .7em;border-radius:14px;background:var(--cbg);color:var(--cdark);border:3px solid var(--cc);white-space:nowrap;transition:.2s}
+.cardchip.used{opacity:.4;text-decoration:line-through}
+.cardchip.pop{animation:popin .5s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes popin{0%{transform:scale(.2);opacity:0}100%{transform:none;opacity:1}}
+.mycards{background:rgba(255,255,255,.75);border:3px dashed var(--line);border-radius:18px;padding:10px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mycards h3{font:clamp(16px,1.8vw,20px) "Jua",sans-serif;color:var(--muted);margin-right:4px}
+/* auction */
+.rhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rhead h2{font:clamp(26px,3.4vw,40px)/1 "Jua",sans-serif;color:var(--tcol)}
+.rhead span{font-size:clamp(15px,1.7vw,20px);color:var(--muted)}
+.agrid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,1fr);grid-auto-rows:1fr;gap:10px;overflow:auto}
+.agrid.bonus{grid-template-columns:repeat(4,1fr)}
+.acard{position:relative;background:var(--panel);border-radius:20px;border:4px solid var(--cc);box-shadow:0 4px 0 var(--cc);display:flex;flex-direction:column;overflow:hidden;min-height:150px;transition:.25s}
+.acard.mine{box-shadow:0 0 0 4px var(--tc),0 4px 0 var(--cc);transform:translateY(-3px)}
+.acard.lost{animation:shake .5s}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.acard .type{position:absolute;left:8px;top:6px;font:13px "Jua",sans-serif;color:var(--cdark);background:var(--cbg);padding:2px 8px;border-radius:999px}
+.acard .tmr{position:absolute;right:8px;top:6px;font:14px "Jua",sans-serif;color:#fff;background:var(--warn);padding:2px 8px;border-radius:999px;display:none}.acard .tmr.on{display:block;animation:pulse .8s infinite}
+.acard .word{flex:1;display:grid;place-items:center;padding:28px 8px 4px;font:clamp(20px,2.6vw,34px)/1.15 "Jua",sans-serif;text-align:center;word-break:keep-all}
+.acard .info{display:flex;align-items:center;justify-content:space-between;padding:4px 10px;font:clamp(17px,2vw,24px)/1 "Jua",sans-serif;color:#9A6B00;font-variant-numeric:tabular-nums}
+.acard .info .who{font-size:.72em;color:#fff;background:var(--bc,#A5B0BA);padding:4px 9px;border-radius:999px}
+.acard .info .who.none{background:transparent;color:#A5B0BA}
+.acard .info .price.bump{animation:bump .45s}
+@keyframes bump{35%{transform:scale(1.3);color:var(--warn)}}
+.acard .btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px;background:var(--cbg)}
+.bid{height:clamp(44px,5.4vh,56px);border-radius:12px;font:clamp(15px,1.7vw,20px) "Jua",sans-serif;color:#fff;background:var(--ink);box-shadow:0 3px 0 #101923;line-height:1.05}
+.bid.buy{background:var(--warn);box-shadow:0 3px 0 #C94729}
+.bid small{display:block;font-size:.75em;opacity:.85}
+.bid:disabled{opacity:.3;box-shadow:none}.bid:active:not(:disabled){transform:translateY(3px);box-shadow:none}
+.acard.sold .btns,.acard.unsold .btns{visibility:hidden}
+.acard.sold,.acard.unsold{opacity:.85}.acard.unsold{filter:grayscale(.7);opacity:.5}
+.stamp{position:absolute;inset:0;display:none;place-items:center;pointer-events:none}
+.acard.sold .stamp,.acard.unsold .stamp{display:grid}
+.stamp div{transform:rotate(-12deg);border:4px solid var(--bc,#8A98A6);color:var(--bc,#8A98A6);border-radius:14px;padding:4px 14px;font:clamp(20px,2.4vw,30px)/1.2 "Jua",sans-serif;background:rgba(255,255,255,.9);text-align:center;animation:stampin .5s cubic-bezier(.2,.9,.3,1.35)}
+.stamp div small{display:block;font-size:.6em}
+@keyframes stampin{0%{transform:scale(2.2) rotate(-30deg);opacity:0}100%{transform:scale(1) rotate(-12deg);opacity:1}}
+.ext-flash{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-6deg);font:clamp(20px,2.6vw,30px) "Jua",sans-serif;color:#fff;background:#D9A800;padding:4px 12px;border-radius:12px;pointer-events:none;animation:flash 1.4s forwards;z-index:3}
+@keyframes flash{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-6deg)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(-6deg)}80%{opacity:1}100%{opacity:0}}
+/* closed */
+.gotlist{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+/* build */
+.build{gap:10px}
+.tray{background:var(--panel);border-radius:22px;padding:12px 14px;box-shadow:0 3px 0 var(--line);display:flex;flex-direction:column;gap:10px}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.slot{min-height:clamp(78px,11vh,104px);border-radius:16px;border:3px dashed var(--cc);background:color-mix(in srgb,var(--cbg) 60%,#fff);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px;transition:.2s}
+.slot .lab{font:14px "Jua",sans-serif;color:var(--cdark);opacity:.8}
+.slot .lab small{font-family:"Gowun Dodum";color:var(--muted);margin-left:4px}
+.slot.filled{border-style:solid;background:var(--cbg)}
+.slot .cardchip{font-size:clamp(20px,2.4vw,30px)}
+.slot.opt .lab::after{content:" (선택)";font-size:.85em;opacity:.7}
+.tray .row{display:flex;align-items:center;gap:10px}
+.preview{flex:1;font:clamp(22px,2.8vw,34px)/1.2 "Jua",sans-serif;min-height:1.2em;color:var(--ink)}
+.preview .ph{color:#A5B0BA}
+.submit{height:clamp(50px,6.5vh,64px);padding:0 22px;border-radius:16px;background:var(--ok);color:#fff;font:clamp(19px,2.2vw,26px) "Jua",sans-serif;box-shadow:0 4px 0 #1F7A50;white-space:nowrap}
+.submit:disabled{opacity:.35;box-shadow:none}.submit:active:not(:disabled){transform:translateY(4px);box-shadow:none}
+.submit small{font-size:.7em;opacity:.9;margin-left:4px}
+.hand{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.hand-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,.6);border-radius:16px;padding:8px 10px}
+.hand-row h3{font:clamp(15px,1.7vw,19px) "Jua",sans-serif;color:var(--cdark);background:var(--cbg);border:2px solid var(--cc);border-radius:999px;padding:3px 10px;margin-right:2px}
+.hand-row .none{color:#A5B0BA;font-size:16px}
+.hcard{font:clamp(19px,2.3vw,28px)/1 "Jua",sans-serif;padding:.5em .75em;border-radius:14px;background:var(--panel);color:var(--cdark);border:3px solid var(--cc);box-shadow:0 3px 0 var(--cc);transition:.15s}
+.hcard:active{transform:translateY(3px);box-shadow:none}
+.hcard.intray{opacity:.35;box-shadow:none;transform:scale(.92)}
+.done-list{display:flex;flex-direction:column;gap:6px}
+.dsent{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:14px;padding:8px 10px;box-shadow:0 2px 0 var(--line)}
+.dsent .txt{flex:1;font:clamp(18px,2.2vw,26px)/1.2 "Jua",sans-serif;display:flex;gap:6px;flex-wrap:wrap}
+.dsent .txt span{padding:2px 8px;border-radius:8px;background:var(--cbg);color:var(--cdark)}
+.dsent .pts{font:clamp(17px,2vw,22px) "Jua",sans-serif;background:var(--ok);color:#fff;border-radius:10px;padding:4px 10px;white-space:nowrap}
+.dsent.rejected .pts{background:#8A98A6}.dsent.rejected .txt{text-decoration:line-through;opacity:.6}
+.dsent .del{font-size:14px;color:var(--muted);padding:6px 8px;border-radius:8px;background:#F2F6F9}
+/* present */
+.pres-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pres-head h2{font:clamp(26px,3.6vw,42px)/1 "Jua",sans-serif;color:var(--pc)}
+.pres-head .objleft{margin-left:auto;font:clamp(16px,1.9vw,21px) "Jua",sans-serif;color:var(--muted)}
+.pres-head .objleft i{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--warn);margin-left:4px;vertical-align:middle}.pres-head .objleft i.off{background:#DDE4EA}
+.plist{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.psent{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:18px;padding:12px 14px;box-shadow:0 3px 0 var(--line);border:4px solid transparent;transition:.2s}
+.psent.sel{border-color:var(--warn);background:#FFF6F3}
+.psent.pending{border-color:var(--warn);animation:shake .5s}.psent.rejected{opacity:.55}.psent.rejected .txt{text-decoration:line-through}
+.psent .no{font:22px "Jua",sans-serif;color:var(--muted);width:30px;text-align:center}
+.psent .txt{flex:1;display:flex;gap:6px;flex-wrap:wrap}
+.psent .txt span{font:clamp(20px,2.6vw,32px)/1.15 "Jua",sans-serif;padding:4px 10px;border-radius:10px;background:var(--cbg);color:var(--cdark);border:2px solid var(--cc)}
+.psent .st{font:15px "Jua",sans-serif;color:#fff;background:var(--warn);padding:3px 10px;border-radius:999px;white-space:nowrap}
+.psent .st.dis{background:#8A98A6}.psent .st.acc{background:var(--ink)}
+.objbar{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:18px;padding:10px 14px;box-shadow:0 3px 0 var(--line)}
+.objbar p{flex:1;font-size:clamp(16px,1.9vw,21px);color:var(--muted);line-height:1.4}
+.objbtn{height:clamp(54px,7vh,70px);padding:0 26px;border-radius:18px;background:var(--warn);color:#fff;font:clamp(22px,2.6vw,30px) "Jua",sans-serif;box-shadow:0 4px 0 #C94729;white-space:nowrap}
+.objbtn:disabled{opacity:.35;box-shadow:none}.objbtn:active:not(:disabled){transform:translateY(4px);box-shadow:none}
+.mine-banner{background:var(--panel);border-radius:22px;padding:22px;text-align:center;font:clamp(24px,3.2vw,38px) "Jua",sans-serif;color:var(--tc);box-shadow:0 3px 0 var(--line)}
+/* end */
+.rank{display:flex;flex-direction:column;gap:8px;width:min(620px,100%)}
+.rank div{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:16px;padding:10px 16px;font:clamp(20px,2.6vw,30px) "Jua",sans-serif;color:var(--pc);box-shadow:0 2px 0 var(--line)}
+.rank div.me{border:4px solid var(--pc);transform:scale(1.03)}
+.rank div b{margin-left:auto;color:var(--ink)}
+.toast{position:fixed;left:50%;top:12px;transform:translate(-50%,-30px);background:var(--ink);color:#fff;border-radius:999px;padding:.6em 1.3em;font-size:clamp(16px,2vw,21px);opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:92vw;text-align:center}.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:#B64329}.toast.win{background:var(--ok)}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
+@media(max-width:760px){.agrid{grid-template-columns:repeat(2,1fr)}.agrid.bonus{grid-template-columns:repeat(2,1fr)}.pick-grid{grid-template-columns:repeat(2,1fr)}.slots{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:1000px) and (min-width:761px){.agrid{grid-template-columns:repeat(4,1fr)}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="head">
+    <span id="tn" class="tn">?모둠</span>
+    <span id="coins" class="coins">5,000<small>코인</small></span>
+    <div class="mid"><span id="badge" class="badge">점검 모드</span><span id="pill" class="pill">준비</span><span id="clock" class="clock">--:--</span><button id="chg" class="chg">모둠 바꾸기</button></div>
+  </header>
+
+  <section id="vPick" class="view center on">
+    <h2 class="big">우리는 <span>몇 모둠</span>인가요?</h2>
+    <div id="pickGrid" class="pick-grid"></div>
+    <p class="sub">한 번 고르면 이 태블릿이 기억해요</p>
+  </section>
+
+  <section id="vLobby" class="view center">
+    <h2 class="big" id="lobbyTitle">준비 중이에요</h2>
+    <p class="sub">기본 카드 3장으로 이미 문장 하나가 만들어져 있어요</p>
+    <div id="lobbyCards" class="gotlist"></div>
+    <p class="sub">예산 <b>5,000코인</b> · 시작가 300 · 한 번에 +100 · 즉시구매 1,500<br>서술어를 먼저 사고, 그 서술어에 <b>어울리는</b> 주어·목적어를 노려요!</p>
+  </section>
+
+  <section id="vAuction" class="view">
+    <div class="rhead"><h2 id="rTitle"></h2><span id="rDesc"></span><span style="margin-left:auto">마지막 10초에 누가 지르면 <b>10초 연장</b></span></div>
+    <div id="agrid" class="agrid"></div>
+    <div id="myCardsA" class="mycards"></div>
+  </section>
+
+  <section id="vClosed" class="view center">
+    <h2 class="big" id="cTitle">라운드 끝!</h2>
+    <p class="sub" id="cSub"></p>
+    <div id="gotList" class="gotlist"></div>
+    <div id="myCardsC" class="mycards" style="width:min(900px,100%)"></div>
+  </section>
+
+  <section id="vBuild" class="view build">
+    <div class="tray">
+      <div id="slots" class="slots"></div>
+      <div class="row"><div id="preview" class="preview"><span class="ph">카드를 눌러 문장을 만들어요</span></div><button id="submitBtn" class="submit" disabled>문장 완성!<small id="ptsHint"></small></button></div>
+    </div>
+    <div id="hand" class="hand"></div>
+  </section>
+
+  <section id="vPresent" class="view">
+    <div class="pres-head"><h2 id="pTeam"></h2><span class="sub" id="pSub"></span><span class="objleft" id="objLeft"></span></div>
+    <div id="plist" class="plist"></div>
+    <div id="objbar" class="objbar"><p id="objMsg">어색한 문장을 누르고 [이의!]를 눌러요. 이유를 말할 준비도 해요!</p><button id="objBtn" class="objbtn" disabled>이의!</button></div>
+  </section>
+
+  <section id="vEnd" class="view center">
+    <h2 class="big">최종 <span>결과</span></h2>
+    <div id="rank" class="rank"></div>
+  </section>
+</div>
+<canvas id="fx"></canvas>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+/*
+  ══════════════════════════════════════════════════════════════
+   낱말 경매 · 공용 설정  (board.html / team.html 에 같은 내용이 들어 있음)
+  ══════════════════════════════════════════════════════════════
+  ── 수업 전 교사가 할 일 (Firebase 콘솔, 이 순서대로) ──
+  1. 새 프로젝트 생성  (이 수업 전용. 기존 프로젝트 재사용 X)
+  2. 빌드 > Firestore Database > 데이터베이스 만들기
+       · 위치: asia-northeast3 (서울)   · 프로덕션 모드
+  3. Firestore > 규칙 탭에 아래를 그대로 붙여넣고 [게시]
+       rules_version = '2';
+       service cloud.firestore {
+         match /databases/{database}/documents {
+           match /auction/s0916/{document=**} {
+             allow read, write: if request.time < timestamp.date(2026, 9, 17);
+           }
+         }
+       }
+     → 2026-09-17 00:00(UTC)부터 자동으로 잠깁니다. 수업 다음 날입니다.
+  4. 프로젝트 개요 > 웹 앱(</>) 등록.  Authentication 은 켜지 않습니다.
+  5. 발급된 firebaseConfig 값을 아래 상수에 그대로 복사합니다.
+     (board.html 과 team.html 두 파일 모두!)
+
+  ※ 현재 값은 Firebase 프로젝트 5-2open(open-cbd39)의 웹앱 config입니다. 2026-09-07에 위 규칙을 이 프로젝트에 배포해 두었습니다.
+    새 프로젝트로 바꾸려면 아래 여섯 값을 교체하세요.
+  ※ 아래 값에 PASTE_HERE 가 남아 있으면 "점검 모드"로 켜집니다.
+    점검 모드는 한 컴퓨터 안의 여러 탭끼리만 통신합니다(태블릿과는 연결되지 않음).
+    주소 뒤에 ?demo=1 을 붙여도 점검 모드로 강제됩니다.
+*/
+const firebaseConfig = Object.freeze({
+  apiKey: "AIzaSyD9E86qHToh_f_fNVAcYQldyjCPpARZB-Q",
+  authDomain: "open-cbd39.firebaseapp.com",
+  projectId: "open-cbd39",
+  storageBucket: "open-cbd39.firebasestorage.app",
+  messagingSenderId: "322878081506",
+  appId: "1:322878081506:web:40efbcf61190f867b451bb"
+});
+const ROOM = "s0916";
+
+/* ── 게임 규칙 상수 ── */
+const RULE = Object.freeze({
+  budget: 5000, start: 300, step: 100, buyout: 1500,
+  softClose: 10000,        // 마감 10초 안 입찰 → 10초 연장
+  closeGrace: 1500,        // 마감 후 이만큼 기다렸다가 확정(태블릿 시계 오차 완충)
+  rounds: [null, { type: 'V', sec: 150 }, { type: 'S', sec: 120 }, { type: 'O', sec: 120 }, { type: 'B', sec: 60 }],
+  buildSec: 240, presentSec: 75, sentenceSec: 30, objections: 2
+});
+const TYPE = Object.freeze({
+  S: { label: '주어',  who: '누가',      color: '#3E9BE0', bg: '#E1F1FC', dark: '#1F6FAE' },
+  O: { label: '목적어', who: '무엇을',    color: '#2E9E6B', bg: '#E3F6EB', dark: '#1F7A50' },
+  V: { label: '서술어', who: '어떻게 했다', color: '#FF6A45', bg: '#FFEBE4', dark: '#C94729' },
+  B: { label: '보너스 말', who: '꾸미는 말', color: '#9B6BE0', bg: '#F1EAFC', dark: '#6F42B8' }
+});
+const ORDER = ['S', 'B', 'O', 'V'];     // 문장에 늘어놓는 순서: 주어 · (보너스) · 목적어 · 서술어
+const AUCTION_CARDS = Object.freeze({
+  V: ['잡수셨다', '빚었다', '담갔다', '지저귄다', '으르렁댔다', '읽었다', '읽을 것이다', '신었다', '포기하지 않았다', '이길 것이다'],
+  S: ['할머니께서', '선생님께서', '아버지께서', '할머니가', '호랑이가', '새가', '나는', '동생이', '강아지가', '우리 반 친구들이'],
+  O: ['진지를', '밥을', '김치를', '송편을', '만두를', '떡을', '책을', '편지를', '신발을', '양말을'],
+  B: ['어제', '내일', '결코', '반드시']
+});
+const BASIC_CARDS = Object.freeze([
+  ['동생이', '모자를', '썼다'], ['친구가', '밥을', '먹었다'], ['언니가', '그림을', '그렸다'], ['아이들이', '노래를', '불렀다'],
+  ['형이', '창문을', '닫았다'], ['누나가', '편지를', '썼다'], ['아기가', '우유를', '마셨다'], ['우리는', '교실을', '청소했다']
+]);
+const TEAM_IDS = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8'];
+const TEAM_COLORS = ['#EF5D5D', '#F28C28', '#D9A800', '#3FAE5E', '#2FA3DA', '#5A6EE0', '#9C5CE0', '#E85FAF'];
+const JUDGE = [
+  ['께서', '높임 주어(께서)면 서술어에도 -시-'],
+  ['때', '어제는 과거, 내일은 미래와 짝'],
+  ['않다', '결코·전혀는 "않다"와 짝'],
+  ['받는 말', '목적어는 그 서술어가 받을 수 있는 것 (송편은 빚고, 김치는 담근다)']
+];
+const teamNo = id => Number(String(id).replace('t', ''));
+const teamName = id => id ? `${teamNo(id)}모둠` : '';
+const teamColor = id => TEAM_COLORS[teamNo(id) - 1] || '#888';
+const fmt = n => Number(n || 0).toLocaleString('ko-KR');
+const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const clone = v => JSON.parse(JSON.stringify(v ?? null));
+const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const sortCards = list => [...list].sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type));
+
+/* ── 초기 문서 ── */
+function initialCards() {
+  const cards = {};
+  const roundOf = { V: 1, S: 2, O: 3, B: 4 };
+  for (const t of ['V', 'S', 'O', 'B']) AUCTION_CARDS[t].forEach((text, i) => {
+    const id = `${t.toLowerCase()}${i + 1}`;
+    cards[id] = { id, type: t, text, round: roundOf[t], team: null, status: 'wait', price: RULE.start, bidder: null, bids: 0, endsAt: null, usedIn: null, extended: 0 };
+  });
+  BASIC_CARDS.forEach((row, i) => {
+    const tid = TEAM_IDS[i];
+    [['S', row[0]], ['O', row[1]], ['V', row[2]]].forEach(([t, text]) => {
+      const id = `${tid}${t.toLowerCase()}`;
+      cards[id] = { id, type: t, text, round: 0, team: tid, status: 'basic', price: 0, bidder: null, bids: 0, endsAt: null, usedIn: null, extended: 0 };
+    });
+  });
+  return cards;
+}
+function initialTeams() {
+  const teams = {};
+  TEAM_IDS.forEach(id => { teams[id] = { id, no: teamNo(id), budget: RULE.budget, scoreAdj: 0, objLeft: RULE.objections, lastSeen: 0 }; });
+  return teams;
+}
+function initialState() {
+  return { phase: 'lobby', round: 0, roundStatus: 'idle', roundEndsAt: 0, buildEndsAt: 0,
+    present: { order: [], idx: 0, teamEndsAt: 0, focus: null, focusEndsAt: 0 }, seededAt: Date.now() };
+}
+/* 문장 점수: 3조각 2점 / 2조각 1점 / 보너스 +1 / 기각(이의 인정)이면 0 */
+function sentencePoints(s) {
+  if (!s || s.status === 'rejected') return 0;
+  return (s.base || 0) + (s.hasBonus ? 1 : 0);
+}
+function teamScore(teamId, sentences, team) {
+  let sum = 0;
+  Object.values(sentences || {}).forEach(s => { if (s.team === teamId) sum += sentencePoints(s); });
+  return sum + Number(team?.scoreAdj || 0);
+}
+function sentenceItems(s, cards) {
+  const items = (s.cards || []).map(id => cards?.[id] || { id, type: (s.types || {})[id] || 'S', text: (s.texts || {})[id] || '?' });
+  return sortCards(items);
+}
+const sentenceText = (s, cards) => sentenceItems(s, cards).map(c => c.text).join(' ');
+
+/* ── 통신 계층: Firestore 또는 점검 모드(같은 컴퓨터의 탭끼리) ──
+   watch(col, cb)  : 컬렉션 구독. 변경분만 받아 누적 맵을 cb 에 넘김
+   tx(fn)          : 트랜잭션. fn({get,set,update,del}) — get 을 모두 끝낸 뒤 쓰기
+   batch(ops)      : 일괄 쓰기 [{op:'set'|'update'|'del', col, id, data}]
+   update 는 set(merge) 의미: 중첩 객체는 병합, 배열은 교체, null 은 null 저장 */
+const validConfig = () => !Object.values(firebaseConfig).some(v => String(v).includes('PASTE_HERE'));
+function deepMerge(target, patch) {
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && target[k] && typeof target[k] === 'object' && !Array.isArray(target[k])) deepMerge(target[k], v);
+    else target[k] = clone(v);
+  }
+  return target;
+}
+function mockTransport() {
+  const key = `auction-demo-${ROOM}`, channel = new BroadcastChannel(key), listeners = {};
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } };
+  const emit = () => { const d = load(); Object.entries(listeners).forEach(([col, fns]) => fns.forEach(fn => fn(clone(d[col] || {})))); };
+  const save = d => { localStorage.setItem(key, JSON.stringify(d)); channel.postMessage('change'); emit(); };
+  channel.onmessage = emit;
+  window.addEventListener('storage', e => { if (e.key === key) emit(); });
+  const ops = d => ({
+    get: async (col, id) => clone(d[col]?.[id] ?? null),
+    set: (col, id, data) => { (d[col] ??= {})[id] = clone(data); },
+    update: (col, id, patch) => { (d[col] ??= {})[id] = deepMerge(d[col][id] || {}, patch); },
+    del: (col, id) => { if (d[col]) delete d[col][id]; }
+  });
+  return {
+    demo: true,
+    watch(col, cb) { (listeners[col] ??= []).push(cb); cb(clone(load()[col] || {})); return () => { listeners[col] = listeners[col].filter(f => f !== cb); }; },
+    async tx(fn) { const d = load(); const r = await fn(ops(d)); save(d); return r; },
+    async batch(list) { const d = load(); const o = ops(d); list.forEach(x => o[x.op](x.col, x.id, x.data)); save(d); }
+  };
+}
+async function firestoreTransport() {
+  const appMod = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js');
+  const fs = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js');
+  const app = appMod.initializeApp(firebaseConfig);
+  const db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() });
+  const ref = (col, id) => fs.doc(db, 'auction', ROOM, col, id);
+  const clean = v => clone(v);                         // undefined 제거
+  const writer = tx => ({
+    set: (col, id, data) => tx.set(ref(col, id), clean(data)),
+    update: (col, id, patch) => tx.set(ref(col, id), clean(patch), { merge: true }),
+    del: (col, id) => tx.delete(ref(col, id))
+  });
+  return {
+    demo: false,
+    watch(col, cb) {
+      const map = {};
+      return fs.onSnapshot(fs.collection(db, 'auction', ROOM, col), snap => {
+        snap.docChanges().forEach(ch => { if (ch.type === 'removed') delete map[ch.doc.id]; else map[ch.doc.id] = ch.doc.data(); });
+        cb({ ...map });
+      }, err => { console.error(err); window.dispatchEvent(new CustomEvent('db-error', { detail: err })); });
+    },
+    async tx(fn) {
+      return fs.runTransaction(db, async tx => fn({
+        get: async (col, id) => { const s = await tx.get(ref(col, id)); return s.exists() ? s.data() : null; },
+        ...writer(tx)
+      }));
+    },
+    async batch(list) {
+      for (let i = 0; i < list.length; i += 450) {          // Firestore 일괄 쓰기 한도 500
+        const b = fs.writeBatch(db), w = writer(b);
+        list.slice(i, i + 450).forEach(x => w[x.op](x.col, x.id, x.data));
+        await b.commit();
+      }
+    }
+  };
+}
+async function createTransport() {
+  const forceDemo = new URLSearchParams(location.search).get('demo') === '1';
+  if (forceDemo || !validConfig()) return mockTransport();
+  return firestoreTransport();
+}
+
+/* ── 공용 게임 트랜잭션 ── */
+/* 입찰: 현재가 확인 → 잔액 확인 → 기록을 한 트랜잭션에서. buyNow=true 면 즉시구매 */
+async function placeBid(T, teamId, cardId, buyNow = false) {
+  return T.tx(async t => {
+    const card = await t.get('cards', cardId);
+    if (!card) throw new Error('카드를 찾을 수 없어요');
+    if (card.status !== 'open') throw new Error('이미 마감된 카드예요');
+    const me = await t.get('teams', teamId);
+    if (!me) throw new Error('모둠 정보를 찾을 수 없어요');
+    const prevBidder = card.bidder && card.bidder !== teamId ? card.bidder : null;
+    const prev = prevBidder ? await t.get('teams', prevBidder) : null;
+    const now = Date.now();
+    if (!buyNow && card.bidder === teamId) throw new Error('지금 우리 모둠이 최고가예요');
+    let price = buyNow ? RULE.buyout : (card.bidder ? Number(card.price) + RULE.step : RULE.start);
+    const myHeld = card.bidder === teamId ? Number(card.price) : 0;          // 이 카드에 이미 걸어 둔 코인
+    const available = Number(me.budget) + myHeld;
+    if (available < price) throw new Error(`코인이 부족해요 (잔액 ${fmt(me.budget)})`);
+    const sold = buyNow || price >= RULE.buyout;
+    if (sold) price = RULE.buyout;
+    const before = card.endsAt || now;
+    let endsAt = before, extended = card.extended || 0;
+    if (!sold && endsAt - now <= RULE.softClose) { endsAt = Math.max(endsAt, now) + RULE.softClose; extended++; }
+    t.update('cards', cardId, { price, bidder: teamId, bids: (card.bids || 0) + 1, endsAt, extended, lastBidAt: now,
+      ...(sold ? { status: 'sold', team: teamId, closedAt: now, buyNow: !!buyNow } : {}) });
+    t.update('teams', teamId, { budget: available - price });
+    if (prev) t.update('teams', prevBidder, { budget: Number(prev.budget) + Number(card.price) });
+    return { price, sold, extended: endsAt !== before };
+  });
+}
+/* 문장 제출: 카드 소유·미사용 확인 → usedIn 표시 + 문장 문서 생성 (한 카드는 한 문장에만) */
+async function submitSentence(T, teamId, cardIds) {
+  const id = `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  return T.tx(async t => {
+    const cards = [];
+    for (const cid of cardIds) {
+      const c = await t.get('cards', cid);
+      if (!c || c.team !== teamId) throw new Error('우리 모둠 카드가 아니에요');
+      if (c.usedIn) throw new Error(`"${c.text}" 카드는 이미 다른 문장에 썼어요`);
+      cards.push(c);
+    }
+    const types = cards.map(c => c.type);
+    if (types.filter(x => x === 'S').length !== 1 || types.filter(x => x === 'V').length !== 1) throw new Error('주어 1장과 서술어 1장이 꼭 필요해요');
+    if (types.filter(x => x === 'O').length > 1 || types.filter(x => x === 'B').length > 1) throw new Error('목적어와 보너스 말은 한 장씩만 넣을 수 있어요');
+    const hasO = types.includes('O'), hasB = types.includes('B');
+    const texts = {}, typeMap = {};
+    cards.forEach(c => { texts[c.id] = c.text; typeMap[c.id] = c.type; });
+    const doc = { id, team: teamId, cards: sortCards(cards).map(c => c.id), texts, types: typeMap, base: hasO ? 2 : 1, hasBonus: hasB, status: 'ok', objection: null, createdAt: Date.now() };
+    cards.forEach(c => t.update('cards', c.id, { usedIn: id }));
+    t.set('sentences', id, doc);
+    return doc;
+  });
+}
+async function deleteSentence(T, sentenceId, teamId = null) {
+  return T.tx(async t => {
+    const s = await t.get('sentences', sentenceId);
+    if (!s) return;
+    if (teamId && s.team !== teamId) throw new Error('우리 모둠 문장이 아니에요');
+    const cards = [];
+    for (const cid of s.cards || []) cards.push([cid, await t.get('cards', cid)]);
+    cards.forEach(([cid, c]) => { if (c && c.usedIn === sentenceId) t.update('cards', cid, { usedIn: null }); });
+    t.del('sentences', sentenceId);
+  });
+}
+/* 이의 제기: 모둠당 2번, 자기 문장 X, 이미 걸린 문장 X */
+async function raiseObjection(T, teamId, sentenceId) {
+  return T.tx(async t => {
+    const s = await t.get('sentences', sentenceId);
+    const me = await t.get('teams', teamId);
+    const st = await t.get('state', 'main');
+    if (!s || !me) throw new Error('문장을 찾을 수 없어요');
+    if (st?.phase !== 'present') throw new Error('지금은 이의를 걸 수 없어요');
+    if (s.team === teamId) throw new Error('우리 모둠 문장에는 이의를 걸 수 없어요');
+    if (s.status === 'rejected') throw new Error('이미 0점 처리된 문장이에요');
+    if (s.objection?.result === 'pending') throw new Error('다른 모둠이 먼저 이의를 걸었어요');
+    if ((me.objLeft ?? 0) <= 0) throw new Error('이의 기회를 모두 썼어요');
+    const now = Date.now();
+    t.update('sentences', sentenceId, { objection: { by: teamId, at: now, result: 'pending' } });
+    t.update('teams', teamId, { objLeft: me.objLeft - 1 });
+    t.update('state', 'main', { present: { focus: sentenceId, focusEndsAt: now + RULE.sentenceSec * 1000 } });
+  });
+}
+
+
+const $ = id => document.getElementById(id);
+const C = { state: null, cards: {}, teams: {}, sentences: {} };
+const urlTeam = new URLSearchParams(location.search).get('team');   // ?team=3 → 3모둠 고정(태블릿 미리 세팅용)
+let T, me = (urlTeam && TEAM_IDS.includes('t' + urlTeam)) ? 't' + urlTeam : (localStorage.getItem('auction-team') || ''), prevCards = {}, prevBudget = null, toastId = 0, tray = { S: null, B: null, O: null, V: null }, selSent = null, lastRound = '';
+const now = () => Date.now();
+const S = () => C.state || null;
+const typeVars = t => `--cc:${TYPE[t].color};--cbg:${TYPE[t].bg};--cdark:${TYPE[t].dark}`;
+const myTeam = () => C.teams[me] || null;
+const myCards = () => sortCards(Object.values(C.cards).filter(c => c.team === me));
+const roundCards = r => Object.values(C.cards).filter(c => c.round === r).sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)));
+const currentTeam = () => S()?.present?.order?.[S()?.present?.idx] || null;
+const chip = (c, extra = '') => `<span class="cardchip${c.usedIn ? ' used' : ''}${extra}" style="${typeVars(c.type)}">${esc(c.text)}</span>`;
+
+function toast(text, cls = '') { clearTimeout(toastId); const el = $('toast'); el.textContent = text; el.className = `toast on ${cls}`; toastId = setTimeout(() => el.classList.remove('on'), 2200); }
+let audio; function beep(kind) { try { audio ??= new (window.AudioContext || window.webkitAudioContext)(); const seq = { tap: [[660, .06]], win: [[523, .1], [784, .18]], lost: [[300, .18]], ext: [[880, .07], [880, .07]] }[kind] || []; let t = audio.currentTime; seq.forEach(([f, d]) => { const o = audio.createOscillator(), g = audio.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.15, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g).connect(audio.destination); o.start(t); o.stop(t + d + .02); t += d; }); } catch { } }
+const fx = $('fx'), fxc = fx.getContext('2d'); let parts = [];
+function resizeFx() { fx.width = innerWidth; fx.height = innerHeight; } resizeFx(); addEventListener('resize', resizeFx);
+function confetti(x, y, n = 40, colors = TEAM_COLORS) { for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * 12, vy: -Math.random() * 11 - 3, r: 5 + Math.random() * 6, c: colors[i % colors.length], a: Math.random() * 6, s: (Math.random() - .5) * .3, life: 80 + Math.random() * 40 }); if (parts.length === n) fxLoop(); }
+let fxLast = 0; function fxLoop(ts = performance.now()) { const dt = fxLast ? Math.min(4, (ts - fxLast) / 16) : 1; fxLast = ts; fxc.clearRect(0, 0, fx.width, fx.height); parts = parts.filter(p => p.life > 0); parts.forEach(p => { p.x += p.vx * dt; p.vy += .35 * dt; p.y += p.vy * dt; p.a += p.s * dt; p.life -= dt; fxc.save(); fxc.translate(p.x, p.y); fxc.rotate(p.a); fxc.fillStyle = p.c; fxc.globalAlpha = Math.min(1, p.life / 30); fxc.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * .6); fxc.restore(); }); if (parts.length) requestAnimationFrame(fxLoop); else fxLast = 0; }
+
+/* ── 모둠 선택 ── */
+$('pickGrid').innerHTML = TEAM_IDS.map(id => `<button class="pickbtn" style="--pc:${teamColor(id)}" data-id="${id}">${teamName(id)}</button>`).join('');
+$('pickGrid').addEventListener('click', e => { const b = e.target.closest('.pickbtn'); if (!b) return; me = b.dataset.id; localStorage.setItem('auction-team', me); heartbeat(); render(); });
+$('chg').addEventListener('click', () => { if (!confirm('모둠을 바꿀까요? (선생님 확인 후에만!)')) return; me = ''; localStorage.removeItem('auction-team'); render(); });
+async function heartbeat() { if (!me || !T) return; try { await T.batch([{ op: 'update', col: 'teams', id: me, data: { lastSeen: now() } }]); } catch { } }
+let hbTick = 0; setInterval(() => { hbTick++; if (S()?.phase === 'lobby' || hbTick % 3 === 0) heartbeat(); }, 40000);   // 준비 단계 40초, 그 뒤 2분마다 (읽기 횟수 절약)
+
+/* ── 렌더 ── */
+let raf = 0; function render() { clearTimeout(raf); raf = setTimeout(paint, 16); }   // rAF 대신 setTimeout: 화면이 꺼져 있다 돌아와도 밀린 갱신 없음
+function paint() {
+  document.documentElement.style.setProperty('--tc', me ? teamColor(me) : '#888');
+  $('tn').textContent = me ? teamName(me) : '?모둠'; $('chg').style.display = me ? '' : 'none';
+  const st = S(), t = myTeam();
+  const budget = t && t.budget != null ? Number(t.budget) : RULE.budget;   // 모둠 문서가 아직 없으면 예산 기본값
+  $('coins').innerHTML = `${fmt(budget)}<small>코인</small>`;
+  if (prevBudget !== null && prevBudget !== budget) { $('coins').classList.remove('up', 'down'); void $('coins').offsetWidth; $('coins').classList.add(budget > prevBudget ? 'up' : 'down'); } prevBudget = budget;
+  const phase = !me ? 'pick' : !st ? 'lobby' : st.phase;
+  const view = phase === 'pick' ? 'Pick' : phase === 'lobby' ? 'Lobby' : phase === 'auction' ? (st.roundStatus === 'bidding' ? 'Auction' : 'Closed') : phase === 'build' ? 'Build' : phase === 'present' ? 'Present' : 'End';
+  ['Pick', 'Lobby', 'Auction', 'Closed', 'Build', 'Present', 'End'].forEach(v => $('v' + v).classList.toggle('on', v === view));
+  $('pill').textContent = { pick: '모둠 선택', lobby: '준비', auction: `경매 ${st?.round || ''}라운드`, build: '조립', present: '발표·판정', end: '결과' }[phase]; $('pill').className = `pill ${phase}`;
+  if (view === 'Lobby') paintLobby(st);
+  if (view === 'Auction') paintAuction(st);
+  if (view === 'Closed') paintClosed(st);
+  if (view === 'Build') paintBuild();
+  if (view === 'Present') paintPresent(st);
+  if (view === 'End') paintEnd();
+  detectEvents(); tick();
+  prevCards = clone(C.cards);
+}
+function paintLobby(st) { $('lobbyTitle').textContent = st ? '곧 경매가 시작돼요!' : '선생님이 경매장을 준비하고 있어요'; $('lobbyCards').innerHTML = myCards().map(c => chip(c)).join(''); }
+function paintAuction(st) {
+  const r = st.round, info = RULE.rounds[r]; if (!info) return;
+  const cards = roundCards(r), t = myTeam(), budget = t ? Number(t.budget) : 0;
+  $('rTitle').textContent = `${r}라운드 · ${TYPE[info.type].label}`; $('rTitle').style.setProperty('--tcol', TYPE[info.type].color);
+  $('rDesc').textContent = `${TYPE[info.type].who} · ${cards.length}장`;
+  const grid = $('agrid'); grid.classList.toggle('bonus', info.type === 'B');
+  if (lastRound !== String(r)) { grid.innerHTML = ''; lastRound = String(r); }
+  cards.forEach(c => {
+    let el = grid.querySelector(`[data-id="${c.id}"]`);
+    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${esc(c.text)}</div><div class="info"><span class="price"></span><span class="who"></span></div><div class="btns"><button class="bid up" data-id="${c.id}"></button><button class="bid buy" data-id="${c.id}">즉시구매<small>1,500</small></button></div><div class="stamp"><div></div></div>`; grid.append(el); }
+    const p = prevCards[c.id] || {}, mine = c.bidder === me && c.status === 'open';
+    el.classList.toggle('mine', mine); el.classList.toggle('sold', c.status === 'sold'); el.classList.toggle('unsold', c.status === 'unsold');
+    el.style.setProperty('--bc', c.bidder ? teamColor(c.bidder) : '#8A98A6');
+    const priceEl = el.querySelector('.price'); priceEl.textContent = fmt(c.bidder ? c.price : RULE.start);
+    const who = el.querySelector('.who'); who.textContent = c.bidder ? (c.bidder === me ? '우리 최고!' : teamName(c.bidder)) : '없음'; who.classList.toggle('none', !c.bidder);
+    const next = c.bidder ? Number(c.price) + RULE.step : RULE.start;
+    const up = el.querySelector('.up'); up.innerHTML = `+100<small>${fmt(next)}코인</small>`; up.disabled = c.status !== 'open' || mine || budget < next;
+    if (mine) up.innerHTML = `우리가 최고!<small>${fmt(c.price)}코인</small>`;
+    el.querySelector('.buy').disabled = c.status !== 'open' || (budget + (mine ? Number(c.price) : 0)) < RULE.buyout;
+    if (c.status === 'sold') el.querySelector('.stamp div').innerHTML = `${c.team === me ? '우리 것!' : teamName(c.team) + ' 낙찰'}<small>${fmt(c.price)}코인</small>`;
+    if (c.status === 'unsold') el.querySelector('.stamp div').innerHTML = `유찰`;
+    if (p.id && c.bids > (p.bids || 0) && c.status === 'open') { priceEl.classList.remove('bump'); void priceEl.offsetWidth; priceEl.classList.add('bump'); }
+    if (p.id && (c.extended || 0) > (p.extended || 0)) { const f = document.createElement('div'); f.className = 'ext-flash'; f.textContent = '+10초!'; el.append(f); setTimeout(() => f.remove(), 1400); }
+    if (p.id && p.bidder === me && c.bidder !== me && c.status === 'open') { el.classList.remove('lost'); void el.offsetWidth; el.classList.add('lost'); }
+  });
+  $('myCardsA').innerHTML = `<h3>우리 카드</h3>${myCards().map(c => chip(c)).join('')}`;
+}
+function paintClosed(st) {
+  const r = st.round, got = roundCards(r).filter(c => c.team === me && c.status === 'sold');
+  $('cTitle').textContent = st.roundStatus === 'closed' ? `${r}라운드 끝!` : '경매 준비 중';
+  $('cSub').innerHTML = st.roundStatus === 'closed' ? (got.length ? `이번 라운드에서 <b>${got.length}장</b>을 얻었어요!` : '이번 라운드에는 얻은 카드가 없어요') : '선생님이 라운드를 열면 카드가 나타나요';
+  $('gotList').innerHTML = got.map(c => chip(c, ' pop')).join('');
+  $('myCardsC').innerHTML = `<h3>우리 카드 전부</h3>${myCards().map(c => chip(c)).join('')}`;
+}
+/* 조립 */
+function paintBuild() {
+  const cards = myCards(), free = cards.filter(c => !c.usedIn);
+  ORDER.forEach(t => { if (tray[t] && !free.find(c => c.id === tray[t])) tray[t] = null; });
+  $('slots').innerHTML = ORDER.map(t => { const c = tray[t] ? C.cards[tray[t]] : null; return `<div class="slot${c ? ' filled' : ''}${t === 'O' || t === 'B' ? ' opt' : ''}" data-t="${t}" style="${typeVars(t)}"><span class="lab">${TYPE[t].label}<small>${TYPE[t].who}</small></span>${c ? chip(c) : ''}</div>`; }).join('');
+  const picked = ORDER.map(t => tray[t]).filter(Boolean).map(id => C.cards[id]);
+  $('preview').innerHTML = picked.length ? picked.map(c => `<span style="color:${TYPE[c.type].dark}">${esc(c.text)}</span>`).join(' ') : '<span class="ph">카드를 눌러 문장을 만들어요</span>';
+  const ok = tray.S && tray.V; const pts = ok ? (tray.O ? 2 : 1) + (tray.B ? 1 : 0) : 0;
+  $('submitBtn').disabled = !ok; $('ptsHint').textContent = ok ? `${pts}점${tray.B ? ' (보너스 어울리면)' : ''}` : '';
+  const groups = ORDER.map(t => `<div class="hand-row" style="${typeVars(t)}"><h3>${TYPE[t].label}</h3>${free.filter(c => c.type === t).map(c => `<button class="hcard${tray[t] === c.id ? ' intray' : ''}" data-id="${c.id}" style="${typeVars(t)}">${esc(c.text)}</button>`).join('') || '<span class="none">없음</span>'}</div>`).join('');
+  const mine = Object.values(C.sentences).filter(s => s.team === me).sort((a, b) => a.createdAt - b.createdAt);
+  $('hand').innerHTML = groups + `<div class="done-list">${mine.map(s => `<div class="dsent${s.status === 'rejected' ? ' rejected' : ''}"><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div><span class="pts">${sentencePoints(s)}점</span><button class="del" data-id="${s.id}">지우기</button></div>`).join('')}</div>`;
+}
+$('hand').addEventListener('click', async e => {
+  const h = e.target.closest('.hcard'); if (h) { const c = C.cards[h.dataset.id]; tray[c.type] = tray[c.type] === c.id ? null : c.id; beep('tap'); paintBuild(); return; }
+  const d = e.target.closest('.del'); if (d) { try { await deleteSentence(T, d.dataset.id, me); toast('문장을 지우고 카드를 되돌렸어요'); } catch (err) { toast(err.message, 'err'); } }
+});
+$('slots').addEventListener('click', e => { const s = e.target.closest('.slot'); if (s && tray[s.dataset.t]) { tray[s.dataset.t] = null; paintBuild(); } });
+$('submitBtn').addEventListener('click', async () => {
+  const ids = ORDER.map(t => tray[t]).filter(Boolean); if (ids.length < 2) return; $('submitBtn').disabled = true;
+  try { const s = await submitSentence(T, me, ids); tray = { S: null, B: null, O: null, V: null }; toast(`문장 완성! ${sentencePoints(s)}점 예상`, 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .3, 30); }
+  catch (err) { toast(err.message, 'err'); } finally { paintBuild(); }
+});
+/* 발표 */
+function paintPresent(st) {
+  const tid = currentTeam(), t = myTeam(), left = t?.objLeft ?? 0;
+  $('objLeft').innerHTML = `이의 ${Array.from({ length: RULE.objections }, (_, i) => `<i class="${i < left ? '' : 'off'}"></i>`).join('')}`;
+  if (!tid) { $('pTeam').textContent = '발표 끝'; $('plist').innerHTML = ''; $('objbar').style.display = 'none'; return; }
+  $('pTeam').textContent = `${teamName(tid)} 발표`; $('pTeam').style.setProperty('--pc', teamColor(tid));
+  const list = Object.values(C.sentences).filter(s => s.team === tid).sort((a, b) => a.createdAt - b.createdAt);
+  if (tid === me) { $('pSub').textContent = '우리 차례!'; $('plist').innerHTML = `<div class="mine-banner">우리 모둠이 발표하고 있어요 🎤<br><small style="font-size:.6em;color:var(--muted)">문장을 읽고, 이의가 들어오면 대답해요</small></div>` + list.map((s, i) => psent(s, i, false)).join(''); $('objbar').style.display = 'none'; return; }
+  $('pSub').textContent = '어색한 문장이 있나요?'; $('objbar').style.display = '';
+  if (selSent && !list.find(s => s.id === selSent)) selSent = null;
+  $('plist').innerHTML = list.length ? list.map((s, i) => psent(s, i, true)).join('') : '<div class="mine-banner" style="color:var(--muted)">만든 문장이 없어요</div>';
+  const target = list.find(s => s.id === selSent), pending = list.some(s => s.objection?.result === 'pending');
+  $('objBtn').disabled = !target || left <= 0 || target.status === 'rejected' || pending;
+  $('objMsg').textContent = left <= 0 ? '이의 기회를 모두 썼어요' : pending ? '지금 다른 이의를 판정하고 있어요' : target ? `"${sentenceText(target, C.cards)}" 에 이의를 걸까요? 이유를 말할 준비!` : '어색한 문장을 누르고 [이의!]를 눌러요. 이유를 말할 준비도 해요!';
+}
+function psent(s, i, clickable) { const pend = s.objection?.result === 'pending'; const st = s.status === 'rejected' ? '<span class="st acc">0점</span>' : pend ? `<span class="st">${teamName(s.objection.by)} 이의!</span>` : s.objection?.result === 'dismissed' ? '<span class="st dis">통과</span>' : ''; return `<div class="psent${selSent === s.id && clickable ? ' sel' : ''}${pend ? ' pending' : ''}${s.status === 'rejected' ? ' rejected' : ''}" data-id="${clickable ? s.id : ''}"><span class="no">${i + 1}</span><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div>${st}</div>`; }
+$('plist').addEventListener('click', e => { const el = e.target.closest('.psent'); if (!el || !el.dataset.id) return; selSent = selSent === el.dataset.id ? null : el.dataset.id; beep('tap'); render(); });
+$('objBtn').addEventListener('click', async () => { if (!selSent) return; $('objBtn').disabled = true; try { await raiseObjection(T, me, selSent); toast('이의를 걸었어요! 이유를 말해요', 'win'); beep('ext'); selSent = null; } catch (err) { toast(err.message, 'err'); } });
+function paintEnd() { const ranked = TEAM_IDS.map(id => ({ id, score: teamScore(id, C.sentences, C.teams[id]) })).sort((a, b) => b.score - a.score); $('rank').innerHTML = ranked.map((t, i) => `<div class="${t.id === me ? 'me' : ''}" style="--pc:${teamColor(t.id)}">${['🥇', '🥈', '🥉'][i] || `${i + 1}위`} ${teamName(t.id)}<b>${t.score}점</b></div>`).join(''); }
+
+/* ── 사건 감지 (남이 더 질렀다 / 낙찰됐다) ── */
+function detectEvents() {
+  if (!me || !Object.keys(prevCards).length) return;
+  Object.values(C.cards).forEach(c => { const p = prevCards[c.id]; if (!p) return;
+    if (p.bidder === me && c.bidder !== me && c.status === 'open') { toast(`${teamName(c.bidder)}이(가) "${c.text}"를 더 높게 불렀어요! 코인이 돌아왔어요`, 'err'); beep('lost'); }
+    if (p.status !== 'sold' && c.status === 'sold' && c.team === me) { toast(`"${c.text}" 낙찰! 우리 카드예요 🎉`, 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .35, 50, [teamColor(me), '#FFD75E', '#fff']); }
+  });
+}
+/* ── 입찰 ── */
+$('agrid').addEventListener('click', async e => {
+  const b = e.target.closest('.bid'); if (!b || b.disabled) return; const id = b.dataset.id, buy = b.classList.contains('buy');
+  if (buy && !confirm(`"${C.cards[id]?.text}" 를 1,500코인에 바로 살까요?`)) return;
+  b.disabled = true;
+  try { const r = await placeBid(T, me, id, buy); beep('tap'); if (r.sold) toast(`"${C.cards[id]?.text}" 즉시구매! 우리 카드예요`, 'win'); else if (r.extended) toast(`${fmt(r.price)}코인으로 최고가! 마감이 10초 늘어났어요`); }
+  catch (err) { toast(err.message, 'err'); render(); }
+});
+/* ── 타이머 ── */
+function tick() {
+  const st = S(), clock = $('clock'); let ms = null, ext = false;
+  if (st?.phase === 'auction' && st.roundStatus === 'bidding') { const open = roundCards(st.round).filter(c => c.status === 'open'); const dl = open.length ? Math.max(...open.map(c => c.endsAt || 0)) : st.roundEndsAt; ms = dl - now(); ext = dl > st.roundEndsAt; roundCards(st.round).forEach(c => { const el = $('agrid').querySelector(`[data-id="${c.id}"] .tmr`); if (!el) return; const left = (c.endsAt || 0) - now(); const show = c.status === 'open' && left <= 15000; el.classList.toggle('on', show); el.textContent = show ? `⏱ ${Math.max(0, Math.ceil(left / 1000))}` : ''; }); }
+  if (st?.phase === 'build') ms = st.buildEndsAt - now();
+  if (st?.phase === 'present' && currentTeam()) { const f = st.present.focusEndsAt || 0; ms = (f > now() ? f : st.present.teamEndsAt || 0) - now(); }
+  clock.textContent = ms === null ? '--:--' : mmss(ms); clock.classList.toggle('hot', ms !== null && ms <= 10000 && ms > -1000); clock.classList.toggle('ext', ext && ms > 0);
+}
+setInterval(tick, 250);
+
+/* ── 연결 ── */
+window.addEventListener('db-error', () => { $('badge').textContent = '연결 오류'; $('badge').className = 'badge err on'; });
+try {
+  T = await createTransport(); if (T.demo) $('badge').classList.add('on');
+  T.watch('state', map => { C.state = map.main || null; render(); });
+  T.watch('cards', map => { C.cards = map; render(); });
+  T.watch('teams', map => { C.teams = map; render(); });
+  T.watch('sentences', map => { C.sentences = map; render(); });
+  heartbeat();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) heartbeat(); });
+} catch (e) { console.error(e); $('badge').textContent = '연결하지 못했어요 · 새로고침'; $('badge').className = 'badge err on'; }
+render();
+</script>
+</body>
+</html>
