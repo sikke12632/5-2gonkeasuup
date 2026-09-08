@@ -6,26 +6,40 @@
 <title>낱말 경매장 · 바로가기</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#EAF1F6;--ink:#1E2A38;--muted:#5B6B7C;--panel:#FFF;--warn:#FF6A45;--ok:#2E9E6B;--line:#D6DFE7;--sky:#3E9BE0}
+:root{--bg:#EAF1F6;--ink:#1E2A38;--muted:#5B6B7C;--panel:#FFF;--warn:#FF6A45;--ok:#2E9E6B;--line:#D6DFE7;--sky:#3E9BE0;--grape:#9B6BE0}
 *{box-sizing:border-box;margin:0;padding:0}
 body{min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font-family:"Gowun Dodum","Malgun Gothic",sans-serif;padding:24px}
-main{display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+main{display:flex;flex-direction:column;align-items:center;gap:26px;text-align:center;width:min(1100px,100%)}
 h1{font:clamp(40px,6vw,72px)/1.1 "Jua",sans-serif}h1 span{color:var(--warn)}
 p{color:var(--muted);font-size:clamp(16px,2vw,22px)}
-.links{display:grid;gap:14px;width:min(560px,100%)}
-a{display:flex;align-items:center;gap:16px;background:var(--panel);border-radius:22px;padding:18px 22px;text-decoration:none;color:var(--ink);box-shadow:0 3px 0 var(--line);border-left:10px solid var(--c)}
-a b{font:clamp(24px,3vw,32px) "Jua",sans-serif;color:var(--c)}a small{color:var(--muted);font-size:16px;margin-left:auto;text-align:right}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:22px;width:100%}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+.col{background:rgba(255,255,255,.55);border-radius:26px;padding:18px;display:grid;gap:12px;border-top:10px solid var(--c)}
+.col h2{font:clamp(24px,3vw,34px) "Jua",sans-serif;color:var(--c)}
+.col h2 small{display:block;font-family:"Gowun Dodum";font-size:.5em;color:var(--muted);margin-top:4px}
+a.lnk{display:flex;align-items:center;gap:14px;background:var(--panel);border-radius:18px;padding:14px 18px;text-decoration:none;color:var(--ink);box-shadow:0 3px 0 var(--line);border-left:8px solid var(--lc)}
+a.lnk b{font:clamp(20px,2.4vw,28px) "Jua",sans-serif;color:var(--lc)}a.lnk small{color:var(--muted);font-size:15px;margin-left:auto;text-align:right}
+.tip{font-size:15px;color:var(--muted);line-height:1.6}
 </style>
 </head>
 <body>
 <main>
   <h1>낱말 <span>경매장</span></h1>
   <p>5학년 2학기 국어 · 문장 성분의 호응 관계 · 공개수업 9/16</p>
-  <div class="links">
-    <a href="board.html" style="--c:var(--warn)"><b>board</b><small>전자칠판 · 교사 조작</small></a>
-    <a href="team.html" style="--c:var(--sky)"><b>team</b><small>모둠 태블릿 · 모둠 번호 선택</small></a>
-    <a href="rules.html" style="--c:var(--ok)"><b>rules</b><small>아이들에게 규칙 설명</small></a>
+  <div class="cols">
+    <div class="col" style="--c:#D9A800">
+      <h2>🍳 요리 경매장<small>연습 게임 · 며칠 전 리허설용</small></h2>
+      <a class="lnk" href="board.html?deck=cook" style="--lc:var(--warn)"><b>board</b><small>전자칠판 · 교사</small></a>
+      <a class="lnk" href="rules-cook.html" style="--lc:var(--ok)"><b>rules</b><small>규칙 설명 (풀버전)</small></a>
+    </div>
+    <div class="col" style="--c:var(--warn)">
+      <h2>🎪 낱말 경매장<small>본수업 · 9/16</small></h2>
+      <a class="lnk" href="board.html" style="--lc:var(--warn)"><b>board</b><small>전자칠판 · 교사</small></a>
+      <a class="lnk" href="rules.html" style="--lc:var(--ok)"><b>rules</b><small>달라진 것만 (짧은 버전)</small></a>
+    </div>
   </div>
+  <a class="lnk" href="team.html" style="--lc:var(--sky);width:min(560px,100%)"><b>team</b><small>모둠 태블릿 · 한 주소로 두 게임 모두 (칠판이 연 판을 자동으로 따라가요)</small></a>
+  <p class="tip">태블릿에는 <b>team.html?team=1</b> ~ <b>team=8</b> 처럼 모둠 번호를 붙여 북마크해 두면 켜자마자 들어와요.</p>
 </main>
 </body>
 </html>

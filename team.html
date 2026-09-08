@@ -123,7 +123,18 @@ p.sub{font-size:clamp(17px,2vw,23px);color:var(--muted);line-height:1.5}
 .psent .st.dis{background:#8A98A6}.psent .st.acc{background:var(--ink)}
 .objbar{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:18px;padding:10px 14px;box-shadow:0 3px 0 var(--line)}
 .objbar p{flex:1;font-size:clamp(16px,1.9vw,21px);color:var(--muted);line-height:1.4}
-.objbtn{height:clamp(54px,7vh,70px);padding:0 26px;border-radius:18px;background:var(--warn);color:#fff;font:clamp(22px,2.6vw,30px) "Jua",sans-serif;box-shadow:0 4px 0 #C94729;white-space:nowrap}
+.objbar.raised{background:#FFF6F3;border:3px solid var(--warn)}
+.objbar.speak{background:var(--warn);color:#fff;animation:pulse .9s infinite}.objbar.speak p{color:#fff;font:clamp(22px,2.8vw,32px) "Jua",sans-serif}
+.objbar .timer{font:clamp(30px,4vw,48px)/1 "Jua",sans-serif;font-variant-numeric:tabular-nums;color:#fff;background:rgba(0,0,0,.18);border-radius:14px;padding:6px 14px}
+.confirm{position:fixed;inset:0;z-index:60;display:none;place-items:center;background:rgba(30,42,56,.55)}
+.confirm.on{display:grid}
+.confirm .box{background:#fff;border-radius:28px;padding:28px 32px;width:min(560px,92vw);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.35);animation:popin .3s}
+.confirm h3{font:clamp(28px,4vw,40px)/1.2 "Jua",sans-serif;margin-bottom:8px}
+.confirm p{color:var(--muted);font-size:clamp(16px,2vw,21px);line-height:1.5;margin-bottom:18px}
+.confirm .btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.confirm .btns button{height:clamp(56px,8vh,72px);border-radius:16px;font:clamp(20px,2.6vw,28px) "Jua",sans-serif}
+.confirm .yes{background:var(--warn);color:#fff;box-shadow:0 4px 0 #C94729}.confirm .no{background:#EDF2F6;color:var(--ink)}
+.objbtn{height:clamp(58px,8vh,76px);padding:0 30px;border-radius:18px;background:var(--warn);color:#fff;font:clamp(22px,2.6vw,30px) "Jua",sans-serif;box-shadow:0 4px 0 #C94729;white-space:nowrap}
 .objbtn:disabled{opacity:.35;box-shadow:none}.objbtn:active:not(:disabled){transform:translateY(4px);box-shadow:none}
 .mine-banner{background:var(--panel);border-radius:22px;padding:22px;text-align:center;font:clamp(24px,3.2vw,38px) "Jua",sans-serif;color:var(--tc);box-shadow:0 3px 0 var(--line)}
 /* end */
@@ -155,9 +166,9 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
 
   <section id="vLobby" class="view center">
     <h2 class="big" id="lobbyTitle">준비 중이에요</h2>
-    <p class="sub">기본 카드 3장으로 이미 문장 하나가 만들어져 있어요</p>
+    <p class="sub" id="lobbySub">기본 카드 3장으로 이미 문장 하나가 만들어져 있어요</p>
     <div id="lobbyCards" class="gotlist"></div>
-    <p class="sub">예산 <b>5,000코인</b> · 시작가 300 · 한 번에 +100 · 즉시구매 1,500<br>서술어를 먼저 사고, 그 서술어에 <b>어울리는</b> 주어·목적어를 노려요!</p>
+    <p class="sub" id="lobbyHint">예산 <b>5,000코인</b> · 시작가 300 · 한 번에 +100 · 즉시구매 1,500</p>
   </section>
 
   <section id="vAuction" class="view">
@@ -176,7 +187,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
   <section id="vBuild" class="view build">
     <div class="tray">
       <div id="slots" class="slots"></div>
-      <div class="row"><div id="preview" class="preview"><span class="ph">카드를 눌러 문장을 만들어요</span></div><button id="submitBtn" class="submit" disabled>문장 완성!<small id="ptsHint"></small></button></div>
+      <div class="row"><div id="preview" class="preview"><span class="ph">카드를 눌러 문장을 만들어요</span></div><button id="submitBtn" class="submit" disabled><span id="submitLabel">문장 완성!</span><small id="ptsHint"></small></button></div>
     </div>
     <div id="hand" class="hand"></div>
   </section>
@@ -184,7 +195,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
   <section id="vPresent" class="view">
     <div class="pres-head"><h2 id="pTeam"></h2><span class="sub" id="pSub"></span><span class="objleft" id="objLeft"></span></div>
     <div id="plist" class="plist"></div>
-    <div id="objbar" class="objbar"><p id="objMsg">어색한 문장을 누르고 [이의!]를 눌러요. 이유를 말할 준비도 해요!</p><button id="objBtn" class="objbtn" disabled>이의!</button></div>
+    <div id="objbar" class="objbar"><p id="objMsg"></p><span id="objTimer" class="timer" hidden>30</span><button id="objBtn" class="objbtn" disabled>✋ 이의!</button></div>
   </section>
 
   <section id="vEnd" class="view center">
@@ -194,6 +205,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
 </div>
 <canvas id="fx"></canvas>
 <div id="toast" class="toast"></div>
+<div id="confirmObj" class="confirm"><div class="box"><h3>정말로 이의를 제기할까요?</h3><p id="confirmMsg"></p><div class="btns"><button class="no" id="confirmNo">아니요</button><button class="yes" id="confirmYes">네, 손 들기! ✋</button></div></div></div>
 
 <script type="module">
 /*
@@ -223,6 +235,12 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
   ※ 아래 값에 PASTE_HERE 가 남아 있으면 "점검 모드"로 켜집니다.
     점검 모드는 한 컴퓨터 안의 여러 탭끼리만 통신합니다(태블릿과는 연결되지 않음).
     주소 뒤에 ?demo=1 을 붙여도 점검 모드로 강제됩니다.
+
+  ── 카드 묶음(deck) 두 가지 ──
+  · korean  본수업 「낱말 경매장」 (주어·목적어·서술어·보너스 말)   board.html
+  · cook    리허설용 「요리 경매장」 (재료·도구·조리법·비밀 양념)   board.html?deck=cook
+  교사가 board 를 여는 순간 그 deck 이 "현재 판"으로 기록되고, 태블릿(team.html)은 자동으로 따라갑니다.
+  두 판의 데이터는 Firestore 안에서 컬렉션 이름(접두어)으로 나뉘어 서로 섞이지 않습니다.
 */
 const firebaseConfig = Object.freeze({
   apiKey: "AIzaSyD9E86qHToh_f_fNVAcYQldyjCPpARZB-Q",
@@ -234,39 +252,84 @@ const firebaseConfig = Object.freeze({
 });
 const ROOM = "s0916";
 
-/* ── 게임 규칙 상수 ── */
-const RULE = Object.freeze({
+/* ── 공통 규칙 상수 (deck 과 무관) ── */
+const RULE = {
   budget: 5000, start: 300, step: 100, buyout: 1500,
   softClose: 10000,        // 마감 10초 안 입찰 → 10초 연장
   closeGrace: 1500,        // 마감 후 이만큼 기다렸다가 확정(태블릿 시계 오차 완충)
-  rounds: [null, { type: 'V', sec: 150 }, { type: 'S', sec: 120 }, { type: 'O', sec: 120 }, { type: 'B', sec: 60 }],
-  buildSec: 240, presentSec: 75, sentenceSec: 30, objections: 2
+  objections: 2, sentenceSec: 30,
+  rounds: null, buildSec: 240, presentSec: 75   // ← applyDeck 이 채움
+};
+const TYPE_COLORS = Object.freeze({
+  S: { color: '#3E9BE0', bg: '#E1F1FC', dark: '#1F6FAE' },
+  O: { color: '#2E9E6B', bg: '#E3F6EB', dark: '#1F7A50' },
+  V: { color: '#FF6A45', bg: '#FFEBE4', dark: '#C94729' },
+  B: { color: '#9B6BE0', bg: '#F1EAFC', dark: '#6F42B8' }
 });
-const TYPE = Object.freeze({
-  S: { label: '주어',  who: '누가',      color: '#3E9BE0', bg: '#E1F1FC', dark: '#1F6FAE' },
-  O: { label: '목적어', who: '무엇을',    color: '#2E9E6B', bg: '#E3F6EB', dark: '#1F7A50' },
-  V: { label: '서술어', who: '어떻게 했다', color: '#FF6A45', bg: '#FFEBE4', dark: '#C94729' },
-  B: { label: '보너스 말', who: '꾸미는 말', color: '#9B6BE0', bg: '#F1EAFC', dark: '#6F42B8' }
-});
-const ORDER = ['S', 'B', 'O', 'V'];     // 문장에 늘어놓는 순서: 주어 · (보너스) · 목적어 · 서술어
-const AUCTION_CARDS = Object.freeze({
-  V: ['잡수셨다', '빚었다', '담갔다', '지저귄다', '으르렁댔다', '읽었다', '읽을 것이다', '신었다', '포기하지 않았다', '이길 것이다'],
-  S: ['할머니께서', '선생님께서', '아버지께서', '할머니가', '호랑이가', '새가', '나는', '동생이', '강아지가', '우리 반 친구들이'],
-  O: ['진지를', '밥을', '김치를', '송편을', '만두를', '떡을', '책을', '편지를', '신발을', '양말을'],
-  B: ['어제', '내일', '결코', '반드시']
-});
-const BASIC_CARDS = Object.freeze([
-  ['동생이', '모자를', '썼다'], ['친구가', '밥을', '먹었다'], ['언니가', '그림을', '그렸다'], ['아이들이', '노래를', '불렀다'],
-  ['형이', '창문을', '닫았다'], ['누나가', '편지를', '썼다'], ['아기가', '우유를', '마셨다'], ['우리는', '교실을', '청소했다']
-]);
 const TEAM_IDS = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8'];
 const TEAM_COLORS = ['#EF5D5D', '#F28C28', '#D9A800', '#3FAE5E', '#2FA3DA', '#5A6EE0', '#9C5CE0', '#E85FAF'];
-const JUDGE = [
-  ['께서', '높임 주어(께서)면 서술어에도 -시-'],
-  ['때', '어제는 과거, 내일은 미래와 짝'],
-  ['않다', '결코·전혀는 "않다"와 짝'],
-  ['받는 말', '목적어는 그 서술어가 받을 수 있는 것 (송편은 빚고, 김치는 담근다)']
-];
+
+/* ── 카드 묶음 ── (낱말은 지시서 그대로. 임의로 바꾸지 말 것) */
+const DECKS = Object.freeze({
+  korean: {
+    id: 'korean', prefix: '', title: '낱말 경매장', icon: '🎪', unit: '문장', unitOf: '문장을',
+    types: { S: { label: '주어', who: '누가' }, O: { label: '목적어', who: '무엇을' }, V: { label: '서술어', who: '어떻게 했다' }, B: { label: '보너스 말', who: '꾸미는 말' } },
+    order: ['S', 'B', 'O', 'V'],              // 주어 · (보너스) · 목적어 · 서술어
+    rounds: [null, { type: 'V', sec: 150 }, { type: 'S', sec: 120 }, { type: 'O', sec: 120 }, { type: 'B', sec: 60 }],
+    buildSec: 240, presentSec: 75,
+    auction: {
+      V: ['잡수셨다', '빚었다', '담갔다', '지저귄다', '으르렁댔다', '읽었다', '읽을 것이다', '신었다', '포기하지 않았다', '이길 것이다'],
+      S: ['할머니께서', '선생님께서', '아버지께서', '할머니가', '호랑이가', '새가', '나는', '동생이', '강아지가', '우리 반 친구들이'],
+      O: ['진지를', '밥을', '김치를', '송편을', '만두를', '떡을', '책을', '편지를', '신발을', '양말을'],
+      B: ['어제', '내일', '결코', '반드시']
+    },
+    basic: [['동생이', '모자를', '썼다'], ['친구가', '밥을', '먹었다'], ['언니가', '그림을', '그렸다'], ['아이들이', '노래를', '불렀다'],
+      ['형이', '창문을', '닫았다'], ['누나가', '편지를', '썼다'], ['아기가', '우유를', '마셨다'], ['우리는', '교실을', '청소했다']],
+    judgeTitle: '심판 기준',
+    judge: [
+      ['께서', '께서·높임 주어면 서술어에도 <b class="hl">-시-</b>가 붙어야 한다'],
+      ['때', '어제는 과거, 내일은 미래와 짝이다'],
+      ['않다', '결코·전혀는 "않다"와 짝이다'],
+      ['받는 말', '목적어는 그 서술어가 받을 수 있는 것이어야 한다 (송편은 빚고, 김치는 담근다)']
+    ],
+    lobbyHint: '서술어를 먼저 사고, 그 서술어에 <b>어울리는</b> 주어·목적어를 노려요!',
+    rulesPage: 'rules.html'
+  },
+  cook: {
+    id: 'cook', prefix: 'cook_', title: '요리 경매장', icon: '🍳', unit: '요리', unitOf: '요리를',
+    types: { S: { label: '재료', who: '무엇을' }, O: { label: '도구', who: '어디에·무엇으로' }, V: { label: '조리법', who: '어떻게' }, B: { label: '비밀 양념', who: '뿌리는 것' } },
+    order: ['S', 'O', 'B', 'V'],              // 재료 · 도구 · (양념) · 조리법
+    rounds: [null, { type: 'V', sec: 120 }, { type: 'S', sec: 90 }, { type: 'O', sec: 90 }, { type: 'B', sec: 45 }],
+    buildSec: 180, presentSec: 60,
+    auction: {
+      V: ['볶는다', '삶는다', '굽는다', '튀긴다', '얼린다', '짠다', '비빈다', '끓인다', '썬다', '무친다'],
+      S: ['김치를', '얼음을', '수박을', '라면을', '고구마를', '우유를', '오이를', '떡을', '치킨을', '아이스크림을'],
+      O: ['프라이팬에', '냄비에', '오븐에', '냉동실에', '믹서기에', '전자레인지에', '도마에서', '밥솥에', '젓가락으로', '손으로'],
+      B: ['설탕을 뿌려', '케첩을 뿌려', '소금을 뿌려', '김을 뿌려']
+    },
+    basic: [['달걀을', '프라이팬에', '부친다'], ['감자를', '냄비에', '삶는다'], ['빵을', '오븐에', '굽는다'], ['사과를', '도마에서', '자른다'],
+      ['옥수수를', '전자레인지에', '데운다'], ['딸기를', '믹서기에', '간다'], ['소시지를', '프라이팬에', '굽는다'], ['두부를', '냄비에', '끓인다']],
+    judgeTitle: '판정 기준',
+    judge: [
+      ['먹을 수 있나', '재료·도구·조리법이 어울려서 <b class="hl">진짜 만들 수 있는 요리</b>면 통과'],
+      ['이상하면', '얼음을 오븐에 굽는다? 우유를 도마에서 썬다? → 이의!']
+    ],
+    lobbyHint: '조리법을 먼저 사고, 그 조리법에 <b>어울리는</b> 재료·도구를 노려요!',
+    rulesPage: 'rules-cook.html'
+  }
+});
+/* 현재 deck 을 전역 상수에 적용 (파일 안의 코드는 TYPE/ORDER/AUCTION_CARDS/... 를 그대로 씀) */
+const TYPE = { S: {}, O: {}, V: {}, B: {} };
+let DECK = null, ORDER = [], AUCTION_CARDS = {}, BASIC_CARDS = [], JUDGE = [];
+function applyDeck(id) {
+  const d = DECKS[id] || DECKS.korean; DECK = d;
+  for (const t of ['S', 'O', 'V', 'B']) Object.assign(TYPE[t], TYPE_COLORS[t], d.types[t]);
+  ORDER = [...d.order]; AUCTION_CARDS = d.auction; BASIC_CARDS = d.basic; JUDGE = d.judge;
+  RULE.rounds = d.rounds; RULE.buildSec = d.buildSec; RULE.presentSec = d.presentSec;
+  return d;
+}
+applyDeck('korean');
+
 const teamNo = id => Number(String(id).replace('t', ''));
 const teamName = id => id ? `${teamNo(id)}모둠` : '';
 const teamColor = id => TEAM_COLORS[teamNo(id) - 1] || '#888';
@@ -280,7 +343,7 @@ const sortCards = list => [...list].sort((a, b) => ORDER.indexOf(a.type) - ORDER
 /* ── 초기 문서 ── */
 function initialCards() {
   const cards = {};
-  const roundOf = { V: 1, S: 2, O: 3, B: 4 };
+  const roundOf = {}; RULE.rounds.forEach((r, i) => { if (r) roundOf[r.type] = i; });
   for (const t of ['V', 'S', 'O', 'B']) AUCTION_CARDS[t].forEach((text, i) => {
     const id = `${t.toLowerCase()}${i + 1}`;
     cards[id] = { id, type: t, text, round: roundOf[t], team: null, status: 'wait', price: RULE.start, bidder: null, bids: 0, endsAt: null, usedIn: null, extended: 0 };
@@ -301,9 +364,9 @@ function initialTeams() {
 }
 function initialState() {
   return { phase: 'lobby', round: 0, roundStatus: 'idle', roundEndsAt: 0, buildEndsAt: 0,
-    present: { order: [], idx: 0, teamEndsAt: 0, focus: null, focusEndsAt: 0 }, seededAt: Date.now() };
+    present: { order: [], idx: 0, teamEndsAt: 0, focus: null, focusEndsAt: 0, speaker: null, raised: {} }, seededAt: Date.now() };
 }
-/* 문장 점수: 3조각 2점 / 2조각 1점 / 보너스 +1 / 기각(이의 인정)이면 0 */
+/* 점수: 3조각 2점 / 2조각 1점 / 보너스 +1 / 기각(이의 인정)이면 0 */
 function sentencePoints(s) {
   if (!s || s.status === 'rejected') return 0;
   return (s.base || 0) + (s.hasBonus ? 1 : 0);
@@ -318,13 +381,20 @@ function sentenceItems(s, cards) {
   return sortCards(items);
 }
 const sentenceText = (s, cards) => sentenceItems(s, cards).map(c => c.text).join(' ');
+/* 이번 발표(idx)에 손을 든 모둠들: state.present.raised 의 키는 "idx:teamId", 값은 누른 시각(0이면 처리 끝) */
+function raisedTeams(state) {
+  const pr = state?.present || {}, idx = pr.idx || 0;
+  return Object.entries(pr.raised || {}).filter(([k, v]) => v && k.startsWith(`${idx}:`)).sort((a, b) => a[1] - b[1]).map(([k]) => k.split(':')[1]);
+}
 
 /* ── 통신 계층: Firestore 또는 점검 모드(같은 컴퓨터의 탭끼리) ──
-   watch(col, cb)  : 컬렉션 구독. 변경분만 받아 누적 맵을 cb 에 넘김
+   watch(col, cb)  : 컬렉션 구독. 변경분만 받아 누적 맵을 cb 에 넘김. 반환값은 구독 해제 함수
    tx(fn)          : 트랜잭션. fn({get,set,update,del}) — get 을 모두 끝낸 뒤 쓰기
    batch(ops)      : 일괄 쓰기 [{op:'set'|'update'|'del', col, id, data}]
-   update 는 set(merge) 의미: 중첩 객체는 병합, 배열은 교체, null 은 null 저장 */
+   update 는 set(merge) 의미: 중첩 객체는 병합, 배열은 교체, null 은 null 저장
+   컬렉션 이름에는 현재 deck 접두어가 붙는다(setPrefix). 'meta' 컬렉션만 접두어 없이 공유(현재 판 표시용) */
 const validConfig = () => !Object.values(firebaseConfig).some(v => String(v).includes('PASTE_HERE'));
+const colName = (prefix, col) => col === 'meta' ? col : prefix + col;
 function deepMerge(target, patch) {
   for (const [k, v] of Object.entries(patch || {})) {
     if (v && typeof v === 'object' && !Array.isArray(v) && target[k] && typeof target[k] === 'object' && !Array.isArray(target[k])) deepMerge(target[k], v);
@@ -333,21 +403,21 @@ function deepMerge(target, patch) {
   return target;
 }
 function mockTransport() {
-  const key = `auction-demo-${ROOM}`, channel = new BroadcastChannel(key), listeners = {};
+  const key = `auction-demo-${ROOM}`, channel = new BroadcastChannel(key), listeners = {}; let prefix = '';
   const load = () => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } };
   const emit = () => { const d = load(); Object.entries(listeners).forEach(([col, fns]) => fns.forEach(fn => fn(clone(d[col] || {})))); };
   const save = d => { localStorage.setItem(key, JSON.stringify(d)); channel.postMessage('change'); emit(); };
   channel.onmessage = emit;
   window.addEventListener('storage', e => { if (e.key === key) emit(); });
   const ops = d => ({
-    get: async (col, id) => clone(d[col]?.[id] ?? null),
-    set: (col, id, data) => { (d[col] ??= {})[id] = clone(data); },
-    update: (col, id, patch) => { (d[col] ??= {})[id] = deepMerge(d[col][id] || {}, patch); },
-    del: (col, id) => { if (d[col]) delete d[col][id]; }
+    get: async (col, id) => clone(d[colName(prefix, col)]?.[id] ?? null),
+    set: (col, id, data) => { (d[colName(prefix, col)] ??= {})[id] = clone(data); },
+    update: (col, id, patch) => { const c = colName(prefix, col); (d[c] ??= {})[id] = deepMerge(d[c][id] || {}, patch); },
+    del: (col, id) => { const c = colName(prefix, col); if (d[c]) delete d[c][id]; }
   });
   return {
-    demo: true,
-    watch(col, cb) { (listeners[col] ??= []).push(cb); cb(clone(load()[col] || {})); return () => { listeners[col] = listeners[col].filter(f => f !== cb); }; },
+    demo: true, setPrefix(p) { prefix = p; },
+    watch(col, cb) { const c = colName(prefix, col); (listeners[c] ??= []).push(cb); cb(clone(load()[c] || {})); return () => { listeners[c] = (listeners[c] || []).filter(f => f !== cb); }; },
     async tx(fn) { const d = load(); const r = await fn(ops(d)); save(d); return r; },
     async batch(list) { const d = load(); const o = ops(d); list.forEach(x => o[x.op](x.col, x.id, x.data)); save(d); }
   };
@@ -357,7 +427,8 @@ async function firestoreTransport() {
   const fs = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js');
   const app = appMod.initializeApp(firebaseConfig);
   const db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() });
-  const ref = (col, id) => fs.doc(db, 'auction', ROOM, col, id);
+  let prefix = '';
+  const ref = (col, id) => fs.doc(db, 'auction', ROOM, colName(prefix, col), id);
   const clean = v => clone(v);                         // undefined 제거
   const writer = tx => ({
     set: (col, id, data) => tx.set(ref(col, id), clean(data)),
@@ -365,10 +436,10 @@ async function firestoreTransport() {
     del: (col, id) => tx.delete(ref(col, id))
   });
   return {
-    demo: false,
+    demo: false, setPrefix(p) { prefix = p; },
     watch(col, cb) {
       const map = {};
-      return fs.onSnapshot(fs.collection(db, 'auction', ROOM, col), snap => {
+      return fs.onSnapshot(fs.collection(db, 'auction', ROOM, colName(prefix, col)), snap => {
         snap.docChanges().forEach(ch => { if (ch.type === 'removed') delete map[ch.doc.id]; else map[ch.doc.id] = ch.doc.data(); });
         cb({ ...map });
       }, err => { console.error(err); window.dispatchEvent(new CustomEvent('db-error', { detail: err })); });
@@ -390,8 +461,9 @@ async function firestoreTransport() {
 }
 async function createTransport() {
   const forceDemo = new URLSearchParams(location.search).get('demo') === '1';
-  if (forceDemo || !validConfig()) return mockTransport();
-  return firestoreTransport();
+  const T = (forceDemo || !validConfig()) ? mockTransport() : await firestoreTransport();
+  T.update = (col, id, data) => T.batch([{ op: 'update', col, id, data }]);
+  return T;
 }
 
 /* ── 공용 게임 트랜잭션 ── */
@@ -431,12 +503,12 @@ async function submitSentence(T, teamId, cardIds) {
     for (const cid of cardIds) {
       const c = await t.get('cards', cid);
       if (!c || c.team !== teamId) throw new Error('우리 모둠 카드가 아니에요');
-      if (c.usedIn) throw new Error(`"${c.text}" 카드는 이미 다른 문장에 썼어요`);
+      if (c.usedIn) throw new Error(`"${c.text}" 카드는 이미 다른 ${DECK.unit}에 썼어요`);
       cards.push(c);
     }
     const types = cards.map(c => c.type);
-    if (types.filter(x => x === 'S').length !== 1 || types.filter(x => x === 'V').length !== 1) throw new Error('주어 1장과 서술어 1장이 꼭 필요해요');
-    if (types.filter(x => x === 'O').length > 1 || types.filter(x => x === 'B').length > 1) throw new Error('목적어와 보너스 말은 한 장씩만 넣을 수 있어요');
+    if (types.filter(x => x === 'S').length !== 1 || types.filter(x => x === 'V').length !== 1) throw new Error(`${TYPE.S.label} 1장과 ${TYPE.V.label} 1장이 꼭 필요해요`);
+    if (types.filter(x => x === 'O').length > 1 || types.filter(x => x === 'B').length > 1) throw new Error(`${TYPE.O.label}와 ${TYPE.B.label}은 한 장씩만 넣을 수 있어요`);
     const hasO = types.includes('O'), hasB = types.includes('B');
     const texts = {}, typeMap = {};
     cards.forEach(c => { texts[c.id] = c.text; typeMap[c.id] = c.type; });
@@ -450,37 +522,54 @@ async function deleteSentence(T, sentenceId, teamId = null) {
   return T.tx(async t => {
     const s = await t.get('sentences', sentenceId);
     if (!s) return;
-    if (teamId && s.team !== teamId) throw new Error('우리 모둠 문장이 아니에요');
+    if (teamId && s.team !== teamId) throw new Error(`우리 모둠 ${DECK.unit}이 아니에요`);
     const cards = [];
     for (const cid of s.cards || []) cards.push([cid, await t.get('cards', cid)]);
     cards.forEach(([cid, c]) => { if (c && c.usedIn === sentenceId) t.update('cards', cid, { usedIn: null }); });
     t.del('sentences', sentenceId);
   });
 }
-/* 이의 제기: 모둠당 2번, 자기 문장 X, 이미 걸린 문장 X */
-async function raiseObjection(T, teamId, sentenceId) {
+/* 이의 = 손 들기. 발표 중인 모둠이 아니고, 남은 횟수가 있고, 이번 발표에 아직 안 들었으면 접수. 누르는 순간 횟수 차감 */
+async function raiseObjection(T, teamId) {
   return T.tx(async t => {
-    const s = await t.get('sentences', sentenceId);
-    const me = await t.get('teams', teamId);
     const st = await t.get('state', 'main');
-    if (!s || !me) throw new Error('문장을 찾을 수 없어요');
-    if (st?.phase !== 'present') throw new Error('지금은 이의를 걸 수 없어요');
-    if (s.team === teamId) throw new Error('우리 모둠 문장에는 이의를 걸 수 없어요');
-    if (s.status === 'rejected') throw new Error('이미 0점 처리된 문장이에요');
-    if (s.objection?.result === 'pending') throw new Error('다른 모둠이 먼저 이의를 걸었어요');
+    const me = await t.get('teams', teamId);
+    if (!st || !me) throw new Error('정보를 찾을 수 없어요');
+    if (st.phase !== 'present') throw new Error('지금은 이의를 걸 수 없어요');
+    const pr = st.present || {}, cur = (pr.order || [])[pr.idx || 0];
+    if (!cur) throw new Error('발표 중인 모둠이 없어요');
+    if (cur === teamId) throw new Error('우리 모둠 발표에는 이의를 걸 수 없어요');
+    const key = `${pr.idx || 0}:${teamId}`;
+    if (pr.raised?.[key]) throw new Error('이미 손을 들었어요');
     if ((me.objLeft ?? 0) <= 0) throw new Error('이의 기회를 모두 썼어요');
-    const now = Date.now();
-    t.update('sentences', sentenceId, { objection: { by: teamId, at: now, result: 'pending' } });
+    t.update('state', 'main', { present: { raised: { [key]: Date.now() } } });
     t.update('teams', teamId, { objLeft: me.objLeft - 1 });
-    t.update('state', 'main', { present: { focus: sentenceId, focusEndsAt: now + RULE.sentenceSec * 1000 } });
   });
 }
 
 
 const $ = id => document.getElementById(id);
 const C = { state: null, cards: {}, teams: {}, sentences: {} };
+let deck = applyDeck(new URLSearchParams(location.search).get('deck') || 'korean'), unsubs = [];
+function applyDeckText() {
+  document.title = `${deck.title} · 모둠`;
+  $('lobbySub').textContent = `기본 카드 3장으로 이미 ${deck.unit} 하나가 만들어져 있어요`;
+  $('lobbyHint').innerHTML = `예산 <b>5,000코인</b> · 시작가 300 · 한 번에 +100 · 즉시구매 1,500<br>${deck.lobbyHint}`;
+  $('submitLabel').textContent = `${deck.unit} 완성!`;
+}
+/* 칠판이 연 판(deck)을 따라간다: meta/active 를 보고 컬렉션 접두어를 바꿔 다시 구독 */
+function bindDeck(id) {
+  unsubs.forEach(u => u()); unsubs = [];
+  deck = applyDeck(id); T.setPrefix(deck.prefix); applyDeckText();
+  C.state = null; C.cards = {}; C.teams = {}; C.sentences = {}; prevCards = {}; tray = { S: null, B: null, O: null, V: null }; lastRound = '';
+  unsubs.push(T.watch('state', map => { C.state = map.main || null; render(); }));
+  unsubs.push(T.watch('cards', map => { C.cards = map; render(); }));
+  unsubs.push(T.watch('teams', map => { C.teams = map; render(); }));
+  unsubs.push(T.watch('sentences', map => { C.sentences = map; render(); }));
+  heartbeat();
+}
 const urlTeam = new URLSearchParams(location.search).get('team');   // ?team=3 → 3모둠 고정(태블릿 미리 세팅용)
-let T, me = (urlTeam && TEAM_IDS.includes('t' + urlTeam)) ? 't' + urlTeam : (localStorage.getItem('auction-team') || ''), prevCards = {}, prevBudget = null, toastId = 0, tray = { S: null, B: null, O: null, V: null }, selSent = null, lastRound = '';
+let T, me = (urlTeam && TEAM_IDS.includes('t' + urlTeam)) ? 't' + urlTeam : (localStorage.getItem('auction-team') || ''), prevCards = {}, prevBudget = null, toastId = 0, tray = { S: null, B: null, O: null, V: null }, lastRound = '';
 const now = () => Date.now();
 const S = () => C.state || null;
 const typeVars = t => `--cc:${TYPE[t].color};--cbg:${TYPE[t].bg};--cdark:${TYPE[t].dark}`;
@@ -567,41 +656,44 @@ function paintBuild() {
   ORDER.forEach(t => { if (tray[t] && !free.find(c => c.id === tray[t])) tray[t] = null; });
   $('slots').innerHTML = ORDER.map(t => { const c = tray[t] ? C.cards[tray[t]] : null; return `<div class="slot${c ? ' filled' : ''}${t === 'O' || t === 'B' ? ' opt' : ''}" data-t="${t}" style="${typeVars(t)}"><span class="lab">${TYPE[t].label}<small>${TYPE[t].who}</small></span>${c ? chip(c) : ''}</div>`; }).join('');
   const picked = ORDER.map(t => tray[t]).filter(Boolean).map(id => C.cards[id]);
-  $('preview').innerHTML = picked.length ? picked.map(c => `<span style="color:${TYPE[c.type].dark}">${esc(c.text)}</span>`).join(' ') : '<span class="ph">카드를 눌러 문장을 만들어요</span>';
+  $('preview').innerHTML = picked.length ? picked.map(c => `<span style="color:${TYPE[c.type].dark}">${esc(c.text)}</span>`).join(' ') : `<span class="ph">카드를 눌러 ${deck.unitOf} 만들어요</span>`;
   const ok = tray.S && tray.V; const pts = ok ? (tray.O ? 2 : 1) + (tray.B ? 1 : 0) : 0;
-  $('submitBtn').disabled = !ok; $('ptsHint').textContent = ok ? `${pts}점${tray.B ? ' (보너스 어울리면)' : ''}` : '';
+  $('submitBtn').disabled = !ok; $('ptsHint').textContent = ok ? `${pts}점${tray.B ? ` (${TYPE.B.label} 어울리면)` : ''}` : '';
   const groups = ORDER.map(t => `<div class="hand-row" style="${typeVars(t)}"><h3>${TYPE[t].label}</h3>${free.filter(c => c.type === t).map(c => `<button class="hcard${tray[t] === c.id ? ' intray' : ''}" data-id="${c.id}" style="${typeVars(t)}">${esc(c.text)}</button>`).join('') || '<span class="none">없음</span>'}</div>`).join('');
   const mine = Object.values(C.sentences).filter(s => s.team === me).sort((a, b) => a.createdAt - b.createdAt);
   $('hand').innerHTML = groups + `<div class="done-list">${mine.map(s => `<div class="dsent${s.status === 'rejected' ? ' rejected' : ''}"><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div><span class="pts">${sentencePoints(s)}점</span><button class="del" data-id="${s.id}">지우기</button></div>`).join('')}</div>`;
 }
 $('hand').addEventListener('click', async e => {
   const h = e.target.closest('.hcard'); if (h) { const c = C.cards[h.dataset.id]; tray[c.type] = tray[c.type] === c.id ? null : c.id; beep('tap'); paintBuild(); return; }
-  const d = e.target.closest('.del'); if (d) { try { await deleteSentence(T, d.dataset.id, me); toast('문장을 지우고 카드를 되돌렸어요'); } catch (err) { toast(err.message, 'err'); } }
+  const d = e.target.closest('.del'); if (d) { try { await deleteSentence(T, d.dataset.id, me); toast(`${deck.unit}을 지우고 카드를 되돌렸어요`); } catch (err) { toast(err.message, 'err'); } }
 });
 $('slots').addEventListener('click', e => { const s = e.target.closest('.slot'); if (s && tray[s.dataset.t]) { tray[s.dataset.t] = null; paintBuild(); } });
 $('submitBtn').addEventListener('click', async () => {
   const ids = ORDER.map(t => tray[t]).filter(Boolean); if (ids.length < 2) return; $('submitBtn').disabled = true;
-  try { const s = await submitSentence(T, me, ids); tray = { S: null, B: null, O: null, V: null }; toast(`문장 완성! ${sentencePoints(s)}점 예상`, 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .3, 30); }
+  try { const s = await submitSentence(T, me, ids); tray = { S: null, B: null, O: null, V: null }; toast(`${deck.unit} 완성! ${sentencePoints(s)}점 예상`, 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .3, 30); }
   catch (err) { toast(err.message, 'err'); } finally { paintBuild(); }
 });
 /* 발표 */
 function paintPresent(st) {
-  const tid = currentTeam(), t = myTeam(), left = t?.objLeft ?? 0;
+  const tid = currentTeam(), t = myTeam(), left = t?.objLeft ?? 0, pr = st.present || {};
   $('objLeft').innerHTML = `이의 ${Array.from({ length: RULE.objections }, (_, i) => `<i class="${i < left ? '' : 'off'}"></i>`).join('')}`;
   if (!tid) { $('pTeam').textContent = '발표 끝'; $('plist').innerHTML = ''; $('objbar').style.display = 'none'; return; }
   $('pTeam').textContent = `${teamName(tid)} 발표`; $('pTeam').style.setProperty('--pc', teamColor(tid));
   const list = Object.values(C.sentences).filter(s => s.team === tid).sort((a, b) => a.createdAt - b.createdAt);
-  if (tid === me) { $('pSub').textContent = '우리 차례!'; $('plist').innerHTML = `<div class="mine-banner">우리 모둠이 발표하고 있어요 🎤<br><small style="font-size:.6em;color:var(--muted)">문장을 읽고, 이의가 들어오면 대답해요</small></div>` + list.map((s, i) => psent(s, i, false)).join(''); $('objbar').style.display = 'none'; return; }
-  $('pSub').textContent = '어색한 문장이 있나요?'; $('objbar').style.display = '';
-  if (selSent && !list.find(s => s.id === selSent)) selSent = null;
-  $('plist').innerHTML = list.length ? list.map((s, i) => psent(s, i, true)).join('') : '<div class="mine-banner" style="color:var(--muted)">만든 문장이 없어요</div>';
-  const target = list.find(s => s.id === selSent), pending = list.some(s => s.objection?.result === 'pending');
-  $('objBtn').disabled = !target || left <= 0 || target.status === 'rejected' || pending;
-  $('objMsg').textContent = left <= 0 ? '이의 기회를 모두 썼어요' : pending ? '지금 다른 이의를 판정하고 있어요' : target ? `"${sentenceText(target, C.cards)}" 에 이의를 걸까요? 이유를 말할 준비!` : '어색한 문장을 누르고 [이의!]를 눌러요. 이유를 말할 준비도 해요!';
+  const rows = list.length ? list.map((s, i) => psent(s, i)).join('') : `<div class="mine-banner" style="color:var(--muted)">만든 ${deck.unit}이 없어요</div>`;
+  if (tid === me) { $('pSub').textContent = '우리 차례!'; $('plist').innerHTML = `<div class="mine-banner">우리 모둠이 발표하고 있어요 🎤<br><small style="font-size:.6em;color:var(--muted)">${deck.unitOf} 읽고, 이의가 들어오면 대답해요</small></div>` + rows; $('objbar').style.display = 'none'; return; }
+  $('plist').innerHTML = rows; $('objbar').style.display = '';
+  const raised = raisedTeams(st), mine = raised.includes(me), speaking = mine && pr.speaker === me;
+  $('pSub').textContent = speaking ? '지금 말해요!' : mine ? '손 들었어요' : `이상한 ${deck.unit}이 있나요?`;
+  $('objbar').className = `objbar${speaking ? ' speak' : mine ? ' raised' : ''}`;
+  $('objBtn').hidden = mine; $('objTimer').hidden = !speaking;
+  $('objBtn').disabled = left <= 0;
+  $('objMsg').textContent = speaking ? '어느 것이 왜 이상한지 이유를 말해요!' : mine ? '✋ 손 들었어요! 선생님이 우리 모둠을 부르면 이유를 말해요' : left <= 0 ? '이의 기회를 모두 썼어요' : `이상한 ${deck.unit}이 보이면 [이의!] — 손 드는 것과 같아요. 이유를 말할 준비도 해요!`;
 }
-function psent(s, i, clickable) { const pend = s.objection?.result === 'pending'; const st = s.status === 'rejected' ? '<span class="st acc">0점</span>' : pend ? `<span class="st">${teamName(s.objection.by)} 이의!</span>` : s.objection?.result === 'dismissed' ? '<span class="st dis">통과</span>' : ''; return `<div class="psent${selSent === s.id && clickable ? ' sel' : ''}${pend ? ' pending' : ''}${s.status === 'rejected' ? ' rejected' : ''}" data-id="${clickable ? s.id : ''}"><span class="no">${i + 1}</span><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div>${st}</div>`; }
-$('plist').addEventListener('click', e => { const el = e.target.closest('.psent'); if (!el || !el.dataset.id) return; selSent = selSent === el.dataset.id ? null : el.dataset.id; beep('tap'); render(); });
-$('objBtn').addEventListener('click', async () => { if (!selSent) return; $('objBtn').disabled = true; try { await raiseObjection(T, me, selSent); toast('이의를 걸었어요! 이유를 말해요', 'win'); beep('ext'); selSent = null; } catch (err) { toast(err.message, 'err'); } });
+function psent(s, i) { const st = s.status === 'rejected' ? '<span class="st acc">이의 인정 · 0점</span>' : s.objection?.result === 'dismissed' ? '<span class="st dis">통과</span>' : ''; const focus = S()?.present?.focus === s.id; return `<div class="psent${focus ? ' sel' : ''}${s.status === 'rejected' ? ' rejected' : ''}"><span class="no">${i + 1}</span><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div>${st}</div>`; }
+$('objBtn').addEventListener('click', () => { const left = myTeam()?.objLeft ?? 0; if (left <= 0) return; $('confirmMsg').innerHTML = `이의는 모둠당 ${RULE.objections}번 · 지금 남은 횟수 <b style="color:var(--warn)">${left}</b><br>손을 들면 횟수가 바로 줄어요. 이유를 말할 수 있을 때만!`; $('confirmObj').classList.add('on'); beep('tap'); });
+$('confirmNo').addEventListener('click', () => $('confirmObj').classList.remove('on'));
+$('confirmYes').addEventListener('click', async () => { $('confirmObj').classList.remove('on'); $('objBtn').disabled = true; try { await raiseObjection(T, me); toast('✋ 손 들었어요! 선생님이 부르면 이유를 말해요', 'win'); beep('ext'); } catch (err) { toast(err.message, 'err'); render(); } });
 function paintEnd() { const ranked = TEAM_IDS.map(id => ({ id, score: teamScore(id, C.sentences, C.teams[id]) })).sort((a, b) => b.score - a.score); $('rank').innerHTML = ranked.map((t, i) => `<div class="${t.id === me ? 'me' : ''}" style="--pc:${teamColor(t.id)}">${['🥇', '🥈', '🥉'][i] || `${i + 1}위`} ${teamName(t.id)}<b>${t.score}점</b></div>`).join(''); }
 
 /* ── 사건 감지 (남이 더 질렀다 / 낙찰됐다) ── */
@@ -625,7 +717,7 @@ function tick() {
   const st = S(), clock = $('clock'); let ms = null, ext = false;
   if (st?.phase === 'auction' && st.roundStatus === 'bidding') { const open = roundCards(st.round).filter(c => c.status === 'open'); const dl = open.length ? Math.max(...open.map(c => c.endsAt || 0)) : st.roundEndsAt; ms = dl - now(); ext = dl > st.roundEndsAt; roundCards(st.round).forEach(c => { const el = $('agrid').querySelector(`[data-id="${c.id}"] .tmr`); if (!el) return; const left = (c.endsAt || 0) - now(); const show = c.status === 'open' && left <= 15000; el.classList.toggle('on', show); el.textContent = show ? `⏱ ${Math.max(0, Math.ceil(left / 1000))}` : ''; }); }
   if (st?.phase === 'build') ms = st.buildEndsAt - now();
-  if (st?.phase === 'present' && currentTeam()) { const f = st.present.focusEndsAt || 0; ms = (f > now() ? f : st.present.teamEndsAt || 0) - now(); }
+  if (st?.phase === 'present' && currentTeam()) { const sp = st.present.speaker && raisedTeams(st).includes(st.present.speaker); ms = (sp ? st.present.focusEndsAt || 0 : st.present.teamEndsAt || 0) - now(); if (sp && st.present.speaker === me) $('objTimer').textContent = Math.max(0, Math.ceil(ms / 1000)); }
   clock.textContent = ms === null ? '--:--' : mmss(ms); clock.classList.toggle('hot', ms !== null && ms <= 10000 && ms > -1000); clock.classList.toggle('ext', ext && ms > 0);
 }
 setInterval(tick, 250);
@@ -634,11 +726,8 @@ setInterval(tick, 250);
 window.addEventListener('db-error', () => { $('badge').textContent = '연결 오류'; $('badge').className = 'badge err on'; });
 try {
   T = await createTransport(); if (T.demo) $('badge').classList.add('on');
-  T.watch('state', map => { C.state = map.main || null; render(); });
-  T.watch('cards', map => { C.cards = map; render(); });
-  T.watch('teams', map => { C.teams = map; render(); });
-  T.watch('sentences', map => { C.sentences = map; render(); });
-  heartbeat();
+  applyDeckText(); bindDeck(deck.id);
+  T.watch('meta', map => { const id = map.active?.deck; if (id && DECKS[id] && id !== deck.id) { bindDeck(id); toast(`${deck.title}으로 바뀌었어요`); } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) heartbeat(); });
 } catch (e) { console.error(e); $('badge').textContent = '연결하지 못했어요 · 새로고침'; $('badge').className = 'badge err on'; }
 render();
