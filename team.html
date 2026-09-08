@@ -34,6 +34,10 @@ h2.big{font:clamp(34px,5vw,60px)/1.15 "Jua",sans-serif}h2.big span{color:var(--w
 p.sub{font-size:clamp(17px,2vw,23px);color:var(--muted);line-height:1.5}
 /* pick */
 .pick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:min(820px,100%)}
+.waitbox{background:var(--panel);border-radius:26px;padding:26px 30px;box-shadow:0 4px 0 var(--line);max-width:640px;font-size:clamp(18px,2.2vw,24px);line-height:1.6;color:var(--muted)}
+.waitbox b{color:var(--warn)}
+.spin{display:inline-block;width:.9em;height:.9em;border:4px solid var(--line);border-top-color:var(--warn);border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
 .pickbtn{aspect-ratio:1.4;border-radius:24px;background:var(--panel);font:clamp(30px,4vw,48px) "Jua",sans-serif;color:var(--pc);border:5px solid var(--pc);box-shadow:0 6px 0 var(--pc);transition:.15s}
 .pickbtn:active{transform:translateY(5px);box-shadow:none}
 /* cards common */
@@ -155,13 +159,12 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
   <header class="head">
     <span id="tn" class="tn">?모둠</span>
     <span id="coins" class="coins">5,000<small>코인</small></span>
-    <div class="mid"><span id="badge" class="badge">점검 모드</span><span id="pill" class="pill">준비</span><span id="clock" class="clock">--:--</span><button id="chg" class="chg">모둠 바꾸기</button></div>
+    <div class="mid"><span id="badge" class="badge">점검 모드</span><span id="pill" class="pill">준비</span><span id="clock" class="clock">--:--</span><button id="chg" class="chg">다시 접속</button></div>
   </header>
 
   <section id="vPick" class="view center on">
-    <h2 class="big">우리는 <span>몇 모둠</span>인가요?</h2>
-    <div id="pickGrid" class="pick-grid"></div>
-    <p class="sub">한 번 고르면 이 태블릿이 기억해요</p>
+    <h2 class="big" id="pickTitle"><span class="spin"></span>모둠 자리를 받는 중…</h2>
+    <div id="pickMsg" class="waitbox">잠깐만요, 빈 모둠 번호를 찾고 있어요</div>
   </section>
 
   <section id="vLobby" class="view center">
@@ -359,11 +362,11 @@ function initialCards() {
 }
 function initialTeams() {
   const teams = {};
-  TEAM_IDS.forEach(id => { teams[id] = { id, no: teamNo(id), budget: RULE.budget, scoreAdj: 0, objLeft: RULE.objections, lastSeen: 0 }; });
+  TEAM_IDS.forEach(id => { teams[id] = { id, no: teamNo(id), budget: RULE.budget, scoreAdj: 0, objLeft: RULE.objections, lastSeen: 0, device: null, claimedAt: 0 }; });
   return teams;
 }
 function initialState() {
-  return { phase: 'lobby', round: 0, roundStatus: 'idle', roundEndsAt: 0, buildEndsAt: 0,
+  return { phase: 'lobby', round: 0, roundStatus: 'idle', roundEndsAt: 0, buildEndsAt: 0, epoch: Date.now(),   // epoch: 초기화마다 바뀜 → 태블릿의 옛 배정 무효
     present: { order: [], idx: 0, teamEndsAt: 0, focus: null, focusEndsAt: 0, speaker: null, raised: {} }, seededAt: Date.now() };
 }
 /* 점수: 3조각 2점 / 2조각 1점 / 보너스 +1 / 기각(이의 인정)이면 0 */
@@ -529,6 +532,25 @@ async function deleteSentence(T, sentenceId, teamId = null) {
     t.del('sentences', sentenceId);
   });
 }
+/* 자리 배정: 이 기기(deviceId)가 이미 가진 모둠이 있으면 그대로, 없으면 빈 모둠 중 무작위. 빈 모둠이 없으면 null
+   force 에 't3' 처럼 모둠을 주면 그 자리를 강제로 차지(교사 수동 배정용 ?team=3) */
+async function claimTeam(T, deviceId, force = null) {
+  return T.tx(async t => {
+    const teams = {};
+    for (const id of TEAM_IDS) teams[id] = await t.get('teams', id);
+    if (force && teams[force]) { t.update('teams', force, { device: deviceId, claimedAt: Date.now(), lastSeen: Date.now() }); TEAM_IDS.forEach(id => { if (id !== force && teams[id]?.device === deviceId) t.update('teams', id, { device: null }); }); return force; }
+    const mine = TEAM_IDS.find(id => teams[id]?.device === deviceId);
+    if (mine) return mine;
+    const free = TEAM_IDS.filter(id => teams[id] && !teams[id].device);
+    if (!free.length) return null;
+    const pick = free[Math.floor(Math.random() * free.length)];
+    t.update('teams', pick, { device: deviceId, claimedAt: Date.now(), lastSeen: Date.now() });
+    return pick;
+  });
+}
+async function releaseTeam(T, teamId, deviceId = null) {
+  return T.tx(async t => { const tm = await t.get('teams', teamId); if (!tm) return; if (deviceId && tm.device !== deviceId) return; t.update('teams', teamId, { device: null, claimedAt: 0 }); });
+}
 /* 이의 = 손 들기. 발표 중인 모둠이 아니고, 남은 횟수가 있고, 이번 발표에 아직 안 들었으면 접수. 누르는 순간 횟수 차감 */
 async function raiseObjection(T, teamId) {
   return T.tx(async t => {
@@ -561,15 +583,20 @@ function applyDeckText() {
 function bindDeck(id) {
   unsubs.forEach(u => u()); unsubs = [];
   deck = applyDeck(id); T.setPrefix(deck.prefix); applyDeckText();
-  C.state = null; C.cards = {}; C.teams = {}; C.sentences = {}; prevCards = {}; tray = { S: null, B: null, O: null, V: null }; lastRound = '';
-  unsubs.push(T.watch('state', map => { C.state = map.main || null; render(); }));
+  C.state = null; C.cards = {}; C.teams = {}; C.sentences = {}; prevCards = {}; tray = { S: null, B: null, O: null, V: null }; lastRound = ''; me = ''; waitingFull = false;
+  unsubs.push(T.watch('state', map => { C.state = map.main || null; render(); ensureSeat(); }));
   unsubs.push(T.watch('cards', map => { C.cards = map; render(); }));
-  unsubs.push(T.watch('teams', map => { C.teams = map; render(); }));
+  unsubs.push(T.watch('teams', map => { C.teams = map; render(); clearTimeout(claimTimer); claimTimer = setTimeout(ensureSeat, me ? 0 : 300 + Math.random() * 1200); }));   // 자리 확인(대기 중이면 무작위 지연 후 재시도)
   unsubs.push(T.watch('sentences', map => { C.sentences = map; render(); }));
   heartbeat();
 }
-const urlTeam = new URLSearchParams(location.search).get('team');   // ?team=3 → 3모둠 고정(태블릿 미리 세팅용)
-let T, me = (urlTeam && TEAM_IDS.includes('t' + urlTeam)) ? 't' + urlTeam : (localStorage.getItem('auction-team') || ''), prevCards = {}, prevBudget = null, toastId = 0, tray = { S: null, B: null, O: null, V: null }, lastRound = '';
+/* 기기 ID: 이 브라우저(태블릿)마다 하나. 같은 태블릿에서 탭을 여러 개 열어도 같은 모둠을 받는다.
+   ?team=3 은 교사 수동 배정(그 자리를 강제로 차지). 평소에는 안 씀 */
+let deviceId = new URLSearchParams(location.search).get('dev') || '';   // ?dev=이름 → 기기 ID 강제(점검용: 한 컴퓨터에서 여러 태블릿 흉내)
+if (!deviceId) try { deviceId = localStorage.getItem('auction-device') || ''; if (!deviceId) { deviceId = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); localStorage.setItem('auction-device', deviceId); } } catch { deviceId = 'd' + Math.random().toString(36).slice(2, 10); }
+const urlTeam = new URLSearchParams(location.search).get('team');
+const forceTeam = urlTeam && TEAM_IDS.includes('t' + urlTeam) ? 't' + urlTeam : null;
+let T, me = '', prevCards = {}, prevBudget = null, toastId = 0, tray = { S: null, B: null, O: null, V: null }, lastRound = '', claiming = false, claimTimer = 0, waitingFull = false, forced = false;
 const now = () => Date.now();
 const S = () => C.state || null;
 const typeVars = t => `--cc:${TYPE[t].color};--cbg:${TYPE[t].bg};--cdark:${TYPE[t].dark}`;
@@ -587,17 +614,32 @@ function confetti(x, y, n = 40, colors = TEAM_COLORS) { for (let i = 0; i < n; i
 let fxLast = 0; function fxLoop(ts = performance.now()) { const dt = fxLast ? Math.min(4, (ts - fxLast) / 16) : 1; fxLast = ts; fxc.clearRect(0, 0, fx.width, fx.height); parts = parts.filter(p => p.life > 0); parts.forEach(p => { p.x += p.vx * dt; p.vy += .35 * dt; p.y += p.vy * dt; p.a += p.s * dt; p.life -= dt; fxc.save(); fxc.translate(p.x, p.y); fxc.rotate(p.a); fxc.fillStyle = p.c; fxc.globalAlpha = Math.min(1, p.life / 30); fxc.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * .6); fxc.restore(); }); if (parts.length) requestAnimationFrame(fxLoop); else fxLast = 0; }
 
 /* ── 모둠 선택 ── */
-$('pickGrid').innerHTML = TEAM_IDS.map(id => `<button class="pickbtn" style="--pc:${teamColor(id)}" data-id="${id}">${teamName(id)}</button>`).join('');
-$('pickGrid').addEventListener('click', e => { const b = e.target.closest('.pickbtn'); if (!b) return; me = b.dataset.id; localStorage.setItem('auction-team', me); heartbeat(); render(); });
-$('chg').addEventListener('click', () => { if (!confirm('모둠을 바꿀까요? (선생님 확인 후에만!)')) return; me = ''; localStorage.removeItem('auction-team'); render(); });
-async function heartbeat() { if (!me || !T) return; try { await T.batch([{ op: 'update', col: 'teams', id: me, data: { lastSeen: now() } }]); } catch { } }
+/* ── 자리 배정 ──
+   teams 문서의 device 가 내 기기 ID 이면 그 모둠. 아니면 빈 자리를 무작위로 받는다.
+   빈 자리가 없으면 대기(waiting 문서에 등록) → 선생님이 자리를 비우면 자동으로 다시 시도.
+   초기화로 epoch 가 바뀌면 device 가 모두 지워지므로 자연히 다시 배정된다 */
+async function ensureSeat() {
+  if (!T || !S() || !Object.keys(C.teams).length || claiming) return;
+  if (me && C.teams[me]?.device === deviceId) { waitingFull = false; return; }
+  if (me) { me = ''; render(); }                                   // 선생님이 자리를 비웠거나 초기화됨
+  claiming = true;
+  try {
+    const got = await claimTeam(T, deviceId, forceTeam && !forced ? forceTeam : null); forced = true;
+    if (got) { me = got; waitingFull = false; try { await T.batch([{ op: 'del', col: 'waiting', id: deviceId }]); } catch { } toast(`${teamName(me)} 자리를 받았어요!`, 'win'); beep('win'); heartbeat(); }
+    else { waitingFull = true; try { await T.batch([{ op: 'update', col: 'waiting', id: deviceId, data: { lastSeen: now() } }]); } catch { } }
+  } catch (e) { console.error(e); clearTimeout(claimTimer); claimTimer = setTimeout(ensureSeat, 1500 + Math.random() * 1500); }
+  finally { claiming = false; render(); }
+}
+$('chg').addEventListener('click', async () => { if (!confirm('이 태블릿의 자리를 비우고 다시 받을까요? (선생님 확인 후에만!)')) return; try { if (me) await releaseTeam(T, me, deviceId); } catch { } me = ''; forced = true; render(); ensureSeat(); });
+async function heartbeat() { if (!T) return; try { if (me) await T.batch([{ op: 'update', col: 'teams', id: me, data: { lastSeen: now() } }]); else if (waitingFull) await T.batch([{ op: 'update', col: 'waiting', id: deviceId, data: { lastSeen: now() } }]); } catch { } }
 let hbTick = 0; setInterval(() => { hbTick++; if (S()?.phase === 'lobby' || hbTick % 3 === 0) heartbeat(); }, 40000);   // 준비 단계 40초, 그 뒤 2분마다 (읽기 횟수 절약)
 
 /* ── 렌더 ── */
 let raf = 0; function render() { clearTimeout(raf); raf = setTimeout(paint, 16); }   // rAF 대신 setTimeout: 화면이 꺼져 있다 돌아와도 밀린 갱신 없음
 function paint() {
   document.documentElement.style.setProperty('--tc', me ? teamColor(me) : '#888');
-  $('tn').textContent = me ? teamName(me) : '?모둠'; $('chg').style.display = me ? '' : 'none';
+  $('tn').textContent = me ? teamName(me) : '?모둠'; $('chg').style.display = '';
+  if (!me) { $('pickTitle').innerHTML = waitingFull ? '자리가 다 찼어요' : '<span class="spin"></span>모둠 자리를 받는 중…'; $('pickMsg').innerHTML = waitingFull ? '8모둠 자리가 모두 찼어요. <b>이 디벗은 사용하지 않아도 돼요.</b><br>선생님이 자리를 비워 주면 자동으로 들어가요.' : (S() ? '잠깐만요, 빈 모둠 번호를 찾고 있어요' : '선생님이 경매장을 열면 자리가 정해져요'); }
   const st = S(), t = myTeam();
   const budget = t && t.budget != null ? Number(t.budget) : RULE.budget;   // 모둠 문서가 아직 없으면 예산 기본값
   $('coins').innerHTML = `${fmt(budget)}<small>코인</small>`;
@@ -605,7 +647,7 @@ function paint() {
   const phase = !me ? 'pick' : !st ? 'lobby' : st.phase;
   const view = phase === 'pick' ? 'Pick' : phase === 'lobby' ? 'Lobby' : phase === 'auction' ? (st.roundStatus === 'bidding' ? 'Auction' : 'Closed') : phase === 'build' ? 'Build' : phase === 'present' ? 'Present' : 'End';
   ['Pick', 'Lobby', 'Auction', 'Closed', 'Build', 'Present', 'End'].forEach(v => $('v' + v).classList.toggle('on', v === view));
-  $('pill').textContent = { pick: '모둠 선택', lobby: '준비', auction: `경매 ${st?.round || ''}라운드`, build: '조립', present: '발표·판정', end: '결과' }[phase]; $('pill').className = `pill ${phase}`;
+  $('pill').textContent = { pick: '접속 중', lobby: '준비', auction: `경매 ${st?.round || ''}라운드`, build: '조립', present: '발표·판정', end: '결과' }[phase]; $('pill').className = `pill ${phase}`;
   if (view === 'Lobby') paintLobby(st);
   if (view === 'Auction') paintAuction(st);
   if (view === 'Closed') paintClosed(st);

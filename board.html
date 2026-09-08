@@ -64,6 +64,11 @@ a.icon-btn{text-decoration:none;color:var(--ink)}
 .ltile .basic{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .ltile .st{font-size:16px;color:#A5B0BA}.ltile.on .st{color:var(--ok)}.ltile.on{transform:translateY(-4px)}
 .ltile.on .st::before{content:"● "}
+.ltile.taken:not(.on) .st{color:#D9A800}
+.ltile .rel{font-size:14px;color:var(--muted);background:#EDF2F6;border-radius:999px;padding:3px 10px;margin-top:2px}
+.ltile.taken .rel{background:#FFE1DB;color:#B64329}
+.waitline{font:22px "Jua",sans-serif;color:#B64329;background:#FFE1DB;border-radius:999px;padding:8px 22px}
+.waitline.none{background:transparent;color:#A5B0BA;font-family:"Gowun Dodum";font-size:18px}
 .card-chip{font:19px/1 "Jua",sans-serif;padding:7px 10px;border-radius:10px;background:var(--cbg);color:var(--cdark);border:2px solid var(--cc)}
 /* auction */
 .round-head{display:flex;align-items:center;gap:18px;padding:0 4px}
@@ -229,8 +234,9 @@ table.ed select{width:auto}
       <!-- 준비 -->
       <div id="vLobby" class="view lobby on">
         <h2 id="lobbyTitle">낱말 <span>경매장</span></h2>
-        <p>모둠 태블릿에서 모둠 번호를 골라 주세요 · 예산은 모둠마다 <b>5,000코인</b></p>
+        <p>태블릿을 켜면 빈 모둠 번호를 <b>무작위</b>로 받아요 · 예산은 모둠마다 <b>5,000코인</b> · 모둠 칸을 누르면 그 자리를 비워요</p>
         <div id="lobbyGrid" class="lobby-grid"></div>
+        <div id="waitline" class="waitline none"></div>
       </div>
       <!-- 경매 -->
       <div id="vAuction" class="view">
@@ -288,6 +294,7 @@ table.ed select{width:auto}
         <button id="edApply" class="sm">적용</button></div>
       <div class="formrow">타이머 <button class="sm ghost" data-dt="30000">+30초</button><button class="sm ghost" data-dt="-30000">−30초</button><button class="sm ghost" id="edTimerNow">지금 마감</button>
         <span style="color:var(--muted);font-size:15px">지금 단계의 타이머(경매 카드 전체 / 조립 / 발표 모둠)에 적용돼요</span></div>
+      <div class="formrow"><button id="edReseat" class="sm warn">태블릿 자리 모두 비우기(다시 접속)</button><span style="color:var(--muted);font-size:15px">게임 진행은 그대로 두고 모둠 번호 배정만 다시 해요. 태블릿이 자동으로 새 번호를 받아요</span></div>
       <div class="formrow"><button id="edOpenRound" class="sm warn">선택한 라운드 카드 다시 열기(재경매)</button><span style="color:var(--muted);font-size:15px">그 라운드의 미확정 카드를 다시 입찰 상태로 · 이미 낙찰된 카드는 그대로</span></div>
       <p class="note">단계를 "경매"로 바꾸고 라운드 상태를 "입찰 중"으로 두면 카드가 열려 있어야 입찰이 돼요. 보통은 아래쪽 큰 버튼으로 진행하고, 이 패널은 사고가 났을 때만 써요.</p>
     </div>
@@ -452,11 +459,11 @@ function initialCards() {
 }
 function initialTeams() {
   const teams = {};
-  TEAM_IDS.forEach(id => { teams[id] = { id, no: teamNo(id), budget: RULE.budget, scoreAdj: 0, objLeft: RULE.objections, lastSeen: 0 }; });
+  TEAM_IDS.forEach(id => { teams[id] = { id, no: teamNo(id), budget: RULE.budget, scoreAdj: 0, objLeft: RULE.objections, lastSeen: 0, device: null, claimedAt: 0 }; });
   return teams;
 }
 function initialState() {
-  return { phase: 'lobby', round: 0, roundStatus: 'idle', roundEndsAt: 0, buildEndsAt: 0,
+  return { phase: 'lobby', round: 0, roundStatus: 'idle', roundEndsAt: 0, buildEndsAt: 0, epoch: Date.now(),   // epoch: 초기화마다 바뀜 → 태블릿의 옛 배정 무효
     present: { order: [], idx: 0, teamEndsAt: 0, focus: null, focusEndsAt: 0, speaker: null, raised: {} }, seededAt: Date.now() };
 }
 /* 점수: 3조각 2점 / 2조각 1점 / 보너스 +1 / 기각(이의 인정)이면 0 */
@@ -622,6 +629,25 @@ async function deleteSentence(T, sentenceId, teamId = null) {
     t.del('sentences', sentenceId);
   });
 }
+/* 자리 배정: 이 기기(deviceId)가 이미 가진 모둠이 있으면 그대로, 없으면 빈 모둠 중 무작위. 빈 모둠이 없으면 null
+   force 에 't3' 처럼 모둠을 주면 그 자리를 강제로 차지(교사 수동 배정용 ?team=3) */
+async function claimTeam(T, deviceId, force = null) {
+  return T.tx(async t => {
+    const teams = {};
+    for (const id of TEAM_IDS) teams[id] = await t.get('teams', id);
+    if (force && teams[force]) { t.update('teams', force, { device: deviceId, claimedAt: Date.now(), lastSeen: Date.now() }); TEAM_IDS.forEach(id => { if (id !== force && teams[id]?.device === deviceId) t.update('teams', id, { device: null }); }); return force; }
+    const mine = TEAM_IDS.find(id => teams[id]?.device === deviceId);
+    if (mine) return mine;
+    const free = TEAM_IDS.filter(id => teams[id] && !teams[id].device);
+    if (!free.length) return null;
+    const pick = free[Math.floor(Math.random() * free.length)];
+    t.update('teams', pick, { device: deviceId, claimedAt: Date.now(), lastSeen: Date.now() });
+    return pick;
+  });
+}
+async function releaseTeam(T, teamId, deviceId = null) {
+  return T.tx(async t => { const tm = await t.get('teams', teamId); if (!tm) return; if (deviceId && tm.device !== deviceId) return; t.update('teams', teamId, { device: null, claimedAt: 0 }); });
+}
 /* 이의 = 손 들기. 발표 중인 모둠이 아니고, 남은 횟수가 있고, 이번 발표에 아직 안 들었으면 접수. 누르는 순간 횟수 차감 */
 async function raiseObjection(T, teamId) {
   return T.tx(async t => {
@@ -651,7 +677,7 @@ $('scoreRule').innerHTML = `<span>${TYPE.S.label}+${TYPE.O.label}+${TYPE.V.label
 $('buildNote').textContent = `한 카드는 한 ${deck.unit}에만 쓸 수 있어요`;
 $('judge').innerHTML = `<h3>${deck.judgeTitle.replace(' ', '<br>')}</h3>` + JUDGE.map(([k, t]) => `<div><b>${k}</b><span>${t}</span></div>`).join('');
 $('judge').classList.toggle('two', JUDGE.length <= 2);
-const C = { state: null, cards: {}, teams: {}, sentences: {} };
+const C = { state: null, cards: {}, teams: {}, sentences: {}, waiting: {} };
 let T, soundOn = true, audio, toastId = 0, prevCards = {}, prevSentCount = {}, closing = new Set(), lastPhaseKey = '', roundDoneShown = '', lastRaisedKey = '', stampTimer = 0;
 const now = () => Date.now();
 
@@ -678,7 +704,7 @@ const roundCards = r => Object.values(C.cards).filter(c => c.round === r);
 const typeVars = t => `--cc:${TYPE[t].color};--cbg:${TYPE[t].bg};--cdark:${TYPE[t].dark}`;
 const teamVars = id => `--tc:${teamColor(id)}`;
 const chip = (c, cls = 'card-chip') => `<span class="${cls}${c.usedIn ? ' used' : ''}" style="${typeVars(c.type)}" data-id="${c.id}">${esc(c.text)}</span>`;
-const online = t => t.lastSeen && now() - t.lastSeen < 70000;
+const online = t => t.device && t.lastSeen && now() - t.lastSeen < 70000;
 const teamSentences = id => Object.values(C.sentences).filter(s => s.team === id).sort((a, b) => a.createdAt - b.createdAt);
 const currentTeam = () => S().present?.order?.[S().present?.idx] || null;
 const roundDeadline = () => { const open = roundCards(S().round).filter(c => c.status === 'open'); return open.length ? Math.max(...open.map(c => c.endsAt || 0)) : S().roundEndsAt; };
@@ -702,8 +728,12 @@ function paint() {
   prevCards = clone(C.cards);
 }
 function paintLobby() {
-  $('lobbyGrid').innerHTML = TEAM_IDS.map(id => { const t = C.teams[id] || {}; const basic = sortCards(Object.values(C.cards).filter(c => c.team === id && c.round === 0)); return `<div class="ltile${online(t) ? ' on' : ''}" style="${teamVars(id)}"><div class="tn">${teamName(id)}</div><div class="basic">${basic.map(c => chip(c)).join('')}</div><div class="st">${online(t) ? '접속했어요' : '기다리는 중'}</div></div>`; }).join('');
+  $('lobbyGrid').innerHTML = TEAM_IDS.map(id => { const t = C.teams[id] || {}; const taken = !!t.device, on = taken && online(t); const basic = sortCards(Object.values(C.cards).filter(c => c.team === id && c.round === 0)); return `<div class="ltile${on ? ' on' : ''}${taken ? ' taken' : ''}" style="${teamVars(id)}" data-id="${id}"><div class="tn">${teamName(id)}</div><div class="basic">${basic.map(c => chip(c)).join('')}</div><div class="st">${on ? '접속했어요' : taken ? '접속 (잠시 끊김)' : '빈 자리'}</div>${taken ? '<span class="rel">누르면 자리 비우기</span>' : ''}</div>`; }).join('');
+  const waiting = Object.entries(C.waiting).filter(([, w]) => w.lastSeen && now() - w.lastSeen < 120000).length;
+  $('waitline').textContent = waiting ? `자리를 못 받고 기다리는 디벗 ${waiting}대 · 안 쓰는 디벗이면 그냥 두세요. 필요하면 모둠 칸을 눌러 자리를 비워 주세요` : '';
+  $('waitline').classList.toggle('none', !waiting);
 }
+$('lobbyGrid').addEventListener('click', async e => { const tile = e.target.closest('.ltile[data-id]'); if (!tile) return; const id = tile.dataset.id, t = C.teams[id]; if (!t?.device) return toast(`${teamName(id)}은 이미 빈 자리예요`); if (!confirm(`${teamName(id)} 자리를 비울까요? 그 태블릿은 다시 접속 상태가 되고, 기다리던 디벗이 있으면 그 자리를 받아요.`)) return; try { await releaseTeam(T, id); toast(`${teamName(id)} 자리를 비웠어요`); } catch (err) { toast(err.message, true); } });
 function paintAuction() {
   const st = S(), r = st.round, info = RULE.rounds[r]; if (!info) return;
   const cards = roundCards(r).sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)));
@@ -853,10 +883,11 @@ function bindHold(btn) {
 async function resetAll() {
   const ops = [];
   Object.values(initialCards()).forEach(c => ops.push({ op: 'set', col: 'cards', id: c.id, data: c }));
-  Object.values(initialTeams()).forEach(t => ops.push({ op: 'set', col: 'teams', id: t.id, data: { ...t, lastSeen: C.teams[t.id]?.lastSeen || 0 } }));
+  Object.values(initialTeams()).forEach(t => ops.push({ op: 'set', col: 'teams', id: t.id, data: t }));
   Object.keys(C.sentences).forEach(id => ops.push({ op: 'del', col: 'sentences', id }));
+  Object.keys(C.waiting).forEach(id => ops.push({ op: 'del', col: 'waiting', id }));
   ops.push({ op: 'set', col: 'state', id: 'main', data: initialState() });
-  await T.batch(ops); $('agrid').dataset.round = ''; prevSentCount = {}; toast('모두 처음으로 돌렸어요. 모둠 태블릿은 그대로 이어서 써요.');
+  await T.batch(ops); $('agrid').dataset.round = ''; prevSentCount = {}; toast('모두 처음으로 돌렸어요. 태블릿은 자동으로 다시 접속해 새 모둠 번호를 받아요.');
 }
 
 /* ── 수정 패널 ── */
@@ -876,6 +907,7 @@ $('edCardFilter').addEventListener('change', fillEdit);
 $('edApply').addEventListener('click', async () => { try { await T.update('state', 'main', { phase: $('edPhase').value, round: Number($('edRound').value), roundStatus: $('edRS').value, present: { idx: Number($('edIdx').value) || 0 } }); toast('진행 상태를 바꿨어요'); } catch (e) { toast(e.message, true); } });
 dlg.querySelectorAll('[data-dt]').forEach(b => b.addEventListener('click', () => shiftTime(Number(b.dataset.dt)).then(() => toast('타이머를 조정했어요')).catch(e => toast(e.message, true))));
 $('edTimerNow').addEventListener('click', async () => { const st = S(); if (st.phase === 'auction') await act('endRound'); if (st.phase === 'build') await T.update('state', 'main', { buildEndsAt: now() }); if (st.phase === 'present') await T.update('state', 'main', { present: { teamEndsAt: now() } }); toast('지금 마감했어요'); });
+$('edReseat').addEventListener('click', async () => { if (!confirm('모든 태블릿의 모둠 자리를 비울까요? 태블릿들이 무작위로 다시 배정돼요.')) return; await T.batch([...TEAM_IDS.map(id => ({ op: 'update', col: 'teams', id, data: { device: null, claimedAt: 0 } })), ...Object.keys(C.waiting).map(id => ({ op: 'del', col: 'waiting', id })), { op: 'update', col: 'state', id: 'main', data: { epoch: now() } }]); toast('자리를 모두 비웠어요'); });
 $('edOpenRound').addEventListener('click', async () => { const r = Number($('edRound').value); if (!r) return toast('라운드를 먼저 고르세요', true); const ends = now() + RULE.rounds[r].sec * 1000; await T.batch([{ op: 'update', col: 'state', id: 'main', data: { phase: 'auction', round: r, roundStatus: 'bidding', roundEndsAt: ends } }, ...roundCards(r).filter(c => c.status !== 'sold').map(c => ({ op: 'update', col: 'cards', id: c.id, data: { status: 'open', endsAt: ends, price: RULE.start, bidder: null, bids: 0, extended: 0, team: null } }))]); $('agrid').dataset.round = ''; toast(`${r}라운드 미확정 카드를 다시 열었어요`); });
 $('edTeams').addEventListener('click', async e => { if (!e.target.classList.contains('f-save')) return; const tr = e.target.closest('tr'); await T.update('teams', tr.dataset.id, { budget: Number(tr.querySelector('.f-budget').value), scoreAdj: Number(tr.querySelector('.f-adj').value), objLeft: Number(tr.querySelector('.f-obj').value) }); toast(`${teamName(tr.dataset.id)} 저장`); });
 $('edCards').addEventListener('change', e => { const tr = e.target.closest('tr'); if (e.target.classList.contains('f-team')) { const c = C.cards[tr.dataset.id]; if (c.round) tr.querySelector('.f-status').value = e.target.value ? 'sold' : 'unsold'; } });
@@ -893,7 +925,8 @@ try {
   T.watch('cards', map => { C.cards = map; render(); if (dlg.open) fillEdit(); });
   T.watch('teams', map => { C.teams = map; render(); if (dlg.open) fillEdit(); });
   T.watch('sentences', map => { C.sentences = map; render(); if (dlg.open) fillEdit(); });
-  setInterval(paintAside, 15000);
+  T.watch('waiting', map => { C.waiting = map; render(); });
+  setInterval(() => { paintAside(); if (S().phase === 'lobby') paintLobby(); }, 15000);
 } catch (e) { console.error(e); $('badge').textContent = '연결하지 못했어요. 와이파이·설정을 확인한 뒤 새로고침'; $('badge').className = 'badge err on'; }
 </script>
 </body>
