@@ -190,6 +190,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
   <section id="vBuild" class="view build">
     <div class="tray">
       <div id="slots" class="slots"></div>
+      <div class="row" id="buildWarn" style="font-size:clamp(14px,1.6vw,18px);color:#B64329;padding:0 4px">⚠️ 남을 괴롭히는 문장·나쁜 말은 재미로도 안 돼요 → 모둠 전체 0점</div>
       <div class="row"><div id="preview" class="preview"><span class="ph">카드를 눌러 문장을 만들어요</span></div><button id="submitBtn" class="submit" disabled><span id="submitLabel">문장 완성!</span><small id="ptsHint"></small></button></div>
     </div>
     <div id="hand" class="hand"></div>
@@ -587,6 +588,7 @@ function applyDeckText() {
   $('lobbySub').textContent = `기본 카드 3장으로 이미 ${deck.unit} 하나가 만들어져 있어요`;
   $('lobbyHint').innerHTML = `예산 <b>${fmt(RULE.budget)}원</b> · 처음 값 ${fmt(RULE.start)}원 · 한 번에 +${RULE.step}원 · 바로 사기 ${fmt(RULE.buyout)}원<br>${deck.lobbyHint}`;
   $('submitLabel').textContent = `${deck.unit} 완성!`;
+  $('buildWarn').textContent = `⚠️ 남을 괴롭히는 ${deck.unit}·나쁜 말은 재미로도 안 돼요 → 모둠 전체 0점`;
 }
 /* 칠판이 연 판(deck)을 따라간다: meta/active 를 보고 컬렉션 접두어를 바꿔 다시 구독 */
 function bindDeck(id) {

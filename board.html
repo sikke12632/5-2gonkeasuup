@@ -708,12 +708,12 @@ $('brandTitle').innerHTML = `<i>${deck.icon}</i>${deck.title}`; $('rulesLink').h
 $('lobbyTitle').innerHTML = deck.title.replace(/(\S+)$/, '<span>$1</span>');
 $('buildTitle').innerHTML = `${deck.unitOf} <span>조립</span>해요!`;
 $('scoreRule').innerHTML = `<span>${TYPE.S.label}+${TYPE.O.label}+${TYPE.V.label} <b>2점</b></span><span>${TYPE.S.label}+${TYPE.V.label} <b>1점</b></span><span>${TYPE.B.label} 어울리면 <b>+1점</b></span><span>안 어울리면 <b>0점</b></span>`;
-$('buildNote').textContent = `한 카드는 한 ${deck.unit}에만 쓸 수 있어요`;
+$('buildNote').innerHTML = `한 카드는 한 ${deck.unit}에만 쓸 수 있어요 &nbsp;·&nbsp; <b style="color:#B64329">남을 괴롭히는 ${deck.unit}·나쁜 말은 재미로도 안 돼요 → 모둠 전체 0점</b>`;
 $('endTitle').innerHTML = `오늘의 <span>${deck.champ}</span>는?`;
 $('ruleChips').innerHTML = `<span>처음 값 <b>${fmt(RULE.start)}원</b></span><span>한 번에 <b>+${RULE.step}원</b></span><span>바로 사기 <b>${fmt(RULE.buyout)}원</b></span><span>마지막 10초에 값을 부르면 <b>10초가 늘어나요</b></span>`;
 $('judge').innerHTML = `<h3>${deck.judgeTitle.replace(' ', '<br>')}</h3>` + JUDGE.map(([k, t]) => `<div><b>${k}</b><span>${t}</span></div>`).join('');
 $('judge').classList.toggle('two', JUDGE.length <= 2);
-$('judgeBig').innerHTML = `<h3>⚖️ ${deck.judgeTitle}</h3>` + JUDGE.map(([k, t]) => `<div><b>${k}</b><br>${t}</div>`).join('') + `<div class="pass">이유를 못 대면 통과!</div>`;
+$('judgeBig').innerHTML = `<h3>⚖️ ${deck.judgeTitle}</h3>` + JUDGE.map(([k, t]) => `<div><b>${k}</b><br>${t}</div>`).join('') + `<div class="pass">이유를 못 대면 통과!</div><div class="pass" style="background:#B64329;margin-top:8px">괴롭히는 ${deck.unit}·나쁜 말 → 모둠 전체 0점</div>`;
 const C = { state: null, cards: {}, teams: {}, sentences: {}, waiting: {} };
 let T, soundOn = true, audio, toastId = 0, prevCards = {}, prevSentCount = {}, closing = new Set(), lastPhaseKey = '', roundDoneShown = '', lastRaisedKey = '', stampTimer = 0;
 const now = () => Date.now();

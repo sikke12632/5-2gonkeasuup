@@ -113,6 +113,13 @@ h1 em{font-style:normal;color:var(--warn)}
     <div class="note s" data-at="4">밥도 <b class="ok">진지</b>로 바꾸면 더 높이는 말이 돼요 — 할머니께서 <b class="ok">진지를 잡수셨다</b></div>
   </section>
 
+  <!-- 약속 -->
+  <section class="slide" data-step="0" data-max="1">
+    <h1>⚠️ 꼭 지킬 <em>약속</em></h1>
+    <div class="note" style="border:5px solid var(--warn);font-size:clamp(26px,3vw,46px)">남을 다치게 하거나 괴롭히는 문장, 나쁜 말이 들어간 문장은<br><b>재미로도 만들지 않아요</b></div>
+    <div class="note s" data-at="1" style="background:var(--warn);color:#fff;font-size:clamp(26px,3vw,46px)">그런 문장을 만든 모둠은 <b style="color:#fff;text-decoration:underline">전체 0점</b> · 그리고 <b style="color:#fff;text-decoration:underline">선생님과 면담</b></div>
+  </section>
+
   <!-- 2. 심판 기준 -->
   <section class="slide" data-step="0" data-max="4">
     <h1>심판 기준 <em>네 가지</em></h1>
@@ -166,6 +173,7 @@ h1 em{font-style:normal;color:var(--warn)}
     // 1: 어색한 문장 — 3단계에서 서술어만 바뀜 (목적어 "밥을"은 그대로)
     const st = cur === 1 ? step() : 0, link = document.getElementById('badLink').firstElementChild;
     document.querySelectorAll('#badSent .card').forEach(c => { const fix = c.getAttribute('data-fix'), fix2 = c.getAttribute('data-fix2'); c.classList.toggle('hit', st >= 1 && st < 3 && c.hasAttribute('data-hit')); c.classList.toggle('fixed', (st >= 3 && !!fix) || (st >= 4 && !!fix2)); const lab = c.querySelector('.lab').outerHTML; c.dataset.orig ??= c.textContent.replace(/^(주어|목적어|서술어)/, ''); if (fix) c.innerHTML = lab + (st >= 3 ? fix : c.dataset.orig); if (fix2) c.innerHTML = lab + (st >= 4 ? fix2 : c.dataset.orig); });
+    // (약속 슬라이드가 끼어들어 심판 기준·이의 슬라이드 번호가 한 칸씩 밀렸음)
     link.textContent = st >= 3 ? '께서 ↔ 잡수셨다 … 짝이 맞아요!' : '께서 ↔ 먹었다 … 뭔가 이상해요!'; link.parentElement.classList.toggle('ok', st >= 3);
   }
   document.getElementById('tapNext').addEventListener('click', next); document.getElementById('tapBack').addEventListener('click', back);
