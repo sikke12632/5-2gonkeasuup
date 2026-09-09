@@ -52,7 +52,7 @@ p.sub{font-size:clamp(17px,2vw,23px);color:var(--muted);line-height:1.5}
 .rhead h2{font:clamp(26px,3.4vw,40px)/1 "Jua",sans-serif;color:var(--tcol)}
 .rhead span{font-size:clamp(15px,1.7vw,20px);color:var(--muted)}
 .agrid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,1fr);grid-auto-rows:1fr;gap:10px;overflow:auto}
-.agrid.bonus{grid-template-columns:repeat(4,1fr)}
+.agrid.bonus{grid-template-columns:repeat(3,1fr)}
 .acard{position:relative;background:var(--panel);border-radius:20px;border:4px solid var(--cc);box-shadow:0 4px 0 var(--cc);display:flex;flex-direction:column;overflow:hidden;min-height:150px;transition:.25s}
 .acard.mine{box-shadow:0 0 0 4px var(--tc),0 4px 0 var(--cc);transform:translateY(-3px)}
 .acard.lost{animation:shake .5s}
@@ -257,10 +257,10 @@ const ROOM = "s0916";
 
 /* ── 공통 규칙 상수 (deck 과 무관) ── */
 const RULE = {
-  budget: 5000, start: 300, step: 100, buyout: 1500,
+  budget: 5000, start: 200, step: 100, buyout: 1200,
   softClose: 10000,        // 마감 10초 안 입찰 → 10초 연장
   closeGrace: 1500,        // 마감 후 이만큼 기다렸다가 확정(태블릿 시계 오차 완충)
-  objections: 2, sentenceSec: 30,
+  objections: 2, sentenceSec: 20,          // 이의 설명·해명 각 20초
   rounds: null, buildSec: 240, presentSec: 75   // ← applyDeck 이 채움
 };
 const TYPE_COLORS = Object.freeze({
@@ -275,16 +275,20 @@ const TEAM_COLORS = ['#EF5D5D', '#F28C28', '#D9A800', '#3FAE5E', '#2FA3DA', '#5A
 /* ── 카드 묶음 ── (낱말은 지시서 그대로. 임의로 바꾸지 말 것) */
 const DECKS = Object.freeze({
   korean: {
-    id: 'korean', prefix: '', title: '낱말 경매장', icon: '🎪', unit: '문장', unitOf: '문장을',
+    id: 'korean', prefix: '', title: '낱말 경매장', icon: '🎪', unit: '문장', unitOf: '문장을', champ: '낱말 부자',
     types: { S: { label: '주어', who: '누가' }, O: { label: '목적어', who: '무엇을' }, V: { label: '서술어', who: '어떻게 했다' }, B: { label: '보너스 말', who: '꾸미는 말' } },
     order: ['S', 'B', 'O', 'V'],              // 주어 · (보너스) · 목적어 · 서술어
     rounds: [null, { type: 'V', sec: 150 }, { type: 'S', sec: 120 }, { type: 'O', sec: 120 }, { type: 'B', sec: 60 }],
-    buildSec: 240, presentSec: 75,
+    buildSec: 180, presentSec: 75,
+    // 앞 10장(보너스 4장)은 지시서 원본. 뒤에 붙인 5장(보너스 2장)은 심판 기준과 짝이 맞게 고른 추가분(2026-09-09)
     auction: {
-      V: ['잡수셨다', '빚었다', '담갔다', '지저귄다', '으르렁댔다', '읽었다', '읽을 것이다', '신었다', '포기하지 않았다', '이길 것이다'],
-      S: ['할머니께서', '선생님께서', '아버지께서', '할머니가', '호랑이가', '새가', '나는', '동생이', '강아지가', '우리 반 친구들이'],
-      O: ['진지를', '밥을', '김치를', '송편을', '만두를', '떡을', '책을', '편지를', '신발을', '양말을'],
-      B: ['어제', '내일', '결코', '반드시']
+      V: ['잡수셨다', '빚었다', '담갔다', '지저귄다', '으르렁댔다', '읽었다', '읽을 것이다', '신었다', '포기하지 않았다', '이길 것이다',
+          '말씀하셨다', '입었다', '마셨다', '먹을 것이다', '가지 않았다'],
+      S: ['할머니께서', '선생님께서', '아버지께서', '할머니가', '호랑이가', '새가', '나는', '동생이', '강아지가', '우리 반 친구들이',
+          '어머니께서', '교장 선생님께서', '고양이가', '친구들이', '우리 가족은'],
+      O: ['진지를', '밥을', '김치를', '송편을', '만두를', '떡을', '책을', '편지를', '신발을', '양말을',
+          '옷을', '물을', '음식을', '과자를', '이야기를'],
+      B: ['어제', '내일', '결코', '반드시', '전혀', '모레']
     },
     basic: [['동생이', '모자를', '썼다'], ['친구가', '밥을', '먹었다'], ['언니가', '그림을', '그렸다'], ['아이들이', '노래를', '불렀다'],
       ['형이', '창문을', '닫았다'], ['누나가', '편지를', '썼다'], ['아기가', '우유를', '마셨다'], ['우리는', '교실을', '청소했다']],
@@ -299,16 +303,19 @@ const DECKS = Object.freeze({
     rulesPage: 'rules.html'
   },
   cook: {
-    id: 'cook', prefix: 'cook_', title: '요리 경매장', icon: '🍳', unit: '요리', unitOf: '요리를',
+    id: 'cook', prefix: 'cook_', title: '요리 경매장', icon: '🍳', unit: '요리', unitOf: '요리를', champ: '요리 부자',
     types: { S: { label: '재료', who: '무엇을' }, O: { label: '도구', who: '어디에·무엇으로' }, V: { label: '조리법', who: '어떻게' }, B: { label: '비밀 양념', who: '뿌리는 것' } },
     order: ['S', 'O', 'B', 'V'],              // 재료 · 도구 · (양념) · 조리법
     rounds: [null, { type: 'V', sec: 120 }, { type: 'S', sec: 90 }, { type: 'O', sec: 90 }, { type: 'B', sec: 45 }],
-    buildSec: 180, presentSec: 60,
+    buildSec: 120, presentSec: 60,
     auction: {
-      V: ['볶는다', '삶는다', '굽는다', '튀긴다', '얼린다', '짠다', '비빈다', '끓인다', '썬다', '무친다'],
-      S: ['김치를', '얼음을', '수박을', '라면을', '고구마를', '우유를', '오이를', '떡을', '치킨을', '아이스크림을'],
-      O: ['프라이팬에', '냄비에', '오븐에', '냉동실에', '믹서기에', '전자레인지에', '도마에서', '밥솥에', '젓가락으로', '손으로'],
-      B: ['설탕을 뿌려', '케첩을 뿌려', '소금을 뿌려', '김을 뿌려']
+      V: ['볶는다', '삶는다', '굽는다', '튀긴다', '얼린다', '짠다', '비빈다', '끓인다', '썬다', '무친다',
+          '찐다', '데친다', '녹인다', '간다', '졸인다'],
+      S: ['김치를', '얼음을', '수박을', '라면을', '고구마를', '우유를', '오이를', '떡을', '치킨을', '아이스크림을',
+          '만두를', '토마토를', '버터를', '초콜릿을', '미역을'],
+      O: ['프라이팬에', '냄비에', '오븐에', '냉동실에', '믹서기에', '전자레인지에', '도마에서', '밥솥에', '젓가락으로', '손으로',
+          '찜기에', '토스터에', '그릇에', '숟가락으로', '접시에'],
+      B: ['설탕을 뿌려', '케첩을 뿌려', '소금을 뿌려', '김을 뿌려', '참기름을 뿌려', '초콜릿을 뿌려']
     },
     basic: [['달걀을', '프라이팬에', '부친다'], ['감자를', '냄비에', '삶는다'], ['빵을', '오븐에', '굽는다'], ['사과를', '도마에서', '자른다'],
       ['옥수수를', '전자레인지에', '데운다'], ['딸기를', '믹서기에', '간다'], ['소시지를', '프라이팬에', '굽는다'], ['두부를', '냄비에', '끓인다']],
@@ -367,7 +374,7 @@ function initialTeams() {
 }
 function initialState() {
   return { phase: 'lobby', round: 0, roundStatus: 'idle', roundEndsAt: 0, buildEndsAt: 0, epoch: Date.now(),   // epoch: 초기화마다 바뀜 → 태블릿의 옛 배정 무효
-    present: { order: [], idx: 0, teamEndsAt: 0, focus: null, focusEndsAt: 0, speaker: null, raised: {} }, seededAt: Date.now() };
+    present: { order: [], idx: 0, teamEndsAt: 0, focus: null, focusEndsAt: 0, speaker: null, defend: false, raised: {} }, seededAt: Date.now() };
 }
 /* 점수: 3조각 2점 / 2조각 1점 / 보너스 +1 / 기각(이의 인정)이면 0 */
 function sentencePoints(s) {
@@ -576,7 +583,7 @@ let deck = applyDeck(new URLSearchParams(location.search).get('deck') || 'korean
 function applyDeckText() {
   document.title = `${deck.title} · 모둠`;
   $('lobbySub').textContent = `기본 카드 3장으로 이미 ${deck.unit} 하나가 만들어져 있어요`;
-  $('lobbyHint').innerHTML = `예산 <b>5,000코인</b> · 시작가 300 · 한 번에 +100 · 즉시구매 1,500<br>${deck.lobbyHint}`;
+  $('lobbyHint').innerHTML = `예산 <b>5,000코인</b> · 시작가 ${fmt(RULE.start)} · 한 번에 +${RULE.step} · 즉시구매 ${fmt(RULE.buyout)}<br>${deck.lobbyHint}`;
   $('submitLabel').textContent = `${deck.unit} 완성!`;
 }
 /* 칠판이 연 판(deck)을 따라간다: meta/active 를 보고 컬렉션 접두어를 바꿔 다시 구독 */
@@ -667,7 +674,7 @@ function paintAuction(st) {
   if (lastRound !== String(r)) { grid.innerHTML = ''; lastRound = String(r); }
   cards.forEach(c => {
     let el = grid.querySelector(`[data-id="${c.id}"]`);
-    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${esc(c.text)}</div><div class="info"><span class="price"></span><span class="who"></span></div><div class="btns"><button class="bid up" data-id="${c.id}"></button><button class="bid buy" data-id="${c.id}">즉시구매<small>1,500</small></button></div><div class="stamp"><div></div></div>`; grid.append(el); }
+    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${esc(c.text)}</div><div class="info"><span class="price"></span><span class="who"></span></div><div class="btns"><button class="bid up" data-id="${c.id}"></button><button class="bid buy" data-id="${c.id}">즉시구매<small>${fmt(RULE.buyout)}</small></button></div><div class="stamp"><div></div></div>`; grid.append(el); }
     const p = prevCards[c.id] || {}, mine = c.bidder === me && c.status === 'open';
     el.classList.toggle('mine', mine); el.classList.toggle('sold', c.status === 'sold'); el.classList.toggle('unsold', c.status === 'unsold');
     el.style.setProperty('--bc', c.bidder ? teamColor(c.bidder) : '#8A98A6');
@@ -723,14 +730,15 @@ function paintPresent(st) {
   $('pTeam').textContent = `${teamName(tid)} 발표`; $('pTeam').style.setProperty('--pc', teamColor(tid));
   const list = Object.values(C.sentences).filter(s => s.team === tid).sort((a, b) => a.createdAt - b.createdAt);
   const rows = list.length ? list.map((s, i) => psent(s, i)).join('') : `<div class="mine-banner" style="color:var(--muted)">만든 ${deck.unit}이 없어요</div>`;
-  if (tid === me) { $('pSub').textContent = '우리 차례!'; $('plist').innerHTML = `<div class="mine-banner">우리 모둠이 발표하고 있어요 🎤<br><small style="font-size:.6em;color:var(--muted)">${deck.unitOf} 읽고, 이의가 들어오면 대답해요</small></div>` + rows; $('objbar').style.display = 'none'; return; }
+  if (tid === me) { const sp = pr.speaker && raisedTeams(st).includes(pr.speaker) ? pr.speaker : null; $('pSub').textContent = '우리 차례!'; $('plist').innerHTML = (sp ? (pr.defend ? `<div class="mine-banner" style="background:var(--ok);color:#fff">🎤 지금 해명해요! 왜 어울리는지 말해요 <span id="defT"></span></div>` : `<div class="mine-banner" style="background:var(--warn);color:#fff">✋ ${teamName(sp)}이(가) 이의를 말하고 있어요 · 잘 들어요</div>`) : `<div class="mine-banner">우리 모둠이 발표하고 있어요 🎤<br><small style="font-size:.6em;color:var(--muted)">${deck.unitOf} 읽고, 이의가 들어오면 대답해요</small></div>`) + rows; $('objbar').style.display = 'none'; return; }
   $('plist').innerHTML = rows; $('objbar').style.display = '';
   const raised = raisedTeams(st), mine = raised.includes(me), speaking = mine && pr.speaker === me;
-  $('pSub').textContent = speaking ? '지금 말해요!' : mine ? '손 들었어요' : `이상한 ${deck.unit}이 있나요?`;
-  $('objbar').className = `objbar${speaking ? ' speak' : mine ? ' raised' : ''}`;
+  $('pSub').textContent = speaking && pr.defend ? `${teamName(tid)} 해명 듣기` : speaking ? '지금 말해요!' : mine ? '손 들었어요' : `이상한 ${deck.unit}이 있나요?`;
+  const defending = pr.speaker && pr.defend;
+  $('objbar').className = `objbar${speaking && !defending ? ' speak' : mine ? ' raised' : ''}`;
   $('objBtn').hidden = mine; $('objTimer').hidden = !speaking;
   $('objBtn').disabled = left <= 0;
-  $('objMsg').textContent = speaking ? '어느 것이 왜 이상한지 이유를 말해요!' : mine ? '✋ 손 들었어요! 선생님이 우리 모둠을 부르면 이유를 말해요' : left <= 0 ? '이의 기회를 모두 썼어요' : `이상한 ${deck.unit}이 보이면 [이의!] — 손 드는 것과 같아요. 이유를 말할 준비도 해요!`;
+  $('objMsg').textContent = speaking && defending ? `${teamName(tid)}이(가) 해명하고 있어요 · 조용히 들어요` : speaking ? '어느 것이 왜 이상한지 이유를 말해요!' : (pr.speaker && raised.includes(pr.speaker)) ? `${teamName(defending ? tid : pr.speaker)}이(가) ${defending ? '해명' : '이의를'} 말하고 있어요 · 조용히 경청해요 🤫` : mine ? '✋ 손 들었어요! 선생님이 우리 모둠을 부르면 이유를 말해요' : left <= 0 ? '이의 기회를 모두 썼어요' : `이상한 ${deck.unit}이 보이면 [이의!] — 손 드는 것과 같아요. 이유를 말할 준비도 해요!`;
 }
 function psent(s, i) { const st = s.status === 'rejected' ? '<span class="st acc">이의 인정 · 0점</span>' : s.objection?.result === 'dismissed' ? '<span class="st dis">통과</span>' : ''; const focus = S()?.present?.focus === s.id; return `<div class="psent${focus ? ' sel' : ''}${s.status === 'rejected' ? ' rejected' : ''}"><span class="no">${i + 1}</span><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div>${st}</div>`; }
 $('objBtn').addEventListener('click', () => { const left = myTeam()?.objLeft ?? 0; if (left <= 0) return; $('confirmMsg').innerHTML = `이의는 모둠당 ${RULE.objections}번 · 지금 남은 횟수 <b style="color:var(--warn)">${left}</b><br>손을 들면 횟수가 바로 줄어요. 이유를 말할 수 있을 때만!`; $('confirmObj').classList.add('on'); beep('tap'); });
@@ -749,7 +757,7 @@ function detectEvents() {
 /* ── 입찰 ── */
 $('agrid').addEventListener('click', async e => {
   const b = e.target.closest('.bid'); if (!b || b.disabled) return; const id = b.dataset.id, buy = b.classList.contains('buy');
-  if (buy && !confirm(`"${C.cards[id]?.text}" 를 1,500코인에 바로 살까요?`)) return;
+  if (buy && !confirm(`"${C.cards[id]?.text}" 를 ${fmt(RULE.buyout)}코인에 바로 살까요?`)) return;
   b.disabled = true;
   try { const r = await placeBid(T, me, id, buy); beep('tap'); if (r.sold) toast(`"${C.cards[id]?.text}" 즉시구매! 우리 카드예요`, 'win'); else if (r.extended) toast(`${fmt(r.price)}코인으로 최고가! 마감이 10초 늘어났어요`); }
   catch (err) { toast(err.message, 'err'); render(); }
@@ -759,7 +767,7 @@ function tick() {
   const st = S(), clock = $('clock'); let ms = null, ext = false;
   if (st?.phase === 'auction' && st.roundStatus === 'bidding') { const open = roundCards(st.round).filter(c => c.status === 'open'); const dl = open.length ? Math.max(...open.map(c => c.endsAt || 0)) : st.roundEndsAt; ms = dl - now(); ext = dl > st.roundEndsAt; roundCards(st.round).forEach(c => { const el = $('agrid').querySelector(`[data-id="${c.id}"] .tmr`); if (!el) return; const left = (c.endsAt || 0) - now(); const show = c.status === 'open' && left <= 15000; el.classList.toggle('on', show); el.textContent = show ? `⏱ ${Math.max(0, Math.ceil(left / 1000))}` : ''; }); }
   if (st?.phase === 'build') ms = st.buildEndsAt - now();
-  if (st?.phase === 'present' && currentTeam()) { const sp = st.present.speaker && raisedTeams(st).includes(st.present.speaker); ms = (sp ? st.present.focusEndsAt || 0 : st.present.teamEndsAt || 0) - now(); if (sp && st.present.speaker === me) $('objTimer').textContent = Math.max(0, Math.ceil(ms / 1000)); }
+  if (st?.phase === 'present' && currentTeam()) { const sp = st.present.speaker && raisedTeams(st).includes(st.present.speaker); ms = (sp ? st.present.focusEndsAt || 0 : st.present.teamEndsAt || 0) - now(); if (sp && st.present.speaker === me) $('objTimer').textContent = Math.max(0, Math.ceil(ms / 1000)); const dt = document.getElementById('defT'); if (dt) dt.textContent = `⏱ ${Math.max(0, Math.ceil(ms / 1000))}`; }
   clock.textContent = ms === null ? '--:--' : mmss(ms); clock.classList.toggle('hot', ms !== null && ms <= 10000 && ms > -1000); clock.classList.toggle('ext', ext && ms > 0);
 }
 setInterval(tick, 250);

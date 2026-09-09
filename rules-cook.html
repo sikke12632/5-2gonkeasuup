@@ -128,13 +128,13 @@ h1 em{font-style:normal;color:var(--warn)}
     <div class="demo">
       <div class="acard"><span class="tmr" id="demoTmr">⏱ 12</span>
         <div class="w">볶는다</div>
-        <div class="price" id="demoPrice">300</div>
+        <div class="price" id="demoPrice">200</div>
         <span class="who" id="demoWho">아직 아무도 없어요</span>
-        <div class="btns"><div class="btn" id="demoUp">+100</div><div class="btn buy" id="demoBuy">즉시구매 1,500</div></div>
+        <div class="btns"><div class="btn" id="demoUp">+100</div><div class="btn buy" id="demoBuy">즉시구매 1,200</div></div>
       </div>
       <div class="steps">
         <div class="note s" data-at="1"><i>1</i>원하는 카드에 <b>+100</b> — 마감 때 가장 높이 부른 모둠이 가져가요</div>
-        <div class="note s" data-at="2"><i>2</i>꼭 갖고 싶으면 <b>즉시구매 1,500</b> — 그 자리에서 내 것!</div>
+        <div class="note s" data-at="2"><i>2</i>꼭 갖고 싶으면 <b>즉시구매 1,200</b> — 그 자리에서 내 것!</div>
         <div class="note s" data-at="3"><i>3</i>마지막 <b>10초</b>에 누가 지르면 <b>10초 연장</b> — 끝까지 방심 금지!</div>
       </div>
     </div>
@@ -169,7 +169,8 @@ h1 em{font-style:normal;color:var(--warn)}
     <div class="flow">
       <div class="fb"><span class="hand">✋</span><small>태블릿의 [이의!] = 손 들기</small></div><span class="arrow">→</span>
       <div class="fb warn">칠판에 "이의 있음!"<small>선생님이 우리 모둠을 불러요</small></div><span class="arrow">→</span>
-      <div class="fb">이유 말하기<small>어느 카드끼리 왜 안 어울리는지 · 30초</small></div><span class="arrow">→</span>
+      <div class="fb">이유 말하기<small>어느 카드끼리 왜 안 어울리는지 · 20초 · 다른 모둠은 조용히!</small></div><span class="arrow">→</span>
+      <div class="fb">발표 모둠 해명<small>왜 어울리는지 · 20초</small></div><span class="arrow">→</span>
       <div class="fb">인정 → 그 요리 0점<small>기각 → 통과</small></div>
     </div>
     <div class="chips s" data-at="1"><span class="chip">이의는 모둠당 <b>2번</b></span><span class="chip">누르는 순간 횟수가 <b>줄어요</b></span><span class="chip">우리 모둠 발표에는 <b>못 걸어요</b></span></div>
@@ -204,12 +205,12 @@ h1 em{font-style:normal;color:var(--warn)}
     document.getElementById('merge').classList.toggle('together', cur === 0 && step() >= 1);
     clearInterval(demoTimer);
     const price = document.getElementById('demoPrice'), who = document.getElementById('demoWho'), up = document.getElementById('demoUp'), buy = document.getElementById('demoBuy'), tmr = document.getElementById('demoTmr');
-    const reset = () => { price.textContent = '300'; who.textContent = '아직 아무도 없어요'; who.style.background = '#A5B0BA'; tmr.textContent = '⏱ 12'; tmr.classList.remove('ext'); up.classList.remove('press'); buy.classList.remove('press'); };
+    const reset = () => { price.textContent = '200'; who.textContent = '아직 아무도 없어요'; who.style.background = '#A5B0BA'; tmr.textContent = '⏱ 12'; tmr.classList.remove('ext'); up.classList.remove('press'); buy.classList.remove('press'); };
     if (cur === 2) {
       const st = step(); reset();
-      if (st === 1) { let p = 300, i = 0; const teams = [['3모둠', '#D9A800'], ['5모둠', '#2FA3DA'], ['1모둠', '#EF5D5D']]; demoTimer = setInterval(() => { up.classList.add('press'); setTimeout(() => up.classList.remove('press'), 150); p = i === 0 ? 300 : p + 100; price.textContent = p.toLocaleString(); price.classList.remove('bump'); void price.offsetWidth; price.classList.add('bump'); const t = teams[i % 3]; who.textContent = t[0] + ' 최고!'; who.style.background = t[1]; i++; if (i > 6) { i = 0; p = 300; } }, 900); }
-      if (st === 2) { demoTimer = setInterval(() => { buy.classList.add('press'); setTimeout(() => buy.classList.remove('press'), 200); setTimeout(() => { price.textContent = '1,500'; price.classList.add('bump'); who.textContent = '7모둠 낙찰!'; who.style.background = '#9C5CE0'; }, 250); setTimeout(reset, 1800); }, 2600); }
-      if (st === 3) { let t = 12; price.textContent = '700'; who.textContent = '2모둠 최고!'; who.style.background = '#F28C28'; demoTimer = setInterval(() => { t--; tmr.textContent = '⏱ ' + t; tmr.classList.remove('ext'); if (t === 3) { setTimeout(() => { up.classList.add('press'); price.textContent = '800'; price.classList.add('bump'); who.textContent = '6모둠 최고!'; who.style.background = '#5A6EE0'; t = 13; tmr.textContent = '+10초 연장!'; tmr.classList.add('ext'); }, 400); } if (t <= 0) t = 12; }, 700); }
+      if (st === 1) { let p = 200, i = 0; const teams = [['3모둠', '#D9A800'], ['5모둠', '#2FA3DA'], ['1모둠', '#EF5D5D']]; demoTimer = setInterval(() => { up.classList.add('press'); setTimeout(() => up.classList.remove('press'), 150); p = i === 0 ? 200 : p + 100; price.textContent = p.toLocaleString(); price.classList.remove('bump'); void price.offsetWidth; price.classList.add('bump'); const t = teams[i % 3]; who.textContent = t[0] + ' 최고!'; who.style.background = t[1]; i++; if (i > 6) { i = 0; p = 200; } }, 900); }
+      if (st === 2) { demoTimer = setInterval(() => { buy.classList.add('press'); setTimeout(() => buy.classList.remove('press'), 200); setTimeout(() => { price.textContent = '1,200'; price.classList.add('bump'); who.textContent = '7모둠 낙찰!'; who.style.background = '#9C5CE0'; }, 250); setTimeout(reset, 1800); }, 2600); }
+      if (st === 3) { let t = 12; price.textContent = '600'; who.textContent = '2모둠 최고!'; who.style.background = '#F28C28'; demoTimer = setInterval(() => { t--; tmr.textContent = '⏱ ' + t; tmr.classList.remove('ext'); if (t === 3) { setTimeout(() => { up.classList.add('press'); price.textContent = '700'; price.classList.add('bump'); who.textContent = '6모둠 최고!'; who.style.background = '#5A6EE0'; t = 13; tmr.textContent = '+10초 연장!'; tmr.classList.add('ext'); }, 400); } if (t <= 0) t = 12; }, 700); }
     } else reset();
     // 3: 이상한 요리 — 3단계에서 도구 카드만 바뀜
     const st3 = cur === 3 ? step() : 0, link = document.getElementById('badLink').firstElementChild;
