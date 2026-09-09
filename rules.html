@@ -86,7 +86,7 @@ h1 em{font-style:normal;color:var(--warn)}
     <h1>저번엔 요리, 오늘은 <em>낱말!</em></h1>
     <div class="row merge" id="merge">
       <span class="card S"><span class="lab">주어</span>동생이</span><span class="plus">+</span>
-      <span class="card O"><span class="lab">목적어</span>밥을</span><span class="plus">+</span>
+      <span class="card O" data-fix2="진지를"><span class="lab">목적어</span>밥을</span><span class="plus">+</span>
       <span class="card V"><span class="lab">서술어</span>먹었다</span>
     </div>
     <div class="note s" data-at="1">카드 세 장이 모이면 <b class="ok">문장 하나</b>가 돼요 · 경매 → 조립 → 발표는 그대로!</div>
@@ -94,14 +94,14 @@ h1 em{font-style:normal;color:var(--warn)}
       <div class="pair"><span class="old">재료</span><span class="card S">주어</span>누가</div>
       <div class="pair"><span class="old">도구</span><span class="card O">목적어</span>무엇을</div>
       <div class="pair"><span class="old">조리법</span><span class="card V">서술어</span>어떻게 했다</div>
-      <div class="pair"><span class="old">비밀 양념</span><span class="card B">보너스 말</span>꾸미는 말</div>
+      <div class="pair"><span class="old">그대로</span><span class="card B">꾸며 주는 말</span>어제·내일·결코…</div>
     </div>
-    <div class="order s" data-at="3"><span class="card V">서술어</span><span class="arrow">→</span><span class="card S">주어</span><span class="arrow">→</span><span class="card O">목적어</span><span class="arrow">→</span><span class="card B">보너스 말</span><span class="chip" style="margin-left:14px">3조각 <b>2점</b> · 2조각 <b>1점</b> · 보너스 <b>+1</b> · 안 어울리면 <b>0점</b></span></div>
+    <div class="order s" data-at="3"><span class="card V">서술어</span><span class="arrow">→</span><span class="card S">주어</span><span class="arrow">→</span><span class="card O">목적어</span><span class="arrow">→</span><span class="card B">꾸며 주는 말</span><span class="chip" style="margin-left:14px">3조각 <b>2점</b> · 2조각 <b>1점</b> · 꾸며 주는 말 <b>+1</b> · 안 어울리면 <b>0점</b></span></div>
   </section>
 
   <!-- 1. 어울리지 않는 예 -->
-  <section class="slide" data-step="0" data-max="3">
-    <h1>이 문장, <em>괜찮을까요?</em></h1>
+  <section class="slide" data-step="0" data-max="4">
+    <h1>문장 재판 · 이 문장, <em>괜찮을까요?</em></h1>
     <div class="sent" id="badSent">
       <span class="card S" data-hit><span class="lab">주어</span>할머니께서</span>
       <span class="card O"><span class="lab">목적어</span>밥을</span>
@@ -110,6 +110,7 @@ h1 em{font-style:normal;color:var(--warn)}
     <div class="link" id="badLink"><span class="s" data-at="1">께서 ↔ 먹었다 … 뭔가 이상해요!</span></div>
     <div class="note s" data-at="2"><b class="blue">할머니께서</b>는 높이는 말이에요. 그러면 서술어도 높여야 해요. <b>먹었다</b>는 어울리지 않아요. → 이런 문장이 나오면 <b>이의!</b></div>
     <div class="note s" data-at="3">할머니께서 밥을 <b class="ok">잡수셨다</b> — 이제 어울려요! 이런 문장은 <b class="ok">통과</b>예요.</div>
+    <div class="note s" data-at="4">밥도 <b class="ok">진지</b>로 바꾸면 더 높이는 말이 돼요 — 할머니께서 <b class="ok">진지를 잡수셨다</b></div>
   </section>
 
   <!-- 2. 심판 기준 -->
@@ -125,7 +126,7 @@ h1 em{font-style:normal;color:var(--warn)}
 
   <!-- 3. 이의 -->
   <section class="slide" data-step="0" data-max="2">
-    <h1>어색하면 <em>이의!</em></h1>
+    <h1>문장 재판 · 어색하면 <em>이의!</em></h1>
     <div class="flow">
       <div class="fb"><span class="hand">✋</span><small>태블릿의 [이의!] = 손 들기</small></div><span class="arrow">→</span>
       <div class="fb warn">칠판에 "이의 있음!"<small>선생님이 우리 모둠을 불러요</small></div><span class="arrow">→</span>
@@ -164,7 +165,7 @@ h1 em{font-style:normal;color:var(--warn)}
     document.getElementById('merge').classList.toggle('together', cur === 0 && step() >= 1);
     // 1: 어색한 문장 — 3단계에서 서술어만 바뀜 (목적어 "밥을"은 그대로)
     const st = cur === 1 ? step() : 0, link = document.getElementById('badLink').firstElementChild;
-    document.querySelectorAll('#badSent .card').forEach(c => { const fix = c.getAttribute('data-fix'); c.classList.toggle('hit', st >= 1 && st < 3 && c.hasAttribute('data-hit')); c.classList.toggle('fixed', st >= 3 && !!fix); if (fix) { const lab = c.querySelector('.lab').outerHTML; c.dataset.orig ??= c.textContent.replace(/^(주어|목적어|서술어)/, ''); c.innerHTML = lab + (st >= 3 ? fix : c.dataset.orig); } });
+    document.querySelectorAll('#badSent .card').forEach(c => { const fix = c.getAttribute('data-fix'), fix2 = c.getAttribute('data-fix2'); c.classList.toggle('hit', st >= 1 && st < 3 && c.hasAttribute('data-hit')); c.classList.toggle('fixed', (st >= 3 && !!fix) || (st >= 4 && !!fix2)); const lab = c.querySelector('.lab').outerHTML; c.dataset.orig ??= c.textContent.replace(/^(주어|목적어|서술어)/, ''); if (fix) c.innerHTML = lab + (st >= 3 ? fix : c.dataset.orig); if (fix2) c.innerHTML = lab + (st >= 4 ? fix2 : c.dataset.orig); });
     link.textContent = st >= 3 ? '께서 ↔ 잡수셨다 … 짝이 맞아요!' : '께서 ↔ 먹었다 … 뭔가 이상해요!'; link.parentElement.classList.toggle('ok', st >= 3);
   }
   document.getElementById('tapNext').addEventListener('click', next); document.getElementById('tapBack').addEventListener('click', back);

@@ -19,7 +19,7 @@ button,input,select{font:inherit}button{border:0;cursor:pointer;background:none;
 .brand{display:flex;align-items:center;gap:14px}
 .brand h1{font:44px "Jua",sans-serif;letter-spacing:-.02em;line-height:1}
 .brand h1 i{display:inline-block;font-style:normal;transform:rotate(-8deg);margin-right:6px}
-.phase-pill{background:var(--ink);color:#fff;border-radius:999px;padding:.35em 1em;font:22px "Jua",sans-serif}
+.phase-pill{background:var(--ink);color:#fff;border-radius:999px;padding:.3em 1.1em;font:34px "Jua",sans-serif;box-shadow:0 3px 0 rgba(0,0,0,.2)}
 .phase-pill.auction{background:var(--warn)}.phase-pill.build{background:var(--ok)}.phase-pill.present{background:var(--sky)}.phase-pill.end{background:var(--grape)}
 .clock{display:flex;flex-direction:column;align-items:center;min-width:280px}
 .clock b{font:66px/1 "Jua",sans-serif;font-variant-numeric:tabular-nums;padding:2px 26px;border-radius:22px;background:var(--panel);box-shadow:0 3px 0 var(--line);transition:.2s}
@@ -124,7 +124,14 @@ a.icon-btn{text-decoration:none;color:var(--ink)}
 .score-rule span{background:var(--panel);border-radius:999px;padding:.4em 1em;font:20px "Jua",sans-serif;box-shadow:0 2px 0 var(--line)}
 .score-rule span b{color:var(--warn)}
 /* present */
-.present{gap:10px}
+.view.present.on{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:16px}
+.pres-left{display:flex;flex-direction:column;gap:10px;min-height:0}
+.judge-big{background:var(--panel);border-radius:26px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 0 var(--line);border-top:10px solid var(--warn);min-height:0;overflow:auto}
+.judge-big h3{font:34px "Jua",sans-serif;color:var(--warn)}
+.judge-big div{background:#FFF7F3;border-radius:18px;padding:12px 14px;font-size:22px;line-height:1.35}
+.judge-big div b{display:inline-block;font:20px "Jua",sans-serif;background:var(--warn);color:#fff;padding:2px 12px;border-radius:999px;margin-bottom:6px}
+.judge-big div b.hl{background:#EAF7F0;color:var(--ok);display:inline;padding:0 6px;margin:0;font-size:22px}
+.judge-big .pass{margin-top:auto;background:var(--ink);color:#fff;font:22px "Jua",sans-serif;text-align:center}
 .order-strip{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .order-strip span{font:18px "Jua",sans-serif;padding:5px 12px;border-radius:999px;background:var(--panel);color:var(--tc);border:2px solid var(--tc);opacity:.55}
 .order-strip span.done{opacity:.3;text-decoration:line-through}.order-strip span.now{opacity:1;background:var(--tc);color:#fff;transform:scale(1.1)}
@@ -248,7 +255,7 @@ table.ed select{width:auto}
       <!-- 준비 -->
       <div id="vLobby" class="view lobby on">
         <h2 id="lobbyTitle">낱말 <span>경매장</span></h2>
-        <p>태블릿을 켜면 빈 모둠 번호를 <b>무작위</b>로 받아요 · 예산은 모둠마다 <b>5,000코인</b> · 모둠 칸을 누르면 그 자리를 비워요</p>
+        <p>태블릿을 켜면 빈 모둠 번호를 <b>무작위</b>로 받아요 · 예산은 모둠마다 <b>5,000원</b> · 모둠 칸을 누르면 그 자리를 비워요</p>
         <div id="lobbyGrid" class="lobby-grid"></div>
         <div id="waitline" class="waitline none"></div>
       </div>
@@ -270,6 +277,7 @@ table.ed select{width:auto}
       </div>
       <!-- 발표 -->
       <div id="vPresent" class="view present">
+       <div class="pres-left">
         <div id="orderStrip" class="order-strip"></div>
         <div class="pres-head"><h2 id="presTeam">1모둠</h2><span class="sub" id="presSub">발표 · 이상하면 태블릿의 [이의!] = 손 들기</span><div class="total" id="presTotal">합계 <b>0</b>점</div></div>
         <div id="hands" class="hands"></div>
@@ -277,6 +285,8 @@ table.ed select{width:auto}
         <div id="sents" class="sents"></div>
         <div id="unused" class="unused"><h3>쓰지 못한 카드</h3></div>
         <div id="objStamp" class="obj-stamp"><div>✋ 이의 있음!<small id="objStampBy"></small></div></div>
+       </div>
+       <aside id="judgeBig" class="judge-big"></aside>
       </div>
       <!-- 결과 -->
       <div id="vEnd" class="view end">
@@ -304,20 +314,20 @@ table.ed select{width:auto}
     <div id="pProg" class="pane on">
       <div class="formrow">단계 <select id="edPhase"><option value="lobby">준비</option><option value="auction">경매</option><option value="build">조립</option><option value="present">발표</option><option value="end">결과</option></select>
         라운드 <select id="edRound"><option value="0">-</option><option value="1">1 서술어</option><option value="2">2 주어</option><option value="3">3 목적어</option><option value="4">4 보너스</option></select>
-        라운드 상태 <select id="edRS"><option value="idle">대기</option><option value="bidding">입찰 중</option><option value="closed">마감</option></select>
+        라운드 상태 <select id="edRS"><option value="idle">대기</option><option value="bidding">값 부르는 중</option><option value="closed">마감</option></select>
         발표 순번 <input id="edIdx" type="number" min="0" max="7" style="width:70px">
         <button id="edApply" class="sm">적용</button></div>
       <div class="formrow">타이머 <button class="sm ghost" data-dt="30000">+30초</button><button class="sm ghost" data-dt="-30000">−30초</button><button class="sm ghost" id="edTimerNow">지금 마감</button>
         <span style="color:var(--muted);font-size:15px">지금 단계의 타이머(경매 카드 전체 / 조립 / 발표 모둠)에 적용돼요</span></div>
       <div class="formrow"><button id="edReseat" class="sm warn">태블릿 자리 모두 비우기(다시 접속)</button><span style="color:var(--muted);font-size:15px">게임 진행은 그대로 두고 모둠 번호 배정만 다시 해요. 태블릿이 자동으로 새 번호를 받아요</span></div>
       <div class="formrow"><button id="edOpenRound" class="sm warn">선택한 라운드 카드 다시 열기(재경매)</button><span style="color:var(--muted);font-size:15px">그 라운드의 미확정 카드를 다시 입찰 상태로 · 이미 낙찰된 카드는 그대로</span></div>
-      <p class="note">단계를 "경매"로 바꾸고 라운드 상태를 "입찰 중"으로 두면 카드가 열려 있어야 입찰이 돼요. 보통은 아래쪽 큰 버튼으로 진행하고, 이 패널은 사고가 났을 때만 써요.</p>
+      <p class="note">단계를 "경매"로 바꾸고 라운드 상태를 "값 부르는 중"으로 두면 카드가 열려 있어야 값을 부를 수 있어요. 보통은 아래쪽 큰 버튼으로 진행하고, 이 패널은 사고가 났을 때만 써요.</p>
     </div>
-    <div id="pTeams" class="pane"><table class="ed"><thead><tr><th>모둠</th><th>잔액(코인)</th><th>점수 보정(±)</th><th>이의 남음</th><th>자동 점수</th><th></th></tr></thead><tbody id="edTeams"></tbody></table>
-      <p class="note">점수 = 문장 점수 합계 + 보정. 잔액은 그대로 저장돼요(입찰 중인 코인은 이미 빠져 있음).</p></div>
+    <div id="pTeams" class="pane"><table class="ed"><thead><tr><th>모둠</th><th>남은 예산(원)</th><th>점수 보정(±)</th><th>이의 남음</th><th>자동 점수</th><th></th></tr></thead><tbody id="edTeams"></tbody></table>
+      <p class="note">점수 = 문장 점수 합계 + 보정. 남은 예산은 그대로 저장돼요(값 부르는 중인 돈은 이미 빠져 있음).</p></div>
     <div id="pCards" class="pane"><div class="formrow">보기 <select id="edCardFilter"><option value="all">전체</option><option value="1">1R 서술어</option><option value="2">2R 주어</option><option value="3">3R 목적어</option><option value="4">4R 보너스</option><option value="0">기본 지급</option></select></div>
-      <table class="ed"><thead><tr><th>카드</th><th>종류</th><th>상태</th><th>소유 모둠</th><th>값</th><th>문장에 사용</th><th></th></tr></thead><tbody id="edCards"></tbody></table>
-      <p class="note">소유 모둠을 바꾸면 상태는 자동으로 "낙찰"이 돼요(없음으로 바꾸면 "유찰"). 코인은 자동으로 돌려주지 않으니 필요하면 모둠 탭에서 잔액을 고쳐요.</p></div>
+      <table class="ed"><thead><tr><th>카드</th><th>종류</th><th>상태</th><th>소유 모둠</th><th>값(원)</th><th>문장에 사용</th><th></th></tr></thead><tbody id="edCards"></tbody></table>
+      <p class="note">소유 모둠을 바꾸면 상태는 자동으로 "산 것"이 돼요(없음으로 바꾸면 "아무도 안 삼"). 돈은 자동으로 돌려주지 않으니 필요하면 모둠 탭에서 잔액을 고쳐요.</p></div>
     <div id="pSents" class="pane"><table class="ed"><thead><tr><th>모둠</th><th>문장</th><th>점수</th><th>이의</th><th></th></tr></thead><tbody id="edSents"></tbody></table></div>
   </div>
 </dialog>
@@ -388,7 +398,8 @@ const TEAM_COLORS = ['#EF5D5D', '#F28C28', '#D9A800', '#3FAE5E', '#2FA3DA', '#5A
 const DECKS = Object.freeze({
   korean: {
     id: 'korean', prefix: '', title: '낱말 경매장', icon: '🎪', unit: '문장', unitOf: '문장을', champ: '낱말 부자',
-    types: { S: { label: '주어', who: '누가' }, O: { label: '목적어', who: '무엇을' }, V: { label: '서술어', who: '어떻게 했다' }, B: { label: '보너스 말', who: '꾸미는 말' } },
+    activity: { lobby: '낱말 경매장', auction: '낱말 경매', build: '문장 만들기', present: '문장 재판', end: '결과 발표' },
+    types: { S: { label: '주어', who: '누가' }, O: { label: '목적어', who: '무엇을' }, V: { label: '서술어', who: '어떻게 했다' }, B: { label: '꾸며 주는 말', who: '어제·내일·결코…' } },
     order: ['S', 'B', 'O', 'V'],              // 주어 · (보너스) · 목적어 · 서술어
     rounds: [null, { type: 'V', sec: 150 }, { type: 'S', sec: 120 }, { type: 'O', sec: 120 }, { type: 'B', sec: 60 }],
     buildSec: 180, presentSec: 75,
@@ -416,7 +427,8 @@ const DECKS = Object.freeze({
   },
   cook: {
     id: 'cook', prefix: 'cook_', title: '요리 경매장', icon: '🍳', unit: '요리', unitOf: '요리를', champ: '요리 부자',
-    types: { S: { label: '재료', who: '무엇을' }, O: { label: '도구', who: '어디에·무엇으로' }, V: { label: '조리법', who: '어떻게' }, B: { label: '비밀 양념', who: '뿌리는 것' } },
+    activity: { lobby: '요리 경매장', auction: '요리 경매', build: '요리 만들기', present: '요리 재판', end: '결과 발표' },
+    types: { S: { label: '재료', who: '무엇을' }, O: { label: '도구', who: '어디에·무엇으로' }, V: { label: '조리법', who: '어떻게' }, B: { label: '꾸며 주는 말', who: '양념 뿌리기' } },
     order: ['S', 'O', 'B', 'V'],              // 재료 · 도구 · (양념) · 조리법
     rounds: [null, { type: 'V', sec: 120 }, { type: 'S', sec: 90 }, { type: 'O', sec: 90 }, { type: 'B', sec: 45 }],
     buildSec: 120, presentSec: 60,
@@ -600,11 +612,11 @@ async function placeBid(T, teamId, cardId, buyNow = false) {
     const prevBidder = card.bidder && card.bidder !== teamId ? card.bidder : null;
     const prev = prevBidder ? await t.get('teams', prevBidder) : null;
     const now = Date.now();
-    if (!buyNow && card.bidder === teamId) throw new Error('지금 우리 모둠이 최고가예요');
+    if (!buyNow && card.bidder === teamId) throw new Error('지금 우리 모둠이 가장 높은 값이에요');
     let price = buyNow ? RULE.buyout : (card.bidder ? Number(card.price) + RULE.step : RULE.start);
     const myHeld = card.bidder === teamId ? Number(card.price) : 0;          // 이 카드에 이미 걸어 둔 코인
     const available = Number(me.budget) + myHeld;
-    if (available < price) throw new Error(`코인이 부족해요 (잔액 ${fmt(me.budget)})`);
+    if (available < price) throw new Error(`예산이 모자라요 (남은 예산 ${fmt(me.budget)}원)`);
     const sold = buyNow || price >= RULE.buyout;
     if (sold) price = RULE.buyout;
     const before = card.endsAt || now;
@@ -698,9 +710,10 @@ $('buildTitle').innerHTML = `${deck.unitOf} <span>조립</span>해요!`;
 $('scoreRule').innerHTML = `<span>${TYPE.S.label}+${TYPE.O.label}+${TYPE.V.label} <b>2점</b></span><span>${TYPE.S.label}+${TYPE.V.label} <b>1점</b></span><span>${TYPE.B.label} 어울리면 <b>+1점</b></span><span>안 어울리면 <b>0점</b></span>`;
 $('buildNote').textContent = `한 카드는 한 ${deck.unit}에만 쓸 수 있어요`;
 $('endTitle').innerHTML = `오늘의 <span>${deck.champ}</span>는?`;
-$('ruleChips').innerHTML = `<span>시작가 <b>${fmt(RULE.start)}</b></span><span>호가 <b>+${RULE.step}</b></span><span>즉시구매 <b>${fmt(RULE.buyout)}</b></span><span>마지막 10초 입찰 → <b>10초 연장</b></span>`;
+$('ruleChips').innerHTML = `<span>처음 값 <b>${fmt(RULE.start)}원</b></span><span>한 번에 <b>+${RULE.step}원</b></span><span>바로 사기 <b>${fmt(RULE.buyout)}원</b></span><span>마지막 10초에 값을 부르면 <b>10초가 늘어나요</b></span>`;
 $('judge').innerHTML = `<h3>${deck.judgeTitle.replace(' ', '<br>')}</h3>` + JUDGE.map(([k, t]) => `<div><b>${k}</b><span>${t}</span></div>`).join('');
 $('judge').classList.toggle('two', JUDGE.length <= 2);
+$('judgeBig').innerHTML = `<h3>⚖️ ${deck.judgeTitle}</h3>` + JUDGE.map(([k, t]) => `<div><b>${k}</b><br>${t}</div>`).join('') + `<div class="pass">이유를 못 대면 통과!</div>`;
 const C = { state: null, cards: {}, teams: {}, sentences: {}, waiting: {} };
 let T, soundOn = true, audio, toastId = 0, prevCards = {}, prevSentCount = {}, closing = new Set(), lastPhaseKey = '', roundDoneShown = '', lastRaisedKey = '', stampTimer = 0;
 const now = () => Date.now();
@@ -738,7 +751,7 @@ let raf = 0;
 function render() { clearTimeout(raf); raf = setTimeout(paint, 16); }   // rAF 대신 setTimeout: 탭이 뒤에 숨어도 갱신
 function paint() {
   const st = S(), phase = st.phase;
-  $('phasePill').textContent = { lobby: '준비', auction: `경매 ${st.round}라운드`, build: '조립', present: '발표·판정', end: '결과' }[phase] || phase;
+  $('phasePill').textContent = (deck.activity[phase] || phase) + (phase === 'auction' ? ` ${st.round}라운드` : '');
   $('phasePill').className = `phase-pill ${phase}`;
   ['Lobby', 'Auction', 'Build', 'Present', 'End'].forEach(v => $('v' + v).classList.toggle('on', phase === v.toLowerCase()));
   if (phase === 'lobby') paintLobby();
@@ -772,11 +785,11 @@ function paintAuction() {
     el.classList.toggle('sold', c.status === 'sold'); el.classList.toggle('unsold', c.status === 'unsold');
     const priceEl = el.querySelector('.price'); priceEl.textContent = fmt(c.bidder ? c.price : RULE.start); priceEl.classList.toggle('start', !c.bidder);
     const bEl = el.querySelector('.bidder');
-    if (c.bidder) { bEl.textContent = `${teamName(c.bidder)}${c.status === 'sold' ? '' : ' 최고!'}`; bEl.className = 'bidder'; bEl.style.cssText = teamVars(c.bidder); el.style.setProperty('--tc', teamColor(c.bidder)); } else { bEl.textContent = c.status === 'unsold' ? '유찰' : '아직 없어요'; bEl.className = 'bidder none'; }
-    if (c.status === 'sold') el.querySelector('.stamp div').innerHTML = `${teamName(c.team)} 낙찰<small>${c.buyNow ? '즉시구매 ' : ''}${fmt(c.price)}코인</small>`;
-    if (c.status === 'unsold') el.querySelector('.stamp div').innerHTML = `유찰<small>아무도 사지 않았어요</small>`;
+    if (c.bidder) { bEl.textContent = `${teamName(c.bidder)}${c.status === 'sold' ? ' 것' : ' 최고!'}`; bEl.className = 'bidder'; bEl.style.cssText = teamVars(c.bidder); el.style.setProperty('--tc', teamColor(c.bidder)); } else { bEl.textContent = c.status === 'unsold' ? '유찰' : '아직 없어요'; bEl.className = 'bidder none'; }
+    if (c.status === 'sold') el.querySelector('.stamp div').innerHTML = `${teamName(c.team)} 것!<small>${c.buyNow ? '바로 사기 ' : ''}${fmt(c.price)}원</small>`;
+    if (c.status === 'unsold') el.querySelector('.stamp div').innerHTML = `아무도 안 삼<small>다음 기회에!</small>`;
     if (p.id && c.bids > (p.bids || 0) && c.status === 'open') { priceEl.classList.remove('bump'); void priceEl.offsetWidth; priceEl.classList.add('bump'); if (c.bidder !== p.bidder) { bEl.classList.add('swap'); setTimeout(() => bEl.classList.remove('swap'), 500); } const f = document.createElement('span'); f.className = 'float'; f.textContent = `+${fmt(c.price - (p.bidder ? p.price : 0))}`; f.style.left = '18px'; f.style.bottom = '60px'; el.append(f); setTimeout(() => f.remove(), 1000); beep('bid'); }
-    if (p.id && (c.extended || 0) > (p.extended || 0)) { const f = document.createElement('div'); f.className = 'ext-flash'; f.textContent = '+10초 연장!'; el.append(f); setTimeout(() => f.remove(), 1400); beep('ext'); }
+    if (p.id && (c.extended || 0) > (p.extended || 0)) { const f = document.createElement('div'); f.className = 'ext-flash'; f.textContent = '+10초!'; el.append(f); setTimeout(() => f.remove(), 1400); beep('ext'); }
     if (p.id && c.status === 'sold' && p.status !== 'sold') { burstAt(el, 50, [teamColor(c.team), '#FFD75E', '#fff']); beep('sold'); }
   });
   const done = st.roundStatus === 'closed', doneKey = `${r}-closed`;
@@ -826,7 +839,7 @@ function paintEnd() {
 function paintAside() {
   const st = S(), cur = currentTeam();
   $('aside').innerHTML = TEAM_IDS.map(id => { const t = C.teams[id] || { budget: RULE.budget, objLeft: 2 }; const own = sortCards(Object.values(C.cards).filter(c => c.team === id)); const held = Object.values(C.cards).filter(c => c.status === 'open' && c.bidder === id).length;
-    return `<div class="trow${cur === id && st.phase === 'present' ? ' hl' : ''}" style="${teamVars(id)}"><div class="tn"><span class="dot${online(t) ? ' on' : ''}"></span>${teamName(id)}</div><div class="stat"><span class="coin"><b>${fmt(t.budget)}</b> 코인${held ? ` <small>(입찰 ${held})</small>` : ''}</span><span class="score">점수 <b>${teamScore(id, C.sentences, t)}</b></span></div><div class="chips">${own.map(c => chip(c, 'mini' + ((prevCards[c.id]?.team || null) !== id ? ' pop' : ''))).join('')}</div><div class="obj">이의${Array.from({ length: RULE.objections }, (_, i) => `<i class="${i < (t.objLeft ?? 2) ? '' : 'off'}"></i>`).join('')}</div></div>`; }).join('');
+    return `<div class="trow${cur === id && st.phase === 'present' ? ' hl' : ''}" style="${teamVars(id)}"><div class="tn"><span class="dot${online(t) ? ' on' : ''}"></span>${teamName(id)}</div><div class="stat"><span class="coin">남은 예산 <b>${fmt(t.budget)}</b>원${held ? ` <small>(부르는 중 ${held})</small>` : ''}</span><span class="score">점수 <b>${teamScore(id, C.sentences, t)}</b></span></div><div class="chips">${own.map(c => chip(c, 'mini' + ((prevCards[c.id]?.team || null) !== id ? ' pop' : ''))).join('')}</div><div class="obj">이의${Array.from({ length: RULE.objections }, (_, i) => `<i class="${i < (t.objLeft ?? 2) ? '' : 'off'}"></i>`).join('')}</div></div>`; }).join('');
 }
 function paintControls() {
   const st = S(), p = st.phase, r = st.round, pr = st.present || {}, speaker = p === 'present' && pr.speaker && raisedTeams(st).includes(pr.speaker) ? pr.speaker : null, canAccept = speaker && pr.focus && C.sentences[pr.focus]?.team === currentTeam() && C.sentences[pr.focus]?.status !== 'rejected';
@@ -848,7 +861,7 @@ function paintControls() {
 /* ── 타이머·마감 감시 ── */
 function tick() {
   const st = S(), p = st.phase, clock = $('clock'), lbl = $('clockLabel'); let ms = null, label = '';
-  if (p === 'auction' && st.roundStatus === 'bidding') { const dl = roundDeadline(); ms = dl - now(); label = dl > st.roundEndsAt ? '연장 중! 마지막 카드까지' : `${st.round}라운드 마감까지`; clock.classList.toggle('ext', dl > st.roundEndsAt && ms > 0); }
+  if (p === 'auction' && st.roundStatus === 'bidding') { const dl = roundDeadline(); ms = dl - now(); label = dl > st.roundEndsAt ? '10초 늘어났어요! 마지막 카드까지' : `${st.round}라운드 마감까지`; clock.classList.toggle('ext', dl > st.roundEndsAt && ms > 0); }
   else clock.classList.remove('ext');
   if (p === 'build') { ms = st.buildEndsAt - now(); label = '조립 시간'; }
   if (p === 'present' && currentTeam()) { const sp = st.present.speaker && raisedTeams(st).includes(st.present.speaker) ? st.present.speaker : null; if (sp) { ms = (st.present.focusEndsAt || 0) - now(); label = st.present.defend ? `${teamName(currentTeam())} 해명 · ${RULE.sentenceSec}초` : `${teamName(sp)} 이의 설명 · ${RULE.sentenceSec}초`; const el = $('objT'); el.textContent = Math.max(0, Math.ceil(ms / 1000)); el.classList.toggle('hot', ms <= 5000); } else { ms = (st.present.teamEndsAt || 0) - now(); label = `${teamName(currentTeam())} 발표 시간`; } }
@@ -874,7 +887,7 @@ async function act(a) {
       const r = st.phase === 'lobby' ? 1 : (st.roundStatus === 'closed' ? st.round + 1 : (st.round || 1)); if (r > 4) return;
       const ends = now() + RULE.rounds[r].sec * 1000;
       await T.batch([{ op: 'update', col: 'state', id: 'main', data: { phase: 'auction', round: r, roundStatus: 'bidding', roundEndsAt: ends } }, ...roundCards(r).filter(c => c.status !== 'sold').map(c => ({ op: 'update', col: 'cards', id: c.id, data: { status: 'open', endsAt: ends, price: RULE.start, bidder: null, bids: 0, extended: 0, team: null } }))]);
-      $('agrid').dataset.round = ''; toast(`${r}라운드 시작! ${TYPE[RULE.rounds[r].type].label} ${roundCards(r).length}장`);
+      $('agrid').dataset.round = ''; toast(`${r}라운드 시작! ${TYPE[RULE.rounds[r].type].label} ${roundCards(r).length}장 · 값을 불러요`);
     }
     if (a === 'endRound') { const open = roundCards(st.round).filter(c => c.status === 'open'); for (const c of open) await T.tx(async t => { const cc = await t.get('cards', c.id); if (!cc || cc.status !== 'open') return; t.update('cards', c.id, cc.bidder ? { status: 'sold', team: cc.bidder, closedAt: now() } : { status: 'unsold', closedAt: now() }); }); await T.update('state', 'main', { roundStatus: 'closed' }); }
     if (a === 'addTime') await shiftTime(30000);
@@ -931,7 +944,7 @@ function fillEdit() {
   $('edTeams').innerHTML = TEAM_IDS.map(id => { const t = C.teams[id] || {}; return `<tr data-id="${id}"><td style="color:${teamColor(id)};font-family:Jua">${teamName(id)}</td><td><input type="number" step="100" class="f-budget" value="${t.budget ?? RULE.budget}"></td><td><input type="number" class="f-adj" value="${t.scoreAdj ?? 0}"></td><td><input type="number" min="0" max="9" class="f-obj" value="${t.objLeft ?? 2}"></td><td>${teamScore(id, C.sentences, { scoreAdj: 0 })} + 보정 = <b>${teamScore(id, C.sentences, t)}</b></td><td><button class="sm f-save">저장</button></td></tr>`; }).join('');
   const filt = $('edCardFilter').value, cards = Object.values(C.cards).filter(c => filt === 'all' || String(c.round) === filt).sort((a, b) => a.round - b.round || a.id.localeCompare(b.id, 'en', { numeric: true }));
   const teamOpts = sel => `<option value="">없음</option>${TEAM_IDS.map(id => `<option value="${id}" ${sel === id ? 'selected' : ''}>${teamName(id)}</option>`).join('')}`;
-  $('edCards').innerHTML = cards.map(c => `<tr data-id="${c.id}"><td style="font-family:Jua;font-size:19px;color:${TYPE[c.type].dark}">${esc(c.text)}</td><td>${TYPE[c.type].label}${c.round ? ` · ${c.round}R` : ' · 기본'}</td><td><select class="f-status">${['wait', 'open', 'sold', 'unsold', 'basic'].map(s => `<option value="${s}" ${c.status === s ? 'selected' : ''}>${{ wait: '대기', open: '입찰 중', sold: '낙찰', unsold: '유찰', basic: '기본 지급' }[s]}</option>`).join('')}</select></td><td><select class="f-team">${teamOpts(c.team)}</select></td><td><input type="number" step="100" class="f-price" value="${c.price || 0}" style="width:90px"></td><td>${c.usedIn ? '사용 중' : '-'}</td><td><button class="sm f-save">저장</button></td></tr>`).join('');
+  $('edCards').innerHTML = cards.map(c => `<tr data-id="${c.id}"><td style="font-family:Jua;font-size:19px;color:${TYPE[c.type].dark}">${esc(c.text)}</td><td>${TYPE[c.type].label}${c.round ? ` · ${c.round}R` : ' · 기본'}</td><td><select class="f-status">${['wait', 'open', 'sold', 'unsold', 'basic'].map(s => `<option value="${s}" ${c.status === s ? 'selected' : ''}>${{ wait: '대기', open: '값 부르는 중', sold: '산 것', unsold: '아무도 안 삼', basic: '기본 지급' }[s]}</option>`).join('')}</select></td><td><select class="f-team">${teamOpts(c.team)}</select></td><td><input type="number" step="100" class="f-price" value="${c.price || 0}" style="width:90px"></td><td>${c.usedIn ? '사용 중' : '-'}</td><td><button class="sm f-save">저장</button></td></tr>`).join('');
   const sents = Object.values(C.sentences).sort((a, b) => teamNo(a.team) - teamNo(b.team) || a.createdAt - b.createdAt);
   $('edSents').innerHTML = sents.length ? sents.map(s => `<tr data-id="${s.id}"><td style="color:${teamColor(s.team)};font-family:Jua">${teamName(s.team)}</td><td style="font-family:Jua;font-size:20px">${esc(sentenceText(s, C.cards))}</td><td>${sentencePoints(s)}점 ${s.status === 'rejected' ? '(0점 처리)' : ''}</td><td>${s.objection ? `${teamName(s.objection.by)} · ${{ accepted: '인정', dismissed: '기각' }[s.objection.result] || '-'}` : '-'}</td><td style="white-space:nowrap"><button class="sm ghost f-toggle">${s.status === 'rejected' ? '점수 되살리기' : '0점 처리'}</button> <button class="sm warn f-del">지우기(카드 되돌림)</button></td></tr>`).join('') : '<tr><td colspan="5" style="color:var(--muted)">아직 문장이 없어요</td></tr>';
 }

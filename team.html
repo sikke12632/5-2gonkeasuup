@@ -21,7 +21,7 @@ button{font:inherit;border:0;cursor:pointer;background:none;color:inherit;touch-
 .head .coins.up{animation:coinup .6s}.head .coins.down{animation:coindown .5s}
 @keyframes coinup{30%{transform:scale(1.2);color:var(--ok)}}@keyframes coindown{30%{transform:scale(.9);color:var(--warn)}}
 .head .mid{margin-left:auto;display:flex;align-items:center;gap:10px}
-.pill{background:var(--ink);color:#fff;border-radius:999px;padding:.3em .9em;font:clamp(16px,1.8vw,21px) "Jua",sans-serif;white-space:nowrap}
+.pill{background:var(--ink);color:#fff;border-radius:999px;padding:.25em 1em;font:clamp(20px,2.6vw,30px) "Jua",sans-serif;white-space:nowrap;box-shadow:0 3px 0 rgba(0,0,0,.2)}
 .pill.auction{background:var(--warn)}.pill.build{background:var(--ok)}.pill.present{background:var(--sky)}.pill.end{background:var(--grape)}
 .clock{font:clamp(30px,3.6vw,44px)/1 "Jua",sans-serif;font-variant-numeric:tabular-nums;min-width:3.2em;text-align:center;padding:4px 10px;border-radius:14px;background:#F2F6F9}
 .clock.hot{background:var(--warn);color:#fff;animation:pulse .8s infinite}.clock.ext{background:var(--yellow)}
@@ -158,7 +158,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
 <div id="app">
   <header class="head">
     <span id="tn" class="tn">?모둠</span>
-    <span id="coins" class="coins">5,000<small>코인</small></span>
+    <span id="coins" class="coins">5,000<small>원 남음</small></span>
     <div class="mid"><span id="badge" class="badge">점검 모드</span><span id="pill" class="pill">준비</span><span id="clock" class="clock">--:--</span><button id="chg" class="chg">다시 접속</button></div>
   </header>
 
@@ -175,7 +175,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
   </section>
 
   <section id="vAuction" class="view">
-    <div class="rhead"><h2 id="rTitle"></h2><span id="rDesc"></span><span style="margin-left:auto">마지막 10초에 누가 지르면 <b>10초 연장</b></span></div>
+    <div class="rhead"><h2 id="rTitle"></h2><span id="rDesc"></span><span style="margin-left:auto">마지막 10초에 값을 부르면 <b>10초가 늘어나요</b></span></div>
     <div id="agrid" class="agrid"></div>
     <div id="myCardsA" class="mycards"></div>
   </section>
@@ -276,7 +276,8 @@ const TEAM_COLORS = ['#EF5D5D', '#F28C28', '#D9A800', '#3FAE5E', '#2FA3DA', '#5A
 const DECKS = Object.freeze({
   korean: {
     id: 'korean', prefix: '', title: '낱말 경매장', icon: '🎪', unit: '문장', unitOf: '문장을', champ: '낱말 부자',
-    types: { S: { label: '주어', who: '누가' }, O: { label: '목적어', who: '무엇을' }, V: { label: '서술어', who: '어떻게 했다' }, B: { label: '보너스 말', who: '꾸미는 말' } },
+    activity: { lobby: '낱말 경매장', auction: '낱말 경매', build: '문장 만들기', present: '문장 재판', end: '결과 발표' },
+    types: { S: { label: '주어', who: '누가' }, O: { label: '목적어', who: '무엇을' }, V: { label: '서술어', who: '어떻게 했다' }, B: { label: '꾸며 주는 말', who: '어제·내일·결코…' } },
     order: ['S', 'B', 'O', 'V'],              // 주어 · (보너스) · 목적어 · 서술어
     rounds: [null, { type: 'V', sec: 150 }, { type: 'S', sec: 120 }, { type: 'O', sec: 120 }, { type: 'B', sec: 60 }],
     buildSec: 180, presentSec: 75,
@@ -304,7 +305,8 @@ const DECKS = Object.freeze({
   },
   cook: {
     id: 'cook', prefix: 'cook_', title: '요리 경매장', icon: '🍳', unit: '요리', unitOf: '요리를', champ: '요리 부자',
-    types: { S: { label: '재료', who: '무엇을' }, O: { label: '도구', who: '어디에·무엇으로' }, V: { label: '조리법', who: '어떻게' }, B: { label: '비밀 양념', who: '뿌리는 것' } },
+    activity: { lobby: '요리 경매장', auction: '요리 경매', build: '요리 만들기', present: '요리 재판', end: '결과 발표' },
+    types: { S: { label: '재료', who: '무엇을' }, O: { label: '도구', who: '어디에·무엇으로' }, V: { label: '조리법', who: '어떻게' }, B: { label: '꾸며 주는 말', who: '양념 뿌리기' } },
     order: ['S', 'O', 'B', 'V'],              // 재료 · 도구 · (양념) · 조리법
     rounds: [null, { type: 'V', sec: 120 }, { type: 'S', sec: 90 }, { type: 'O', sec: 90 }, { type: 'B', sec: 45 }],
     buildSec: 120, presentSec: 60,
@@ -488,11 +490,11 @@ async function placeBid(T, teamId, cardId, buyNow = false) {
     const prevBidder = card.bidder && card.bidder !== teamId ? card.bidder : null;
     const prev = prevBidder ? await t.get('teams', prevBidder) : null;
     const now = Date.now();
-    if (!buyNow && card.bidder === teamId) throw new Error('지금 우리 모둠이 최고가예요');
+    if (!buyNow && card.bidder === teamId) throw new Error('지금 우리 모둠이 가장 높은 값이에요');
     let price = buyNow ? RULE.buyout : (card.bidder ? Number(card.price) + RULE.step : RULE.start);
     const myHeld = card.bidder === teamId ? Number(card.price) : 0;          // 이 카드에 이미 걸어 둔 코인
     const available = Number(me.budget) + myHeld;
-    if (available < price) throw new Error(`코인이 부족해요 (잔액 ${fmt(me.budget)})`);
+    if (available < price) throw new Error(`예산이 모자라요 (남은 예산 ${fmt(me.budget)}원)`);
     const sold = buyNow || price >= RULE.buyout;
     if (sold) price = RULE.buyout;
     const before = card.endsAt || now;
@@ -583,7 +585,7 @@ let deck = applyDeck(new URLSearchParams(location.search).get('deck') || 'korean
 function applyDeckText() {
   document.title = `${deck.title} · 모둠`;
   $('lobbySub').textContent = `기본 카드 3장으로 이미 ${deck.unit} 하나가 만들어져 있어요`;
-  $('lobbyHint').innerHTML = `예산 <b>5,000코인</b> · 시작가 ${fmt(RULE.start)} · 한 번에 +${RULE.step} · 즉시구매 ${fmt(RULE.buyout)}<br>${deck.lobbyHint}`;
+  $('lobbyHint').innerHTML = `예산 <b>${fmt(RULE.budget)}원</b> · 처음 값 ${fmt(RULE.start)}원 · 한 번에 +${RULE.step}원 · 바로 사기 ${fmt(RULE.buyout)}원<br>${deck.lobbyHint}`;
   $('submitLabel').textContent = `${deck.unit} 완성!`;
 }
 /* 칠판이 연 판(deck)을 따라간다: meta/active 를 보고 컬렉션 접두어를 바꿔 다시 구독 */
@@ -649,12 +651,12 @@ function paint() {
   if (!me) { $('pickTitle').innerHTML = waitingFull ? '자리가 다 찼어요' : '<span class="spin"></span>모둠 자리를 받는 중…'; $('pickMsg').innerHTML = waitingFull ? '8모둠 자리가 모두 찼어요. <b>이 디벗은 사용하지 않아도 돼요.</b><br>선생님이 자리를 비워 주면 자동으로 들어가요.' : (S() ? '잠깐만요, 빈 모둠 번호를 찾고 있어요' : '선생님이 경매장을 열면 자리가 정해져요'); }
   const st = S(), t = myTeam();
   const budget = t && t.budget != null ? Number(t.budget) : RULE.budget;   // 모둠 문서가 아직 없으면 예산 기본값
-  $('coins').innerHTML = `${fmt(budget)}<small>코인</small>`;
+  $('coins').innerHTML = `${fmt(budget)}<small>원 남음</small>`;
   if (prevBudget !== null && prevBudget !== budget) { $('coins').classList.remove('up', 'down'); void $('coins').offsetWidth; $('coins').classList.add(budget > prevBudget ? 'up' : 'down'); } prevBudget = budget;
   const phase = !me ? 'pick' : !st ? 'lobby' : st.phase;
   const view = phase === 'pick' ? 'Pick' : phase === 'lobby' ? 'Lobby' : phase === 'auction' ? (st.roundStatus === 'bidding' ? 'Auction' : 'Closed') : phase === 'build' ? 'Build' : phase === 'present' ? 'Present' : 'End';
   ['Pick', 'Lobby', 'Auction', 'Closed', 'Build', 'Present', 'End'].forEach(v => $('v' + v).classList.toggle('on', v === view));
-  $('pill').textContent = { pick: '접속 중', lobby: '준비', auction: `경매 ${st?.round || ''}라운드`, build: '조립', present: '발표·판정', end: '결과' }[phase]; $('pill').className = `pill ${phase}`;
+  $('pill').textContent = phase === 'pick' ? '접속 중' : (deck.activity[phase] || phase) + (phase === 'auction' ? ` ${st?.round || ''}라운드` : ''); $('pill').className = `pill ${phase}`;
   if (view === 'Lobby') paintLobby(st);
   if (view === 'Auction') paintAuction(st);
   if (view === 'Closed') paintClosed(st);
@@ -674,18 +676,18 @@ function paintAuction(st) {
   if (lastRound !== String(r)) { grid.innerHTML = ''; lastRound = String(r); }
   cards.forEach(c => {
     let el = grid.querySelector(`[data-id="${c.id}"]`);
-    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${esc(c.text)}</div><div class="info"><span class="price"></span><span class="who"></span></div><div class="btns"><button class="bid up" data-id="${c.id}"></button><button class="bid buy" data-id="${c.id}">즉시구매<small>${fmt(RULE.buyout)}</small></button></div><div class="stamp"><div></div></div>`; grid.append(el); }
+    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${esc(c.text)}</div><div class="info"><span class="price"></span><span class="who"></span></div><div class="btns"><button class="bid up" data-id="${c.id}"></button><button class="bid buy" data-id="${c.id}">바로 사기<small>${fmt(RULE.buyout)}원</small></button></div><div class="stamp"><div></div></div>`; grid.append(el); }
     const p = prevCards[c.id] || {}, mine = c.bidder === me && c.status === 'open';
     el.classList.toggle('mine', mine); el.classList.toggle('sold', c.status === 'sold'); el.classList.toggle('unsold', c.status === 'unsold');
     el.style.setProperty('--bc', c.bidder ? teamColor(c.bidder) : '#8A98A6');
     const priceEl = el.querySelector('.price'); priceEl.textContent = fmt(c.bidder ? c.price : RULE.start);
-    const who = el.querySelector('.who'); who.textContent = c.bidder ? (c.bidder === me ? '우리 최고!' : teamName(c.bidder)) : '없음'; who.classList.toggle('none', !c.bidder);
+    const who = el.querySelector('.who'); who.textContent = c.bidder ? (c.bidder === me ? '우리 최고!' : teamName(c.bidder)) : '아직 없음'; who.classList.toggle('none', !c.bidder);
     const next = c.bidder ? Number(c.price) + RULE.step : RULE.start;
-    const up = el.querySelector('.up'); up.innerHTML = `+100<small>${fmt(next)}코인</small>`; up.disabled = c.status !== 'open' || mine || budget < next;
-    if (mine) up.innerHTML = `우리가 최고!<small>${fmt(c.price)}코인</small>`;
+    const up = el.querySelector('.up'); up.innerHTML = `+100원<small>${fmt(next)}원 부르기</small>`; up.disabled = c.status !== 'open' || mine || budget < next;
+    if (mine) up.innerHTML = `우리가 최고!<small>${fmt(c.price)}원</small>`;
     el.querySelector('.buy').disabled = c.status !== 'open' || (budget + (mine ? Number(c.price) : 0)) < RULE.buyout;
-    if (c.status === 'sold') el.querySelector('.stamp div').innerHTML = `${c.team === me ? '우리 것!' : teamName(c.team) + ' 낙찰'}<small>${fmt(c.price)}코인</small>`;
-    if (c.status === 'unsold') el.querySelector('.stamp div').innerHTML = `유찰`;
+    if (c.status === 'sold') el.querySelector('.stamp div').innerHTML = `${c.team === me ? '우리 것!' : teamName(c.team) + ' 것'}<small>${fmt(c.price)}원</small>`;
+    if (c.status === 'unsold') el.querySelector('.stamp div').innerHTML = `아무도 안 삼`;
     if (p.id && c.bids > (p.bids || 0) && c.status === 'open') { priceEl.classList.remove('bump'); void priceEl.offsetWidth; priceEl.classList.add('bump'); }
     if (p.id && (c.extended || 0) > (p.extended || 0)) { const f = document.createElement('div'); f.className = 'ext-flash'; f.textContent = '+10초!'; el.append(f); setTimeout(() => f.remove(), 1400); }
     if (p.id && p.bidder === me && c.bidder !== me && c.status === 'open') { el.classList.remove('lost'); void el.offsetWidth; el.classList.add('lost'); }
@@ -695,7 +697,7 @@ function paintAuction(st) {
 function paintClosed(st) {
   const r = st.round, got = roundCards(r).filter(c => c.team === me && c.status === 'sold');
   $('cTitle').textContent = st.roundStatus === 'closed' ? `${r}라운드 끝!` : '경매 준비 중';
-  $('cSub').innerHTML = st.roundStatus === 'closed' ? (got.length ? `이번 라운드에서 <b>${got.length}장</b>을 얻었어요!` : '이번 라운드에는 얻은 카드가 없어요') : '선생님이 라운드를 열면 카드가 나타나요';
+  $('cSub').innerHTML = st.roundStatus === 'closed' ? (got.length ? `이번 라운드에서 <b>${got.length}장</b>을 샀어요!` : '이번 라운드에는 산 카드가 없어요') : '선생님이 라운드를 열면 카드가 나타나요';
   $('gotList').innerHTML = got.map(c => chip(c, ' pop')).join('');
   $('myCardsC').innerHTML = `<h3>우리 카드 전부</h3>${myCards().map(c => chip(c)).join('')}`;
 }
@@ -707,7 +709,7 @@ function paintBuild() {
   const picked = ORDER.map(t => tray[t]).filter(Boolean).map(id => C.cards[id]);
   $('preview').innerHTML = picked.length ? picked.map(c => `<span style="color:${TYPE[c.type].dark}">${esc(c.text)}</span>`).join(' ') : `<span class="ph">카드를 눌러 ${deck.unitOf} 만들어요</span>`;
   const ok = tray.S && tray.V; const pts = ok ? (tray.O ? 2 : 1) + (tray.B ? 1 : 0) : 0;
-  $('submitBtn').disabled = !ok; $('ptsHint').textContent = ok ? `${pts}점${tray.B ? ` (${TYPE.B.label} 어울리면)` : ''}` : '';
+  $('submitBtn').disabled = !ok; $('ptsHint').textContent = ok ? `${pts}점${tray.B ? ` (${TYPE.B.label}이 어울리면)` : ''}` : '';
   const groups = ORDER.map(t => `<div class="hand-row" style="${typeVars(t)}"><h3>${TYPE[t].label}</h3>${free.filter(c => c.type === t).map(c => `<button class="hcard${tray[t] === c.id ? ' intray' : ''}" data-id="${c.id}" style="${typeVars(t)}">${esc(c.text)}</button>`).join('') || '<span class="none">없음</span>'}</div>`).join('');
   const mine = Object.values(C.sentences).filter(s => s.team === me).sort((a, b) => a.createdAt - b.createdAt);
   $('hand').innerHTML = groups + `<div class="done-list">${mine.map(s => `<div class="dsent${s.status === 'rejected' ? ' rejected' : ''}"><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div><span class="pts">${sentencePoints(s)}점</span><button class="del" data-id="${s.id}">지우기</button></div>`).join('')}</div>`;
@@ -750,16 +752,16 @@ function paintEnd() { const ranked = TEAM_IDS.map(id => ({ id, score: teamScore(
 function detectEvents() {
   if (!me || !Object.keys(prevCards).length) return;
   Object.values(C.cards).forEach(c => { const p = prevCards[c.id]; if (!p) return;
-    if (p.bidder === me && c.bidder !== me && c.status === 'open') { toast(`${teamName(c.bidder)}이(가) "${c.text}"를 더 높게 불렀어요! 코인이 돌아왔어요`, 'err'); beep('lost'); }
-    if (p.status !== 'sold' && c.status === 'sold' && c.team === me) { toast(`"${c.text}" 낙찰! 우리 카드예요 🎉`, 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .35, 50, [teamColor(me), '#FFD75E', '#fff']); }
+    if (p.bidder === me && c.bidder !== me && c.status === 'open') { toast(`${teamName(c.bidder)}이(가) "${c.text}"를 더 높게 불렀어요! 돈이 돌아왔어요`, 'err'); beep('lost'); }
+    if (p.status !== 'sold' && c.status === 'sold' && c.team === me) { toast(`"${c.text}" 우리 것이 됐어요! 🎉`, 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .35, 50, [teamColor(me), '#FFD75E', '#fff']); }
   });
 }
 /* ── 입찰 ── */
 $('agrid').addEventListener('click', async e => {
   const b = e.target.closest('.bid'); if (!b || b.disabled) return; const id = b.dataset.id, buy = b.classList.contains('buy');
-  if (buy && !confirm(`"${C.cards[id]?.text}" 를 ${fmt(RULE.buyout)}코인에 바로 살까요?`)) return;
+  if (buy && !confirm(`"${C.cards[id]?.text}" 를 ${fmt(RULE.buyout)}원에 바로 살까요?`)) return;
   b.disabled = true;
-  try { const r = await placeBid(T, me, id, buy); beep('tap'); if (r.sold) toast(`"${C.cards[id]?.text}" 즉시구매! 우리 카드예요`, 'win'); else if (r.extended) toast(`${fmt(r.price)}코인으로 최고가! 마감이 10초 늘어났어요`); }
+  try { const r = await placeBid(T, me, id, buy); beep('tap'); if (r.sold) toast(`"${C.cards[id]?.text}" 바로 샀어요! 우리 것이에요`, 'win'); else if (r.extended) toast(`${fmt(r.price)}원으로 가장 높아요! 마감이 10초 늘어났어요`); }
   catch (err) { toast(err.message, 'err'); render(); }
 });
 /* ── 타이머 ── */
