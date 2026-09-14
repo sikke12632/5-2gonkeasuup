@@ -748,7 +748,7 @@ function psent(s, i) { const st = s.status === 'rejected' ? '<span class="st acc
 $('objBtn').addEventListener('click', () => { const left = myTeam()?.objLeft ?? 0; if (left <= 0) return; $('confirmMsg').innerHTML = `이의는 모둠당 ${RULE.objections}번 · 지금 남은 횟수 <b style="color:var(--warn)">${left}</b><br>손을 들면 횟수가 바로 줄어요. 이유를 말할 수 있을 때만!`; $('confirmObj').classList.add('on'); beep('tap'); });
 $('confirmNo').addEventListener('click', () => $('confirmObj').classList.remove('on'));
 $('confirmYes').addEventListener('click', async () => { $('confirmObj').classList.remove('on'); $('objBtn').disabled = true; try { await raiseObjection(T, me); toast('✋ 손 들었어요! 선생님이 부르면 이유를 말해요', 'win'); beep('ext'); } catch (err) { toast(err.message, 'err'); render(); } });
-function paintEnd() { const ranked = TEAM_IDS.map(id => ({ id, score: teamScore(id, C.sentences, C.teams[id]) })).sort((a, b) => b.score - a.score); $('rank').innerHTML = ranked.map((t, i) => `<div class="${t.id === me ? 'me' : ''}" style="--pc:${teamColor(t.id)}">${['🥇', '🥈', '🥉'][i] || `${i + 1}위`} ${teamName(t.id)}<b>${t.score}점</b></div>`).join(''); }
+function paintEnd() { const ranked = TEAM_IDS.map(id => ({ id, score: teamScore(id, C.sentences, C.teams[id]) })).sort((a, b) => b.score - a.score); ranked.forEach(t => { t.rank = 1 + ranked.filter(x => x.score > t.score).length; t.tie = ranked.filter(x => x.score === t.score).length > 1; }); const medal = { 1: '🥇', 2: '🥈', 3: '🥉' }; $('rank').innerHTML = ranked.map(t => `<div class="${t.id === me ? 'me' : ''}" style="--pc:${teamColor(t.id)}">${medal[t.rank] || ''} ${t.tie ? '공동 ' : ''}${t.rank}위 ${teamName(t.id)}<b>${t.score}점</b></div>`).join(''); }   // 동점은 같은 순위(칠판과 동일)
 
 /* ── 사건 감지 (남이 더 질렀다 / 낙찰됐다) ── */
 function detectEvents() {
