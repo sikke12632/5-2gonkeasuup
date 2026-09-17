@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>벽란도 무역항 · 전자칠판</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4ECDC;--ink:#23303B;--muted:#6E6556;--panel:#FFFCF5;--line:#E3D5BA;--sea:#1D4E6B;--sea2:#2E7A9A;--celadon:#5E9C8F;--cel-bg:#E2EFEA;--red:#B5432D;--gold:#C9962B;--ok:#2E8B57;--warn:#D65A31;--sky:#2F7FB5}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:"Gowun Dodum","Malgun Gothic",sans-serif;-webkit-user-select:none;user-select:none}
+body{background:radial-gradient(circle at 8% 0%,#FFF7E6 0,transparent 40%),linear-gradient(180deg,transparent 60%,rgba(46,122,154,.12)),var(--bg)}
+button,input,select{font:inherit}button{border:0;cursor:pointer;background:none;color:inherit}
+#app{height:100dvh;display:grid;grid-template-rows:88px minmax(0,1fr) 96px;gap:10px;padding:10px 16px}
+/* header */
+.head{display:grid;grid-template-columns:1fr auto auto 1fr;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand h1{font:42px/1 "Jua",sans-serif;color:var(--sea);letter-spacing:-.02em}
+.brand h1 i{font-style:normal;display:inline-block;transform:rotate(-10deg);margin-right:4px}
+.brand small{font-size:17px;color:var(--muted);display:block;margin-top:4px}
+.phase-pill{background:var(--ink);color:#fff;border-radius:999px;padding:.25em 1em;font:32px "Jua",sans-serif;box-shadow:0 3px 0 rgba(0,0,0,.2);white-space:nowrap}
+.phase-pill.r1,.phase-pill.r2{background:var(--sea2)}.phase-pill.event{background:var(--gold)}.phase-pill.end{background:var(--red)}
+.clock{display:flex;flex-direction:column;align-items:center;min-width:230px}
+.clock b{font:60px/1 "Jua",sans-serif;font-variant-numeric:tabular-nums;padding:2px 22px;border-radius:20px;background:var(--panel);box-shadow:0 3px 0 var(--line)}
+.clock b.hot{background:var(--warn);color:#fff;animation:pulse .8s infinite}.clock b.paused{background:#DDD6C8;color:var(--muted)}.clock b.over{background:var(--ink);color:#fff}
+.clock small{font-size:16px;color:var(--muted);margin-top:3px;min-height:19px}
+@keyframes pulse{50%{transform:scale(1.05)}}
+.head-right{display:flex;justify-content:flex-end;align-items:center;gap:10px}
+.badge{border-radius:999px;padding:.35em .9em;font-size:15px;background:#FFF1C9;color:#7A5A00;display:none;white-space:nowrap}.badge.on{display:block}.badge.err{background:#FFE0D6;color:#A63A20}
+.icon-btn{height:50px;min-width:50px;padding:0 12px;border-radius:14px;background:var(--panel);box-shadow:0 2px 0 var(--line);font-size:20px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.icon-btn span{font:17px "Jua",sans-serif}.icon-btn.off{opacity:.45}
+/* main */
+.main{position:relative;min-height:0}
+.view{display:none;height:100%;min-height:0}.view.on{display:flex}
+.chip{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:999px;background:#F3EADA;border:2px solid var(--line);font:19px/1.1 "Jua",sans-serif;white-space:nowrap}
+.chip.ok{background:#E1F2E7;border-color:#8CC7A1;color:#1E6B40}.chip.new{background:#FFF1C9;border-color:var(--gold)}
+.chip b{font-weight:400;color:var(--muted);font-size:.85em}
+/* lobby */
+#vLobby{gap:16px}
+.lobby-side{width:470px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border-radius:22px;padding:16px 18px;box-shadow:0 3px 0 var(--line)}
+.card h2{font:26px "Jua",sans-serif;color:var(--sea);margin-bottom:8px}
+.countrow{display:flex;gap:8px}
+.countrow button{flex:1;height:64px;border-radius:16px;background:#EFE6D4;font:30px "Jua",sans-serif;color:var(--muted)}
+.countrow button.on{background:var(--sea);color:#fff;box-shadow:0 4px 0 #123447}
+.hint{font-size:17px;color:var(--muted);line-height:1.5;margin-top:8px}.hint b{color:var(--red)}
+.minrow{display:flex;align-items:center;gap:12px}.minrow button{width:60px;height:56px;border-radius:14px;background:#EFE6D4;font:30px "Jua",sans-serif}.minrow b{font:40px "Jua",sans-serif;min-width:120px;text-align:center}
+.rules{font-size:19px;line-height:1.55;padding-left:1.1em}.rules li{margin:3px 0}.rules b{color:var(--red)}
+.seats{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(0,1fr);gap:12px;min-height:0}
+.seat{position:relative;background:var(--panel);border-radius:22px;border-top:12px solid var(--tc);box-shadow:0 3px 0 var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;min-height:0;overflow:hidden}
+.seat .nm{font:30px/1.1 "Jua",sans-serif;color:var(--tc)}
+.seat .st{font:19px "Jua",sans-serif;color:#A69B87}.seat.on .st{color:var(--ok)}.seat.taken:not(.on) .st{color:var(--gold)}
+.seat .row{display:flex;flex-wrap:wrap;gap:5px}.seat .lab{font-size:15px;color:var(--muted)}
+.seat .rel{position:absolute;right:10px;top:10px;font-size:13px;color:var(--muted);background:#F3EADA;border-radius:999px;padding:2px 8px}
+/* play: 지도 */
+#vPlay{gap:14px}
+.map{flex:1;min-width:0;display:grid;grid-template-columns:1fr 1.55fr 1fr;grid-template-rows:1fr 1fr;gap:12px;min-height:0;position:relative}
+.map::before{content:"";position:absolute;inset:-4px;border-radius:30px;background:radial-gradient(ellipse at 50% 55%,rgba(46,122,154,.16),transparent 70%);pointer-events:none}
+.ncard{position:relative;background:var(--panel);border-radius:22px;border:4px solid var(--tc);box-shadow:0 4px 0 var(--tc);padding:10px 14px;display:flex;flex-direction:column;gap:6px;min-height:0;overflow:hidden}
+.ncard.empty{display:grid;place-items:center;border-style:dashed;box-shadow:none;background:transparent;color:#B7AC98;font:22px "Jua",sans-serif}
+.ncard .top{display:flex;align-items:center;gap:8px}
+.ncard .nm{font:30px/1 "Jua",sans-serif;color:var(--tc)}
+.ncard .dot{width:13px;height:13px;border-radius:50%;background:#CFC5B3}.ncard .dot.on{background:var(--ok)}
+.ncard .pct{margin-left:auto;font:30px "Jua",sans-serif;font-variant-numeric:tabular-nums}
+.ncard.done{background:#F2FAF4}.ncard.done .pct::after{content:" ✅"}
+.bar{height:12px;border-radius:999px;background:#EDE3D0;overflow:hidden}.bar i{display:block;height:100%;background:var(--tc);border-radius:999px;transition:width .5s}
+.ncard .lab{font-size:16px;color:var(--muted);margin-top:2px}
+.ncard .row{display:flex;flex-wrap:wrap;gap:4px}
+.ncard .row .chip{font-size:21px;padding:3px 9px}
+.ncard.pop{animation:cardpop .7s}
+@keyframes cardpop{30%{transform:scale(1.04)}}
+.port{grid-column:2;grid-row:1/3;background:linear-gradient(180deg,#E7F1EC,#D9E9E4);border-radius:26px;border:4px solid var(--celadon);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.port h2{font:28px "Jua",sans-serif;color:#2F6E62;text-align:center}.port h2 small{font:16px "Gowun Dodum";color:var(--muted);margin-left:8px}
+.merchants{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(0,1fr);gap:10px;min-height:0}
+.arab{display:none;align-items:center;gap:12px;background:linear-gradient(90deg,#FFF3D1,#FFE6A8);border:3px solid var(--gold);border-radius:18px;padding:8px 14px;font:22px "Jua",sans-serif}
+.arab.on{display:flex}.arab .ship{font-size:36px;animation:bob 2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-4px) rotate(-4deg)}}
+.feed{width:380px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.feed h2{font:24px "Jua",sans-serif;color:var(--sea);display:flex;align-items:baseline;gap:8px}.feed h2 small{font:16px "Gowun Dodum";color:var(--muted)}
+.flist{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:7px}
+.fitem{background:var(--panel);border-radius:14px;padding:7px 10px;box-shadow:0 2px 0 var(--line);font:19px/1.35 "Jua",sans-serif;border-left:8px solid var(--fc)}
+.fitem.fresh{animation:slidein .5s}.fitem .who{display:flex;gap:6px;align-items:center}.fitem .who i{font-style:normal;color:var(--muted)}
+.fitem .what{font-size:17px;color:var(--muted)}
+@keyframes slidein{0%{transform:translateX(40px);opacity:0}100%{transform:none;opacity:1}}
+/* event */
+#event{position:absolute;inset:0;z-index:20;display:none;border-radius:26px;overflow:hidden;background:linear-gradient(180deg,#0E2F47 0%,#1D5B7E 55%,#2E86A8 100%);color:#fff}
+#event.on{display:block}
+#event .sky{position:absolute;inset:0;background:radial-gradient(circle at 80% 18%,rgba(255,220,140,.55),transparent 22%)}
+#event .waves{position:absolute;left:-10%;right:-10%;bottom:0;height:34%;background:repeating-radial-gradient(circle at 50% 0,rgba(255,255,255,.12) 0 12px,transparent 12px 40px);animation:wave 6s linear infinite}
+@keyframes wave{to{transform:translateX(80px)}}
+#event .shipbig{position:absolute;bottom:22%;left:-20%;font-size:170px;filter:drop-shadow(0 12px 18px rgba(0,0,0,.35));animation:sail 5s cubic-bezier(.2,.7,.3,1) forwards,bob 2.4s ease-in-out 5s infinite}
+@keyframes sail{to{left:6%}}
+#event .txt{position:absolute;right:4%;top:6%;width:62%;display:flex;flex-direction:column;gap:14px;animation:fadein 1s .6s both}
+@keyframes fadein{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+#event h2{font:84px/1.05 "Jua",sans-serif;color:#FFE08A;text-shadow:0 4px 0 rgba(0,0,0,.25)}
+#event .quote{font:44px/1.3 "Jua",sans-serif;background:rgba(255,255,255,.12);border-left:10px solid #FFE08A;border-radius:14px;padding:14px 20px}
+#event .quote small{display:block;font:22px/1.5 "Gowun Dodum";opacity:.85;margin-top:6px}
+#event .adds{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;animation:fadein 1s 2.4s both}
+#event .add{background:rgba(255,255,255,.92);color:var(--ink);border-radius:16px;padding:10px 14px;border-left:10px solid var(--tc)}
+#event .add b{font:24px "Jua",sans-serif;color:var(--tc);margin-right:8px}
+#event .rate{font:28px/1.4 "Jua",sans-serif;background:#FFE08A;color:#4A3500;border-radius:16px;padding:10px 18px;animation:fadein 1s 3.4s both}
+#event .x{position:absolute;right:16px;bottom:14px;background:rgba(255,255,255,.2);color:#fff;border-radius:12px;padding:8px 14px;font-size:17px}
+/* end */
+#vEnd{flex-direction:column;gap:10px}
+.tabs{display:flex;gap:10px}.tabs button{height:54px;padding:0 24px;border-radius:16px;background:#EFE6D4;font:26px "Jua",sans-serif;color:var(--muted)}.tabs button.on{background:var(--sea);color:#fff}
+.tabs .note{margin-left:auto;align-self:center;font-size:18px;color:var(--muted)}
+.pane{display:none;flex:1;min-height:0;flex-direction:column;gap:10px}.pane.on{display:flex}
+table.sum{width:100%;border-collapse:separate;border-spacing:0 12px;font-size:24px}
+table.sum th{font:22px "Jua",sans-serif;color:var(--muted);text-align:left;padding:0 14px}
+table.sum td{background:var(--panel);padding:16px 16px;vertical-align:middle;box-shadow:0 2px 0 var(--line)}
+table.sum td:first-child{border-radius:16px 0 0 16px;border-left:12px solid var(--tc);font:38px "Jua",sans-serif;color:var(--tc);white-space:nowrap;width:220px}
+table.sum td:last-child{border-radius:0 16px 16px 0;text-align:center;font:26px "Jua",sans-serif;width:110px}
+table.sum td .row{display:flex;flex-wrap:wrap;gap:6px}table.sum .chip{font-size:30px;padding:5px 14px}
+table.sum .none{color:#B7AC98;font-size:19px}
+.relay{background:#FFF7DE;border:3px dashed var(--gold);border-radius:18px;padding:12px 18px;font:30px/1.5 "Jua",sans-serif}
+.relay small{font:21px "Gowun Dodum";color:var(--muted)}
+.bonus{background:linear-gradient(90deg,#FFE08A,#FFC96B);border-radius:20px;padding:12px 20px;font:32px "Jua",sans-serif;text-align:center;color:#5A3D00}
+.bonus.no{background:#EFE6D4;color:var(--muted);font-size:24px}
+.ranklist{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start}
+.rk{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:18px;padding:10px 16px;box-shadow:0 2px 0 var(--line);border-left:12px solid var(--tc)}
+.rk .no{font:30px "Jua",sans-serif;width:170px;white-space:nowrap}.rk .nm{font:30px "Jua",sans-serif;color:var(--tc);width:140px}
+.rk .bar{flex:1;height:18px}.rk .sc{font:32px "Jua",sans-serif;width:120px;text-align:right}
+/* controls */
+.controls{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:22px;padding:10px 14px;box-shadow:0 3px 0 var(--line)}
+.controls .sp{flex:1}
+.ctl{height:72px;padding:0 24px;border-radius:18px;font:26px "Jua",sans-serif;white-space:nowrap;position:relative;overflow:hidden}
+.ctl.primary{background:var(--sea);color:#fff;box-shadow:0 4px 0 #123447}.ctl.gold{background:var(--gold);color:#fff;box-shadow:0 4px 0 #8F6A18}.ctl.redb{background:var(--red);color:#fff;box-shadow:0 4px 0 #7E2E1E}
+.ctl.soft{background:#EFE6D4}.ctl.ghost{background:transparent;color:var(--muted);font-size:20px;padding:0 14px}
+.ctl:active{transform:translateY(3px);box-shadow:none}.ctl:disabled{opacity:.4}
+.ctl.armed{animation:pulse .6s infinite;background:var(--warn)!important;color:#fff}
+.ctl .hold-fill{position:absolute;left:0;bottom:0;height:5px;width:0;background:var(--warn)}.ctl.holding .hold-fill{width:100%;transition:width 1.5s linear}
+/* chart (DB 없이도 뜨는 품목표) */
+.chart{position:fixed;inset:0;z-index:70;display:none;background:var(--bg);padding:18px 24px;overflow:auto}
+.chart.on{display:block}
+.chart h1{font:44px "Jua",sans-serif;color:var(--sea);display:flex;align-items:center;gap:16px}.chart h1 small{font:20px "Gowun Dodum";color:var(--muted)}
+.chart h1 .ctl{margin-left:auto;height:60px}
+.chart table{width:100%;border-collapse:separate;border-spacing:0 10px;margin-top:8px}
+.chart td,.chart th{padding:10px 14px;font-size:22px;text-align:left;vertical-align:middle}
+.chart th{font:22px "Jua",sans-serif;color:var(--muted)}
+.chart td{background:var(--panel);box-shadow:0 2px 0 var(--line)}
+.chart td:first-child{border-radius:16px 0 0 16px;border-left:12px solid var(--tc);font:32px "Jua",sans-serif;color:var(--tc);white-space:nowrap}
+.chart td:last-child{border-radius:0 16px 16px 0;font-size:18px;color:var(--muted);max-width:420px}
+.chart .chip{font-size:24px;padding:4px 12px}.chart .row{display:flex;flex-wrap:wrap;gap:6px}
+.chart .opts{display:flex;align-items:center;gap:10px;font-size:20px;margin-top:6px}.chart .opts button{height:46px;padding:0 16px;border-radius:12px;background:#EFE6D4;font:22px "Jua",sans-serif}.chart .opts button.on{background:var(--sea);color:#fff}
+.chart .say{margin-top:10px;background:#FFF7DE;border-radius:16px;padding:12px 18px;font-size:21px;line-height:1.6}
+/* dialog */
+dialog{border:0;border-radius:24px;padding:0;width:min(1100px,94vw);max-height:90vh;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(20,30,40,.5)}
+.dlg{display:flex;flex-direction:column;max-height:90vh}
+.dlg header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:2px solid var(--line)}
+.dlg header h3{font:28px "Jua",sans-serif;margin-right:auto}
+.dlg .tabs button{height:44px;font-size:20px;padding:0 16px}
+.dlg .body{overflow:auto;padding:14px 18px}
+.dlg .pn{display:none}.dlg .pn.on{display:block}
+.dlg table{width:100%;border-collapse:collapse;font-size:17px}.dlg td,.dlg th{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:middle}
+.sm{height:40px;padding:0 14px;border-radius:10px;background:#EFE6D4;font:17px "Jua",sans-serif;white-space:nowrap}.sm.warn{background:var(--warn);color:#fff}.sm:disabled{opacity:.4}
+.invgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:10px}
+.invgrid div{display:flex;align-items:center;gap:6px;background:#F7F1E4;border-radius:12px;padding:6px 8px;font:19px "Jua",sans-serif}.invgrid div span{flex:1}.invgrid b{min-width:30px;text-align:center}
+.toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-30px);background:var(--ink);color:#fff;border-radius:999px;padding:.6em 1.4em;font-size:20px;opacity:0;pointer-events:none;transition:.25s;z-index:90;max-width:90vw;text-align:center}.toast.on{opacity:1;transform:translate(-50%,0)}.toast.err{background:#A63A20}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:80}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="head">
+    <div class="brand"><h1><i>⚓</i>벽란도 무역항</h1><small>고려의 대외 교류 · 모둠 무역 게임</small></div>
+    <span id="phasePill" class="phase-pill">준비</span>
+    <div class="clock"><b id="clock">--:--</b><small id="clockLabel"></small></div>
+    <div class="head-right"><span id="badge" class="badge">점검 모드</span><button id="chartBtn" class="icon-btn" title="와이파이가 안 될 때도 열려요">📜<span>나라별 품목표</span></button><button id="soundBtn" class="icon-btn" title="소리">🔔</button></div>
+  </header>
+
+  <main class="main">
+    <section id="vLobby" class="view">
+      <div class="lobby-side">
+        <div class="card"><h2>① 모둠 수 정하기</h2>
+          <div id="countRow" class="countrow"></div>
+          <p class="hint" id="countHint"></p>
+        </div>
+        <div class="card"><h2>② 라운드 시간</h2>
+          <div class="minrow"><button data-min="-1">−</button><b id="minVal">8분</b><button data-min="1">+</button><span class="hint" style="margin:0">1라운드·2라운드 각각</span></div>
+        </div>
+        <div class="card" style="flex:1;overflow:auto"><h2>무역 규칙</h2>
+          <ul class="rules">
+            <li>흥정은 <b>말로</b>! 약속이 되면 한쪽이 태블릿으로 제안 → 상대가 수락</li>
+            <li>외국 상인은 <b>벽란도의 고려 상인하고만</b> 거래할 수 있어요</li>
+            <li>바꾸는 비율은 자유 (2개 ↔ 1개도 OK)</li>
+            <li>주문서를 채우면 점수! <b>모든 모둠이 완성</b>하면 반 전체 보너스</li>
+          </ul>
+        </div>
+      </div>
+      <div id="seats" class="seats"></div>
+    </section>
+
+    <section id="vPlay" class="view">
+      <div id="map" class="map"></div>
+      <aside class="feed"><h2>📜 무역 장부 <small id="feedCount"></small></h2><div id="flist" class="flist"></div></aside>
+    </section>
+
+    <section id="vEnd" class="view">
+      <div class="tabs" id="endTabs"><button data-pane="pSum" class="on">📋 정리 표</button><button data-pane="pRank">🏆 순위</button><span class="note" id="endNote"></span></div>
+      <div id="pSum" class="pane on">
+        <table class="sum"><thead><tr><th>나라</th><th>고려에 판 것</th><th>고려에서 사 간 것</th><th style="text-align:center">거래</th></tr></thead><tbody id="sumBody"></tbody></table>
+        <div id="relay" class="relay"></div>
+      </div>
+      <div id="pRank" class="pane">
+        <div id="bonus" class="bonus"></div>
+        <div id="ranklist" class="ranklist"></div>
+      </div>
+    </section>
+
+    <div id="event">
+      <div class="sky"></div><div class="waves"></div><div class="shipbig">⛵</div>
+      <div class="txt">
+        <h2>아라비아 상선 입항!</h2>
+        <div class="quote">이 상인들이 고려를 '코리아'라고 불렀다<small>멀리 서쪽 아라비아에서 온 상인들이 벽란도에 들어왔어요. 이들을 통해 '고려(코리아)'라는 이름이 서쪽 세계에 알려졌어요.</small></div>
+        <div id="eventAdds" class="adds"></div>
+        <div id="eventRate" class="rate"></div>
+      </div>
+      <button class="x" id="eventHide">지도 보기 ✕</button>
+    </div>
+  </main>
+
+  <footer id="controls" class="controls"></footer>
+</div>
+
+<div id="chart" class="chart">
+  <h1>📜 나라별 품목표 <small>와이파이가 안 되면 이 표를 보며 말로만 거래해요</small><button class="ctl soft" id="chartClose">닫기 ✕</button></h1>
+  <div class="opts">고려 상인단 수에 맞춰 보기: <span id="chartCounts"></span></div>
+  <table><thead><tr><th>나라</th><th>가진 것 (팔 것)</th><th>주문서 (살 것)</th><th>알아 두기</th></tr></thead><tbody id="chartBody"></tbody></table>
+  <div class="say" id="chartSay"></div>
+</div>
+
+<dialog id="fixDlg"><div class="dlg">
+  <header><h3>⚙ 고치기</h3><div class="tabs" id="fixTabs"><button data-pn="fLog" class="on">거래 되돌리기</button><button data-pn="fInv">창고 고치기</button><button data-pn="fSeat">자리</button><button data-pn="fPhase">진행 단계</button></div><button class="sm" id="fixClose">닫기</button></header>
+  <div class="body">
+    <div id="fLog" class="pn on"><table><thead><tr><th>시각</th><th>라운드</th><th>거래</th><th></th></tr></thead><tbody id="fLogBody"></tbody></table></div>
+    <div id="fInv" class="pn"><div style="display:flex;gap:10px;align-items:center"><b style="font:20px Jua">모둠</b><select id="fInvTeam" style="height:44px;font-size:20px"></select><span class="hint" style="margin:0">± 누르면 바로 저장돼요</span></div><div id="fInvGrid" class="invgrid"></div></div>
+    <div id="fSeat" class="pn"><table><tbody id="fSeatBody"></tbody></table><p style="margin-top:12px"><button class="sm warn" id="fReseat">태블릿 자리 모두 비우기</button> <span class="hint">게임 기록은 그대로, 자리만 다시 배정</span></p></div>
+    <div id="fPhase" class="pn"><p class="hint">버튼을 잘못 눌렀을 때만 쓰세요.</p><p style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"><button class="sm" data-ph="lobby">준비</button><button class="sm" data-ph="r1">1라운드</button><button class="sm" data-ph="event">입항</button><button class="sm" data-ph="r2">2라운드</button><button class="sm" data-ph="end">정리</button></p></div>
+  </div>
+</div></dialog>
+
+<canvas id="fx"></canvas>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+/*<DATA>*/
+/* ══════════════════════════════════════════════════════════════
+   게임 내용 — 교사가 고치는 곳은 여기 한 군데뿐입니다.
+   (품목은 임시값. 교과서와 대조한 뒤 이름만 바꾸거나 빼면 됩니다)
+   · 수량은 직접 적지 않습니다. 모든 주문서를 더해 "필요한 만큼 + spare(여유분)"을
+     파는 모둠에게 자동으로 나눠 줍니다 → 어떤 모둠 수(5~8)에서도 모든 주문서를 동시에 채울 수 있음.
+   · 고친 뒤에는 board 에서 [초기화]를 1.5초 누르면 새 값으로 다시 차려집니다.
+   ══════════════════════════════════════════════════════════════ */
+const DATA = {
+  goods: {                         // 물건 이름 → 그림
+    인삼: '🥕', 종이: '📜', 먹: '🖌️', 나전칠기: '🐚', 화문석: '🧺', 금: '🪙', 곡식: '🌾', 농기구: '⛏️',
+    비단: '🧣', 서적: '📚', 약재: '🌿', 차: '🍵', 도자기: '🏺', 은: '🥈', 모피: '🦊', 말: '🐴', 유황: '🟡', 수은: '🌡️',
+    향료: '🌶️', 산호: '🪸'
+  },
+  foreign: {                       // 외국 모둠. 모둠 수가 모자라면 drop 이 큰 나라부터 빠짐(최소 외국 3)
+    송:   { label: '송나라 상인단', emoji: '🏯', color: '#C0392B', drop: 0, sells: ['비단', '서적', '약재', '차', '도자기'], extra: { 도자기: 2 }, wants: { 인삼: 1, 종이: 1, 먹: 1, 나전칠기: 1, 화문석: 1, 금: 1 },
+            fact: '고려와 가장 많이 오간 나라. 비단·책·약재를 팔고 고려의 인삼·종이·나전칠기를 사 갔어요' },
+    거란: { label: '거란 상인단', emoji: '🏹', color: '#7D5BA6', drop: 1, sells: ['은', '모피'], wants: { 곡식: 2, 농기구: 1 },
+            fact: '북쪽의 나라. 은과 모피를 가져와 곡식·농기구와 바꿔 갔어요' },
+    여진: { label: '여진 상인단', emoji: '🐎', color: '#8E5B2E', drop: 3, sells: ['말', '모피'], wants: { 곡식: 1, 농기구: 2 },
+            fact: '북쪽의 부족. 말과 모피를 가져와 곡식·농기구와 바꿔 갔어요' },
+    일본: { label: '일본 상인단', emoji: '🗾', color: '#C2528B', drop: 2, sells: ['유황', '수은'], extra: { 수은: 1 }, wants: { 곡식: 1, 인삼: 1, 서적: 1 },
+            fact: '바다 건너 동쪽. 유황·수은을 가져와 곡식·인삼·책을 사 갔어요' }
+  },
+  goryeo: {                        // 고려 상인단(나머지 모둠 전부, 2~4개)
+    label: '고려 상인단', emoji: '⚓', colors: ['#1E8C7E', '#2F7FB5', '#5B8C2A', '#B07A12'],
+    sells: ['인삼', '곡식', '농기구', '종이', '먹', '금', '나전칠기', '화문석'],   // 이 순서로 상인단 1,2,3,(4),1,2… 에게 나눠 줌 → 상인단마다 가진 특산품이 다름
+    wants: [                        // 상인단별 주문서(외국 물건). 상인단 수보다 적으면 돌려 씀
+      { 비단: 1, 서적: 1, 은: 1, 모피: 1, 유황: 1 },
+      { 약재: 1, 차: 1, 말: 1, 모피: 1, 유황: 1 },
+      { 비단: 1, 차: 1, 은: 1, 모피: 1, 유황: 1 },
+      { 서적: 1, 약재: 1, 말: 1, 모피: 1, 유황: 1 }
+    ],
+    arabWants: [                    // 아라비아 상선 입항 때 주문서에 더해지는 것
+      { 향료: 1, 수은: 1 }, { 수은: 1, 산호: 1 }, { 산호: 1, 향료: 1 }, { 향료: 1, 수은: 1 }
+    ],
+    fact: '예성강 하구의 국제 무역항 벽란도. 외국 상인은 모두 이곳의 고려 상인을 거쳐 거래했어요'
+  },
+  arabia: {                        // NPC. 2라운드에 고려 상인단만 이용, 선착순
+    label: '아라비아 상선', emoji: '⛵', color: '#B8860B',
+    sells: ['향료', '수은', '산호'],
+    price: { 금: 1, 비단: 1 },       // 금 1개 또는 비단 1개 → 아라비아 물건 1개
+    spare: 1,                      // 주문서에 필요한 수보다 이만큼 더 싣고 옴
+    fact: '멀리 서쪽에서 온 상인들. 이 상인들이 고려를 \'코리아\'라고 불러 서쪽 세계에 이름이 알려졌어요'
+  },
+  swap: { 말: '은' },               // 그 물건을 파는 나라가 빠지면 주문서에서 대신 넣을 물건
+  spare: 1,                        // 모든 물건: 파는 모둠마다 필요한 수보다 이만큼 더
+  margin: 2,                       // 모둠마다 "값으로 내줄 수 있는 물건"이 (주문서 칸 수 + 입항 칸×2) + 이만큼은 되게 자기 특산품을 더 줌
+  roundMin: 8,                     // 라운드 기본 시간(분)
+  score: { done: 20, classBonus: 30 }   // 점수 = 달성률(0~100) + 주문서 완성 20 + 모든 모둠 완성 시 모두 30
+};
+
+/* 모둠 수(5~8) → 모둠 구성·창고·주문서·아라비아 재고 */
+function buildSetup(n, D = DATA) {
+  n = Math.max(5, Math.min(8, Math.round(Number(n) || 8)));
+  let foreign = Object.entries(D.foreign).map(([id, f]) => ({ id, ...f }));
+  const fCount = Math.min(foreign.length, n - 2);
+  foreign = [...foreign].sort((a, b) => a.drop - b.drop).slice(0, fCount).sort((a, b) => Object.keys(D.foreign).indexOf(a.id) - Object.keys(D.foreign).indexOf(b.id));
+  const k = n - foreign.length;
+  const g = D.goryeo, goryeo = Array.from({ length: k }, (_, i) => ({ id: `고려${i + 1}`, label: `${g.label} ${i + 1}`, emoji: g.emoji, color: g.colors[i % g.colors.length], nation: '고려', sells: [] }));
+  const sellers = {};
+  foreign.forEach(f => f.sells.forEach(x => (sellers[x] ??= []).push(f.id)));
+  g.sells.forEach((x, i) => { const m = goryeo[i % k]; m.sells.push(x); (sellers[x] ??= []).push(m.id); });
+  const fix = order => { const o = {}; for (let [x, q] of Object.entries(order || {})) { if (!sellers[x] && D.swap[x] && sellers[D.swap[x]]) x = D.swap[x]; if (sellers[x]) o[x] = (o[x] || 0) + q; } return o; };
+  const teams = [
+    ...foreign.map(f => ({ id: f.id, name: f.id, label: f.label, emoji: f.emoji, color: f.color, nation: f.id, sells: [...f.sells], order: fix(f.wants), arabOrder: {} })),
+    ...goryeo.map((m, i) => ({ id: m.id, name: m.id, label: m.label, emoji: m.emoji, color: m.color, nation: '고려', sells: m.sells, order: fix(g.wants[i % g.wants.length]), arabOrder: { ...g.arabWants[i % g.arabWants.length] } }))
+  ];
+  /* 필요 수량 = 모든 주문서 합 + 아라비아에 낼 값(금·비단에 반씩) */
+  const demand = {}, arabDemand = {};
+  teams.forEach(t => { Object.entries(t.order).forEach(([x, q]) => demand[x] = (demand[x] || 0) + q); Object.entries(t.arabOrder).forEach(([x, q]) => arabDemand[x] = (arabDemand[x] || 0) + q); });
+  const payUnits = Object.values(arabDemand).reduce((s, q) => s + q, 0), pays = Object.keys(D.arabia.price);
+  pays.forEach(p => { demand[p] = (demand[p] || 0) + Math.ceil(payUnits / pays.length) * D.arabia.price[p]; });
+  const byId = Object.fromEntries(teams.map(t => [t.id, t]));
+  teams.forEach(t => { t.inv = {}; });
+  Object.entries(sellers).forEach(([x, hs]) => { const each = Math.ceil((demand[x] || 0) / hs.length); hs.forEach(h => { byId[h].inv[x] = each + D.spare; }); });
+  foreign.forEach(f => Object.entries(f.extra || {}).forEach(([x, q]) => { byId[f.id].inv[x] = (byId[f.id].inv[x] || 0) + q; }));
+  /* 1:1 이상으로 맞바꾸려면 내줄 물건이 넉넉해야 함 → 모자란 모둠은 자기 특산품을 번갈아 더 받음 */
+  teams.forEach(t => {
+    const units = o => Object.values(o).reduce((s, q) => s + q, 0);
+    const want = units(t.order) + units(t.arabOrder) * 2 + D.margin;
+    let have = Object.entries(t.inv).reduce((s, [x, q]) => s + Math.max(0, q - (t.order[x] || 0)), 0), i = 0;
+    while (have < want && t.sells.length) { const x = t.sells[i++ % t.sells.length]; t.inv[x] = (t.inv[x] || 0) + 1; have++; }
+  });
+  const stock = {}; D.arabia.sells.forEach(x => { stock[x] = (arabDemand[x] || 0) + D.arabia.spare; });
+  return { n, teamIds: teams.map(t => t.id), teams, arabia: { stock, price: { ...D.arabia.price }, got: {} }, demand, arabDemand };
+}
+/*</DATA>*/
+
+
+/*
+  ══════════════════════════════════════════════════════════════
+   벽란도 무역항 · 공용 코드  (board.html / team.html 에 같은 내용이 들어 있음)
+  ══════════════════════════════════════════════════════════════
+  · Firebase 프로젝트는 낱말 경매장과 같은 open-cbd39 를 씁니다. 데이터 경로만 trade/{ROOM}/... 로 분리.
+  · Firestore 보안 규칙은 byeokrando/README.md 참고 (trade 블록 추가 필요).
+  · 주소 뒤에 ?demo=1 → 점검 모드(한 컴퓨터의 여러 탭끼리만 통신, 인터넷 불필요).
+  · 물건·수량·주문서 등 게임 내용은 board.html 의 DATA 한 곳에서만 고칩니다.
+    태블릿(team.html)은 칠판이 Firestore 에 적어 둔 값을 그대로 읽어 씁니다.
+*/
+const firebaseConfig = Object.freeze({
+  apiKey: "AIzaSyD9E86qHToh_f_fNVAcYQldyjCPpARZB-Q",
+  authDomain: "open-cbd39.firebaseapp.com",
+  projectId: "open-cbd39",
+  storageBucket: "open-cbd39.firebasestorage.app",
+  messagingSenderId: "322878081506",
+  appId: "1:322878081506:web:40efbcf61190f867b451bb"
+});
+const ROOM = "byeokrando";                 // Firestore 경로: trade/byeokrando/{state|teams|offers|log|npc|waiting}/...
+const OFFER_TTL = 180000;                  // 답이 없는 제안은 3분 뒤 화면에서 사라짐(보낸 쪽은 취소 가능)
+const FOREIGN_MSG = '외국끼리는 거래할 수 없어요. 벽란도의 고려 상인을 찾아가세요';
+const PHASE_LABEL = Object.freeze({ lobby: '준비', r1: '1라운드', event: '아라비아 상선 입항', r2: '2라운드', end: '무역 끝 · 정리' });
+const DEFAULT_SCORE = Object.freeze({ done: 20, classBonus: 30 });
+
+const fmt = n => Number(n || 0).toLocaleString('ko-KR');
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clone = v => JSON.parse(JSON.stringify(v ?? null));
+const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const newId = p => `${p}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+
+/* ── 게임 규칙 도우미 ── */
+const isTradePhase = p => p === 'r1' || p === 'r2';
+const isGoryeo = tm => tm?.nation === '고려';
+function timeLeft(st, t = Date.now()) { if (!st || !isTradePhase(st.phase)) return null; return st.paused ? (st.left || 0) : (st.endsAt || 0) - t; }
+function tradeOpen(st, t = Date.now()) { return !!st && isTradePhase(st.phase) && !st.paused && t < (st.endsAt || 0) + 3000; }   // 3초: 태블릿 시계 오차 완충
+function closedReason(st, t = Date.now()) {
+  if (!st) return '아직 연결 중이에요';
+  if (st.phase === 'lobby') return '아직 거래 시간이 아니에요. 선생님이 1라운드를 시작하면 열려요';
+  if (st.phase === 'event') return '지금은 아라비아 상선이 들어오는 시간이에요. 칠판을 보세요!';
+  if (st.phase === 'end') return '무역이 끝났어요';
+  if (st.paused) return '선생님이 잠깐 멈췄어요';
+  if (t >= (st.endsAt || 0)) return '이번 라운드 시간이 끝났어요';
+  return '';
+}
+function bundle(b) { const o = {}; for (const [k, v] of Object.entries(b || {})) { const n = Math.floor(Number(v)); if (k && n > 0) o[k] = n; } return o; }
+const hasAll = (inv, b) => Object.entries(b || {}).every(([g, n]) => (Number(inv?.[g]) || 0) >= n);
+const lackText = (inv, b) => Object.entries(b || {}).filter(([g, n]) => (Number(inv?.[g]) || 0) < n).map(([g, n]) => `${g} ${n}개(가진 것 ${Number(inv?.[g]) || 0}개)`).join(', ');
+function checkPair(a, b) {
+  if (!a?.nation || !b?.nation) throw new Error('상대 모둠을 찾을 수 없어요');
+  if (a.id === b.id) throw new Error('우리 모둠끼리는 거래할 수 없어요');
+  if (!isGoryeo(a) && !isGoryeo(b)) throw new Error(FOREIGN_MSG);      // 모든 거래의 한쪽은 반드시 고려
+}
+/* 주문서 달성: 창고에 있는 수량으로 계산(주문서 수량까지만 인정) */
+function orderStatus(tm) {
+  let filled = 0, total = 0;
+  for (const [g, n] of Object.entries(tm?.order || {})) { total += n; filled += Math.min(n, Number(tm.inv?.[g]) || 0); }
+  return { filled, total, done: total > 0 && filled >= total, pct: total ? Math.round(filled * 100 / total) : 0 };
+}
+const activeIds = st => (st?.teamIds || []);
+const activeTeams = (st, teams) => activeIds(st).map(id => teams?.[id]).filter(t => t?.nation);
+/* 점수 = 달성률(0~100) + 주문서 완성 보너스 + (모든 모둠 완성 시) 반 전체 보너스 */
+function ranking(st, teams) {
+  const sc = st?.score || DEFAULT_SCORE, list = activeTeams(st, teams).map(t => ({ id: t.id, team: t, ...orderStatus(t) }));
+  const allDone = list.length > 0 && list.every(x => x.done);
+  list.forEach(x => { x.score = x.pct + (x.done ? sc.done : 0) + (allDone ? sc.classBonus : 0); });
+  list.sort((a, b) => b.score - a.score || activeIds(st).indexOf(a.id) - activeIds(st).indexOf(b.id));
+  list.forEach(x => { x.rank = 1 + list.filter(y => y.score > x.score).length; x.tie = list.filter(y => y.score === x.score).length > 1; });   // 동점은 같은 순위
+  return { list, allDone };
+}
+
+/* ── 통신 계층: Firestore 또는 점검 모드(같은 컴퓨터의 탭끼리) ──  (낱말 경매장 team.html 에서 이식)
+   watch(col, cb)  : 컬렉션 구독. 변경분만 받아 누적 맵을 cb 에 넘김. 반환값은 구독 해제 함수
+   tx(fn)          : 트랜잭션. fn({get,set,update,del}) — get 을 모두 끝낸 뒤 쓰기
+   batch(ops)      : 일괄 쓰기 [{op:'set'|'update'|'del', col, id, data}]
+   update 는 set(merge) 의미: 중첩 객체는 병합, 배열은 교체, null 은 null 저장 */
+const validConfig = () => !Object.values(firebaseConfig).some(v => String(v).includes('PASTE_HERE'));
+function deepMerge(target, patch) {
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && target[k] && typeof target[k] === 'object' && !Array.isArray(target[k])) deepMerge(target[k], v);
+    else target[k] = clone(v);
+  }
+  return target;
+}
+function mockTransport() {
+  const key = `trade-demo-${ROOM}`, channel = new BroadcastChannel(key), listeners = {};
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } };
+  const emit = () => { const d = load(); Object.entries(listeners).forEach(([col, fns]) => fns.forEach(fn => fn(clone(d[col] || {})))); };
+  const save = d => { localStorage.setItem(key, JSON.stringify(d)); channel.postMessage('change'); emit(); };
+  channel.onmessage = emit;
+  window.addEventListener('storage', e => { if (e.key === key) emit(); });
+  const ops = d => ({
+    get: async (col, id) => clone(d[col]?.[id] ?? null),
+    set: (col, id, data) => { (d[col] ??= {})[id] = clone(data); },
+    update: (col, id, patch) => { (d[col] ??= {})[id] = deepMerge(d[col][id] || {}, patch); },
+    del: (col, id) => { if (d[col]) delete d[col][id]; }
+  });
+  return {
+    demo: true,
+    watch(col, cb) { (listeners[col] ??= []).push(cb); cb(clone(load()[col] || {})); return () => { listeners[col] = (listeners[col] || []).filter(f => f !== cb); }; },
+    async tx(fn) { const d = load(); const r = await fn(ops(d)); save(d); return r; },
+    async batch(list) { const d = load(); const o = ops(d); list.forEach(x => o[x.op](x.col, x.id, x.data)); save(d); }
+  };
+}
+async function firestoreTransport() {
+  const appMod = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js');
+  const fs = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js');
+  const app = appMod.initializeApp(firebaseConfig);
+  const db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() });
+  const ref = (col, id) => fs.doc(db, 'trade', ROOM, col, id);
+  const clean = v => clone(v);                         // undefined 제거
+  const writer = tx => ({
+    set: (col, id, data) => tx.set(ref(col, id), clean(data)),
+    update: (col, id, patch) => tx.set(ref(col, id), clean(patch), { merge: true }),
+    del: (col, id) => tx.delete(ref(col, id))
+  });
+  return {
+    demo: false,
+    watch(col, cb) {
+      const map = {};
+      return fs.onSnapshot(fs.collection(db, 'trade', ROOM, col), snap => {
+        snap.docChanges().forEach(ch => { if (ch.type === 'removed') delete map[ch.doc.id]; else map[ch.doc.id] = ch.doc.data(); });
+        cb({ ...map });
+      }, err => { console.error(err); window.dispatchEvent(new CustomEvent('db-error', { detail: err })); });
+    },
+    async tx(fn) {
+      return fs.runTransaction(db, async tx => fn({
+        get: async (col, id) => { const s = await tx.get(ref(col, id)); return s.exists() ? s.data() : null; },
+        ...writer(tx)
+      }));
+    },
+    async batch(list) {
+      for (let i = 0; i < list.length; i += 450) {          // Firestore 일괄 쓰기 한도 500
+        const b = fs.writeBatch(db), w = writer(b);
+        list.slice(i, i + 450).forEach(x => w[x.op](x.col, x.id, x.data));
+        await b.commit();
+      }
+    }
+  };
+}
+async function createTransport() {
+  const forceDemo = new URLSearchParams(location.search).get('demo') === '1';
+  const T = (forceDemo || !validConfig()) ? mockTransport() : await firestoreTransport();
+  T.update = (col, id, data) => T.batch([{ op: 'update', col, id, data }]);
+  return T;
+}
+
+/* ── 거래 트랜잭션 ── */
+/* 제안: 고려 포함 확인 → 거래 시간 확인 → 양쪽 재고 확인 → 제안 문서 생성. 한 모둠은 기다리는 제안을 하나만 보낼 수 있음 */
+async function proposeTrade(T, fromId, toId, give, take) {
+  give = bundle(give); take = bundle(take);
+  return T.tx(async t => {
+    const a = await t.get('teams', fromId), b = await t.get('teams', toId), st = await t.get('state', 'main');
+    checkPair(a, b);
+    if (!activeIds(st).includes(fromId) || !activeIds(st).includes(toId)) throw new Error('이번 판에 없는 모둠이에요');
+    if (!Object.keys(give).length || !Object.keys(take).length) throw new Error('줄 물건과 받을 물건을 모두 담아야 해요');
+    if (!tradeOpen(st)) throw new Error(closedReason(st) || '지금은 거래할 수 없어요');
+    if (!hasAll(a.inv, give)) throw new Error(`우리 창고에 물건이 모자라요: ${lackText(a.inv, give)}`);
+    if (!hasAll(b.inv, take)) throw new Error(`${b.name} 창고에 물건이 모자라요: ${lackText(b.inv, take)}`);
+    const prev = a.outOffer ? await t.get('offers', a.outOffer) : null;
+    if (prev && prev.status === 'pending' && Date.now() - (prev.createdAt || 0) < OFFER_TTL) throw new Error('보낸 제안이 아직 답을 기다려요. 먼저 취소하고 다시 보내요');
+    const id = newId('o'), offer = { id, from: fromId, to: toId, give, take, status: 'pending', phase: st.phase, createdAt: Date.now() };
+    if (prev && prev.status === 'pending') t.update('offers', prev.id, { status: 'canceled', reason: '시간이 지나 취소됨', closedAt: Date.now() });
+    t.set('offers', id, offer);
+    t.update('teams', fromId, { outOffer: id });
+    return offer;
+  });
+}
+/* 수락 = 체결: 제안 확인 → 고려 포함 확인 → 양쪽 재고 확인 → 교환 → 거래 로그 1건. 전부 한 트랜잭션
+   재고가 모자라면 아무것도 옮기지 않고 제안을 failed 로 닫음 → {ok:false, reason} */
+async function acceptOffer(T, offerId, byId) {
+  return T.tx(async t => {
+    const o = await t.get('offers', offerId);
+    if (!o) throw new Error('제안을 찾을 수 없어요');
+    if (o.to !== byId) throw new Error('우리에게 온 제안이 아니에요');
+    if (o.status !== 'pending') throw new Error({ accepted: '이미 거래가 끝난 제안이에요', rejected: '이미 거절한 제안이에요', canceled: '상대가 취소한 제안이에요', failed: '이미 실패한 제안이에요' }[o.status] || '받을 수 없는 제안이에요');
+    const a = await t.get('teams', o.from), b = await t.get('teams', o.to), st = await t.get('state', 'main');
+    checkPair(a, b);
+    if (!tradeOpen(st)) throw new Error(closedReason(st) || '지금은 거래할 수 없어요');
+    const give = bundle(o.give), take = bundle(o.take), now = Date.now();
+    if (!Object.keys(give).length || !Object.keys(take).length) throw new Error('물건이 빈 제안이에요');
+    const lackA = !hasAll(a.inv, give), lackB = !hasAll(b.inv, take);
+    if (lackA || lackB) {
+      const reason = lackA ? `${a.name} 창고에 이제 물건이 모자라요: ${lackText(a.inv, give)}` : `${b.name} 창고에 이제 물건이 모자라요: ${lackText(b.inv, take)}`;
+      t.update('offers', offerId, { status: 'failed', reason, closedAt: now });
+      if (a.outOffer === offerId) t.update('teams', a.id, { outOffer: null });
+      return { ok: false, reason };
+    }
+    const invA = { ...(a.inv || {}) }, invB = { ...(b.inv || {}) };
+    for (const [g, n] of Object.entries(give)) { invA[g] = (invA[g] || 0) - n; invB[g] = (invB[g] || 0) + n; }
+    for (const [g, n] of Object.entries(take)) { invB[g] = (invB[g] || 0) - n; invA[g] = (invA[g] || 0) + n; }
+    const logId = newId('L');
+    const log = { id: logId, kind: 'trade', round: st.phase === 'r2' ? 2 : 1, from: a.id, to: b.id, fromNation: a.nation, toNation: b.nation, give, take, ts: now, offer: offerId };
+    t.update('teams', a.id, { inv: invA, ...(a.outOffer === offerId ? { outOffer: null } : {}) });
+    t.update('teams', b.id, { inv: invB });
+    t.update('offers', offerId, { status: 'accepted', closedAt: now, log: logId });
+    t.set('log', logId, log);
+    return { ok: true, log };
+  });
+}
+async function closeOffer(T, offerId, byId, status) {         // status: 'rejected'(받은 쪽) | 'canceled'(보낸 쪽)
+  return T.tx(async t => {
+    const o = await t.get('offers', offerId); if (!o || o.status !== 'pending') return false;
+    if (status === 'rejected' && o.to !== byId) throw new Error('우리에게 온 제안이 아니에요');
+    if (status === 'canceled' && o.from !== byId) throw new Error('우리가 보낸 제안이 아니에요');
+    const a = await t.get('teams', o.from);
+    t.update('offers', offerId, { status, closedAt: Date.now() });
+    if (a?.outOffer === offerId) t.update('teams', o.from, { outOffer: null });
+    return true;
+  });
+}
+/* 아라비아 상선(NPC): 고려 상인단만, 2라운드에, 정해진 값으로 1개씩 선착순 */
+async function buyArabia(T, teamId, item, pay) {
+  return T.tx(async t => {
+    const me = await t.get('teams', teamId), npc = await t.get('npc', 'arabia'), st = await t.get('state', 'main');
+    if (!me?.nation) throw new Error('모둠 정보를 찾을 수 없어요');
+    if (!isGoryeo(me)) throw new Error('아라비아 상선은 벽란도의 고려 상인하고만 거래해요');
+    if (!npc || !st?.arabOpen || st.phase !== 'r2') throw new Error('아라비아 상선 창구는 2라운드에 열려요');
+    if (!tradeOpen(st)) throw new Error(closedReason(st) || '지금은 거래할 수 없어요');
+    const price = Number(npc.price?.[pay]) || 0;
+    if (!price) throw new Error(`아라비아 상인은 ${pay}을(를) 받지 않아요`);
+    if ((Number(npc.stock?.[item]) || 0) <= 0) throw new Error(`${item}은(는) 다 팔렸어요`);
+    if ((Number(me.inv?.[pay]) || 0) < price) throw new Error(`${pay}이(가) ${price}개 있어야 해요`);
+    const now = Date.now(), logId = newId('L');
+    t.update('npc', 'arabia', { stock: { [item]: npc.stock[item] - 1 }, got: { [pay]: (Number(npc.got?.[pay]) || 0) + price } });
+    t.update('teams', teamId, { inv: { [pay]: me.inv[pay] - price, [item]: (Number(me.inv?.[item]) || 0) + 1 } });
+    t.set('log', logId, { id: logId, kind: 'arabia', round: 2, from: teamId, to: '아라비아', fromNation: '고려', toNation: '아라비아', give: { [pay]: price }, take: { [item]: 1 }, ts: now });
+    return { item, pay, price };
+  });
+}
+/* 자리 배정: 이 기기가 이미 가진 모둠이 있으면 그대로(새로고침 복귀). 없으면 빈 외국 자리 무작위 → 빈 고려 자리 번호순.
+   (외국 자리를 먼저 채우므로, 태블릿이 모자라 모둠 수를 줄여도 이미 앉은 모둠은 대부분 그대로 남음) */
+async function claimTeam(T, deviceId, force = null) {
+  return T.tx(async t => {
+    const st = await t.get('state', 'main'), ids = activeIds(st), teams = {};
+    for (const id of ids) teams[id] = await t.get('teams', id);
+    const valid = ids.filter(id => teams[id]?.nation), stamp = { device: deviceId, claimedAt: Date.now(), lastSeen: Date.now() };
+    if (force && valid.includes(force)) { t.update('teams', force, stamp); valid.forEach(id => { if (id !== force && teams[id].device === deviceId) t.update('teams', id, { device: null }); }); return force; }
+    const mine = valid.find(id => teams[id].device === deviceId);
+    if (mine) return mine;
+    const free = valid.filter(id => !teams[id].device);
+    const foreign = free.filter(id => !isGoryeo(teams[id])), goryeo = free.filter(id => isGoryeo(teams[id]));
+    const pick = foreign.length ? foreign[Math.floor(Math.random() * foreign.length)] : goryeo[0];
+    if (!pick) return null;
+    t.update('teams', pick, stamp);
+    return pick;
+  });
+}
+async function releaseTeam(T, teamId, deviceId = null) {
+  return T.tx(async t => { const tm = await t.get('teams', teamId); if (!tm?.nation) return; if (deviceId && tm.device !== deviceId) return; t.update('teams', teamId, { device: null, claimedAt: 0 }); });
+}
+
+
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const C = { state: null, teams: {}, offers: {}, log: {}, npc: {}, waiting: {} };
+let T = null, soundOn = true, armed = null, armedTimer = 0, lastPhase = '', prevLogIds = null, prevDone = {}, eventHidden = false, endPane = 'pSum', chartN = 8, overBeeped = '';
+const now = () => Date.now();
+const S = () => C.state;
+const goods = () => S()?.goods || DATA.goods;
+const em = g => goods()[g] || '📦';
+const chip = (g, n, cls = '') => `<span class="chip ${cls}">${em(g)} ${esc(g)}${n != null ? ` <b>×${n}</b>` : ''}</span>`;
+const bundleChips = (b, cls = '') => Object.entries(b || {}).map(([g, n]) => chip(g, n, cls)).join('');
+const tinfo = id => id === '아라비아' ? { name: '아라비아', label: DATA.arabia.label, emoji: DATA.arabia.emoji, color: DATA.arabia.color } : (C.teams[id] || { name: id, emoji: '', color: '#888' });
+const online = t => t?.device && t.lastSeen && now() - t.lastSeen < 130000;
+
+function toast(text, err = false) { const el = $('toast'); el.textContent = text; el.className = `toast on${err ? ' err' : ''}`; clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2600); }
+let audio; function beep(kind) { if (!soundOn) return; try { audio ??= new (window.AudioContext || window.webkitAudioContext)(); const seq = { trade: [[660, .07], [880, .1]], done: [[523, .1], [659, .1], [784, .2]], horn: [[196, .5], [247, .6]], end: [[784, .12], [659, .12], [523, .3]], tick: [[440, .08]] }[kind] || []; let t = audio.currentTime; seq.forEach(([f, d]) => { const o = audio.createOscillator(), g = audio.createGain(); o.type = kind === 'horn' ? 'sawtooth' : 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(kind === 'horn' ? .08 : .14, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g).connect(audio.destination); o.start(t); o.stop(t + d + .02); t += d; }); } catch { } }
+const fx = $('fx'), fxc = fx.getContext('2d'); let parts = [];
+function resizeFx() { fx.width = innerWidth; fx.height = innerHeight; } resizeFx(); addEventListener('resize', resizeFx);
+function confetti(x, y, n = 60, colors = ['#C9962B', '#5E9C8F', '#B5432D', '#2F7FB5', '#FFE08A']) { const start = !parts.length; for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * 14, vy: -Math.random() * 12 - 4, r: 6 + Math.random() * 6, c: colors[i % colors.length], a: Math.random() * 6, s: (Math.random() - .5) * .3, life: 90 + Math.random() * 40 }); if (start) requestAnimationFrame(fxLoop); }
+function fxLoop() { fxc.clearRect(0, 0, fx.width, fx.height); parts = parts.filter(p => p.life > 0); parts.forEach(p => { p.x += p.vx; p.vy += .35; p.y += p.vy; p.a += p.s; p.life--; fxc.save(); fxc.translate(p.x, p.y); fxc.rotate(p.a); fxc.fillStyle = p.c; fxc.globalAlpha = Math.min(1, p.life / 30); fxc.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * .6); fxc.restore(); }); if (parts.length) requestAnimationFrame(fxLoop); }
+
+/* ── 나라별 품목표 (DB 없이 DATA 만으로 그림) ── */
+function paintChart() {
+  const s = buildSetup(chartN), k = s.teams.filter(t => t.nation === '고려').length;
+  $('chartCounts').innerHTML = [5, 6, 7, 8].map(n => `<button data-n="${n}" class="${n === chartN ? 'on' : ''}">${n}모둠 (고려 ${n - Math.min(4, n - 2)})</button>`).join('');
+  const rows = s.teams.map(t => `<tr style="--tc:${t.color}"><td>${t.emoji} ${esc(t.nation === '고려' ? t.label : t.label.replace(' 상인단', ''))}</td><td><div class="row">${t.sells.map(g => chip(g, null)).join('')}</div></td><td><div class="row">${Object.keys(t.order).map(g => chip(g, null)).join('')}${Object.keys(t.arabOrder).map(g => chip(g, null, 'new')).join('')}</div></td><td>${esc(t.nation === '고려' ? (t.id === '고려1' ? DATA.goryeo.fact : '') : DATA.foreign[t.id]?.fact || '')}</td></tr>`).join('');
+  const ar = DATA.arabia;
+  $('chartBody').innerHTML = rows + `<tr style="--tc:${ar.color}"><td>${ar.emoji} 아라비아</td><td><div class="row">${ar.sells.map(g => chip(g, null)).join('')}</div></td><td><div class="row">${Object.keys(ar.price).map(g => chip(g, null)).join('')}</div></td><td>${esc(ar.fact)}</td></tr>`;
+  $('chartSay').innerHTML = `🗣 <b>말로 할 때:</b> "우리 ${em('비단')}비단 2개랑 너희 ${em('인삼')}인삼 1개 바꿀래?" · 외국 상인끼리는 거래 금지 · 노란 칸(${chip('향료', null, 'new')})은 아라비아 상선이 들어온 뒤 고려 주문서에 더해지는 물건 · 아라비아 값: ${Object.keys(ar.price).map(p => `${em(p)}${p} ${ar.price[p]}개`).join(' 또는 ')} → 아라비아 물건 1개`;
+}
+$('chartBtn').addEventListener('click', () => { chartN = S()?.teamCount || chartN; paintChart(); $('chart').classList.add('on'); });
+$('chartClose').addEventListener('click', () => { $('chart').classList.remove('on'); if (params.get('chart') === '1' && !T) location.href = location.pathname + (params.get('demo') === '1' ? '?demo=1' : ''); });
+$('chartCounts').addEventListener('click', e => { const b = e.target.closest('[data-n]'); if (b) { chartN = Number(b.dataset.n); paintChart(); } });
+$('soundBtn').addEventListener('click', () => { soundOn = !soundOn; $('soundBtn').classList.toggle('off', !soundOn); $('soundBtn').textContent = soundOn ? '🔔' : '🔕'; if (soundOn) beep('tick'); });
+
+/* ── 판 차리기 ── */
+function seedOps(n, keepSeats = true, keep = {}) {
+  const s = buildSetup(n), ops = [], st = S();
+  s.teams.forEach(t => { const old = keepSeats ? C.teams[t.id] : null; ops.push({ op: 'set', col: 'teams', id: t.id, data: { ...t, inv: t.inv, order: t.order, baseOrder: { ...t.order }, arabOrder: t.arabOrder, newItems: [], outOffer: null, device: old?.device || null, lastSeen: old?.lastSeen || 0, claimedAt: old?.claimedAt || 0 } }); });
+  Object.keys(C.teams).filter(id => !s.teamIds.includes(id)).forEach(id => ops.push({ op: 'del', col: 'teams', id }));
+  Object.keys(C.offers).forEach(id => ops.push({ op: 'del', col: 'offers', id }));
+  Object.keys(C.log).forEach(id => ops.push({ op: 'del', col: 'log', id }));
+  if (!keepSeats) Object.keys(C.waiting).forEach(id => ops.push({ op: 'del', col: 'waiting', id }));
+  ops.push({ op: 'set', col: 'npc', id: 'arabia', data: { ...s.arabia, label: DATA.arabia.label } });
+  ops.push({ op: 'set', col: 'state', id: 'main', data: { phase: 'lobby', teamCount: s.n, teamIds: s.teamIds, roundMin: keep.roundMin || st?.roundMin || DATA.roundMin, endsAt: 0, paused: false, left: 0, arabOpen: false, goods: DATA.goods, score: DATA.score, epoch: now(), seededAt: now() } });
+  return ops;
+}
+async function reseed(n, keepSeats = true) { await T.batch(seedOps(n, keepSeats)); prevLogIds = null; eventHidden = false; }
+
+/* ── 렌더 ── */
+let raf = 0; function render() { clearTimeout(raf); raf = setTimeout(paint, 30); }
+function paint() {
+  const st = S(); if (!st) return;
+  const ph = st.phase;
+  $('phasePill').textContent = PHASE_LABEL[ph] || ph; $('phasePill').className = `phase-pill ${ph}`;
+  const view = ph === 'lobby' ? 'Lobby' : ph === 'end' ? 'End' : 'Play';
+  ['Lobby', 'Play', 'End'].forEach(v => $('v' + v).classList.toggle('on', v === view));
+  if (view === 'Lobby') paintLobby(st);
+  if (view === 'Play') paintPlay(st);
+  if (view === 'End') paintEnd(st);
+  $('event').classList.toggle('on', ph === 'event' && !eventHidden);
+  if (ph === 'event') paintEvent(st);
+  if (ph !== lastPhase) { if (lastPhase && ph === 'event') { beep('horn'); eventHidden = false; $('event').classList.add('on'); } if (lastPhase && ph === 'end') { beep('end'); confetti(innerWidth / 2, innerHeight / 3, 140); endPane = 'pSum'; } lastPhase = ph; }
+  paintControls(st); tick();
+}
+function paintLobby(st) {
+  const n = st.teamCount, list = activeTeams(st, C.teams), taken = list.filter(t => t.device).length;
+  $('countRow').innerHTML = [5, 6, 7, 8].map(k => `<button data-n="${k}" class="${k === n ? 'on' : ''}">${k}</button>`).join('');
+  const onl = list.filter(online).length;
+  $('countHint').innerHTML = `외국 ${list.filter(t => !isGoryeo(t)).length} (${list.filter(t => !isGoryeo(t)).map(t => t.name).join('·')}) + 고려 상인단 ${list.filter(isGoryeo).length} · 태블릿 접속 <b>${taken}/${n}</b>` + (taken && taken < n && taken >= 5 ? `<br>빈 자리가 있어요 → <button class="sm" id="fitBtn">접속한 ${taken}대에 맞추기</button>` : '') + (Object.values(C.waiting).filter(w => now() - (w.lastSeen || 0) < 120000).length ? `<br>자리를 못 받은 태블릿 ${Object.values(C.waiting).filter(w => now() - (w.lastSeen || 0) < 120000).length}대가 기다려요` : '') + (onl < taken ? `<br><small>잠시 끊긴 태블릿 ${taken - onl}대</small>` : '');
+  $('minVal').textContent = `${st.roundMin}분`;
+  $('seats').style.gridTemplateColumns = `repeat(${n <= 6 ? 3 : 4},1fr)`;
+  $('seats').innerHTML = list.map(t => `<div class="seat${t.device ? ' taken' : ''}${online(t) ? ' on' : ''}" style="--tc:${t.color}" data-id="${esc(t.id)}">${t.device ? '<span class="rel">누르면 자리 비우기</span>' : ''}<div class="nm">${t.emoji} ${esc(t.label)}</div><div class="st">${online(t) ? '● 접속했어요' : t.device ? '● 잠시 끊김' : '○ 빈 자리'}</div><div class="lab">가진 것</div><div class="row">${Object.entries(t.inv).map(([g, q]) => chip(g, q)).join('')}</div><div class="lab">주문서</div><div class="row">${Object.entries(t.order).map(([g, q]) => chip(g, q)).join('')}</div></div>`).join('');
+}
+$('countRow').addEventListener('click', async e => { const b = e.target.closest('[data-n]'); if (!b || S()?.phase !== 'lobby') return; const n = Number(b.dataset.n); if (n === S().teamCount) return; try { await reseed(n); toast(`${n}모둠으로 차렸어요. 빠진 자리의 태블릿은 자동으로 새 자리를 받아요`); } catch (err) { toast(err.message, true); } });
+$('countHint').addEventListener('click', async e => { if (e.target.id !== 'fitBtn') return; const n = activeTeams(S(), C.teams).filter(t => t.device).length; if (n < 5 || n > 8) return; try { await reseed(n); toast(`접속한 ${n}대에 맞춰 ${n}모둠으로 차렸어요`); } catch (err) { toast(err.message, true); } });
+document.querySelectorAll('[data-min]').forEach(b => b.addEventListener('click', async () => { const st = S(); if (!st) return; const m = Math.max(2, Math.min(20, (st.roundMin || 8) + Number(b.dataset.min))); await T.update('state', 'main', { roundMin: m }); }));
+$('seats').addEventListener('click', e => { const s = e.target.closest('.seat[data-id]'); if (s) askRelease(s.dataset.id); });
+async function askRelease(id) { const t = C.teams[id]; if (!t?.device) return toast(`${t?.label || id}은(는) 이미 빈 자리예요`); if (!confirm(`${t.label} 자리를 비울까요? 그 태블릿은 다시 자리를 받고, 기다리던 태블릿이 있으면 이 자리에 들어와요.`)) return; try { await releaseTeam(T, id); toast(`${t.label} 자리를 비웠어요`); } catch (err) { toast(err.message, true); } }
+
+function ncard(t, st) {
+  const o = orderStatus(t), fresh = new Set(t.newItems || []);
+  const orderChips = Object.entries(t.order).map(([g, q]) => { const have = Math.min(q, t.inv?.[g] || 0); return `<span class="chip${have >= q ? ' ok' : fresh.has(g) ? ' new' : ''}">${em(g)} ${esc(g)} <b>${have}/${q}</b></span>`; }).join('');
+  const spare = Object.entries(t.inv || {}).filter(([g, q]) => q - (t.order[g] || 0) > 0).map(([g, q]) => chip(g, q - (t.order[g] || 0))).join('');
+  return `<div class="ncard${o.done ? ' done' : ''}${prevDone[t.id] === false && o.done ? ' pop' : ''}" style="--tc:${t.color}" data-id="${esc(t.id)}"><div class="top"><span class="dot${online(t) ? ' on' : ''}"></span><span class="nm">${t.emoji} ${esc(t.nation === '고려' ? t.name : t.label.replace(' 상인단', ''))}</span><span class="pct">${o.pct}%</span></div><div class="bar"><i style="width:${o.pct}%"></i></div><div class="lab">주문서</div><div class="row">${orderChips}</div><div class="lab">내줄 수 있는 것</div><div class="row">${spare || '<span class="lab">없음</span>'}</div></div>`;
+}
+function paintPlay(st) {
+  const list = activeTeams(st, C.teams), byId = Object.fromEntries(list.map(t => [t.id, t]));
+  const slot = id => byId[id] ? ncard(byId[id], st) : `<div class="ncard empty">${esc(id)} · 이번 판에 없음</div>`;
+  const merchants = list.filter(isGoryeo);
+  const npc = C.npc.arabia, arabOn = (st.phase === 'event' || st.phase === 'r2') && npc;
+  const arab = arabOn ? `<div class="arab on"><span class="ship">⛵</span><span style="white-space:nowrap">아라비아 상선 ${st.arabOpen ? '<b style="color:var(--ok)">창구 열림</b>' : '<b style="color:var(--muted)">2라운드에 열림</b>'}</span><span style="margin-left:auto;display:flex;gap:6px">${Object.entries(npc.stock || {}).map(([g, q]) => chip(g, q, q ? '' : 'ok')).join('')}</span></div>` : '';
+  const POS = [[1, 2], [1, 1], [3, 1], [3, 2]];   // DATA.foreign 순서(송·거란·여진·일본) → 지도 자리(왼아래·왼위·오른위·오른아래)
+  $('map').innerHTML = Object.keys(DATA.foreign).slice(0, 4).map((id, i) => `<div style="grid-column:${POS[i][0]};grid-row:${POS[i][1]};display:flex;min-height:0">${slot(id)}</div>`).join('')
+    + `<div class="port"><h2>⚓ 벽란도 · 고려 상인단<small>외국 상인은 모두 여기를 거쳐요</small></h2>${arab}<div class="merchants" style="grid-template-columns:${merchants.length > 2 ? '1fr 1fr' : '1fr'}">${merchants.map(t => ncard(t, st)).join('')}</div></div>`;
+  $('map').querySelectorAll('.ncard:not(.empty)').forEach(el => el.style.flex = '1');
+  list.forEach(t => { const d = orderStatus(t).done; if (prevDone[t.id] === false && d) { beep('done'); const el = $('map').querySelector(`[data-id="${CSS.escape(t.id)}"]`); if (el) { const r = el.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + 30, 50, [t.color, '#FFE08A', '#fff']); } } prevDone[t.id] = d; });
+  paintFeed(st);
+}
+function paintFeed(st) {
+  const logs = Object.values(C.log).filter(l => !l.undone).sort((a, b) => b.ts - a.ts);
+  $('feedCount').textContent = `거래 ${logs.length}건`;
+  const ids = new Set(logs.map(l => l.id)), fresh = prevLogIds ? logs.filter(l => !prevLogIds.has(l.id)) : [];
+  if (fresh.length) beep('trade');
+  prevLogIds = ids;
+  $('flist').innerHTML = logs.slice(0, 14).map(l => { const a = tinfo(l.from), b = tinfo(l.to); return `<div class="fitem${fresh.includes(l) ? ' fresh' : ''}" style="--fc:${b.color}"><div class="who"><span style="color:${a.color}">${a.emoji} ${esc(a.name)}</span><i>⇄</i><span style="color:${b.color}">${b.emoji} ${esc(b.name)}</span><small style="margin-left:auto;color:var(--muted);font-size:14px">${l.round}R</small></div><div class="what">${Object.entries(l.give).map(([g, n]) => `${em(g)}${esc(g)}${n}`).join(' ')} → ${Object.entries(l.take).map(([g, n]) => `${em(g)}${esc(g)}${n}`).join(' ')}</div></div>`; }).join('') || '<div class="fitem" style="--fc:var(--line);color:var(--muted)">아직 거래가 없어요. 흥정을 시작해요!</div>';
+}
+function paintEvent(st) {
+  const list = activeTeams(st, C.teams).filter(isGoryeo), npc = C.npc.arabia || {};
+  $('eventAdds').innerHTML = list.map(t => `<div class="add" style="--tc:${t.color}"><b>${esc(t.name)} 주문서 +</b>${Object.entries(t.arabOrder || {}).map(([g, q]) => chip(g, q, 'new')).join(' ')}</div>`).join('');
+  $('eventRate').innerHTML = `⛵ 아라비아 상선 창구 (2라운드, 고려 상인단만, 선착순) · ${Object.entries(npc.price || DATA.arabia.price).map(([p, n]) => `${em(p)}${esc(p)} ${n}개`).join(' 또는 ')} → ${Object.entries(npc.stock || {}).map(([g, q]) => `${em(g)}${esc(g)}(${q}개)`).join(' · ')} 중 1개`;
+}
+$('eventHide').addEventListener('click', () => { eventHidden = true; render(); });
+
+/* 정리 표: 거래 로그에서 나라별 「고려에 판 것 / 고려에서 사 간 것」 */
+function tradeSummary(st) {
+  const rows = {}, add = (m, g, n) => { m[g] = (m[g] || 0) + n; };
+  const nationOf = id => id === '아라비아' ? '아라비아' : (C.teams[id]?.nation || '?');
+  const within = {};
+  Object.values(C.log).filter(l => !l.undone).forEach(l => {
+    const na = nationOf(l.from), nb = nationOf(l.to);
+    if (na === '고려' && nb === '고려') { Object.entries(l.give).forEach(([g, n]) => add(within, g, n)); Object.entries(l.take).forEach(([g, n]) => add(within, g, n)); return; }
+    const [foreign, sold, bought] = na === '고려' ? [nb, l.take, l.give] : [na, l.give, l.take];   // sold: 외국 → 고려, bought: 고려 → 외국
+    const r = rows[foreign] ??= { sold: {}, bought: {}, count: 0 };
+    Object.entries(sold).forEach(([g, n]) => add(r.sold, g, n)); Object.entries(bought).forEach(([g, n]) => add(r.bought, g, n)); r.count++;
+  });
+  return { rows, within };
+}
+function paintEnd(st) {
+  $('endTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.pane === endPane));
+  ['pSum', 'pRank'].forEach(p => $(p).classList.toggle('on', p === endPane));
+  const { rows, within } = tradeSummary(st), list = activeTeams(st, C.teams);
+  const nations = [...new Set(list.filter(t => !isGoryeo(t)).map(t => t.nation)), ...(rows['아라비아'] ? ['아라비아'] : [])];
+  const total = Object.values(C.log).filter(l => !l.undone).length;
+  $('endNote').textContent = `이번 판 ${list.length}모둠 · 거래 ${total}건`;
+  $('sumBody').innerHTML = nations.map(n => { const r = rows[n] || { sold: {}, bought: {}, count: 0 }, ti = n === '아라비아' ? tinfo('아라비아') : list.find(t => t.nation === n); const cell = m => Object.keys(m).length ? `<div class="row">${Object.entries(m).sort((a, b) => b[1] - a[1]).map(([g, q]) => chip(g, q)).join('')}</div>` : '<span class="none">없음</span>'; return `<tr style="--tc:${ti.color}"><td>${ti.emoji} ${esc(n)}</td><td>${cell(r.sold)}</td><td>${cell(r.bought)}</td><td>${r.count}건</td></tr>`; }).join('');
+  // 중계: 고려가 한 나라에서 사서 다른 나라에 판 물건
+  const relays = [];
+  Object.keys(DATA.goods).forEach(g => { const from = nations.filter(n => rows[n]?.sold[g]), to = nations.filter(n => rows[n]?.bought[g] && !from.includes(n)); if (from.length && to.length) relays.push(`${em(g)}${g} (${from.join('·')} → 고려 → ${to.join('·')})`); });
+  $('relay').innerHTML = `⚓ 고려가 가운데서 이어 준 물건: ${relays.length ? relays.join(' · ') : '<span style="color:var(--muted)">아직 없어요</span>'}<br><small>외국 상인끼리는 직접 거래하지 못하고, 벽란도의 고려 상인을 거쳐야 했어요.${Object.keys(within).length ? ` · 고려 상인단끼리 주고받은 것: ${Object.entries(within).map(([g, q]) => `${em(g)}${g} ${q}`).join(', ')}` : ''}</small>`;
+  const { list: ranked, allDone } = ranking(st, C.teams), sc = st.score || DEFAULT_SCORE;
+  const doneN = ranked.filter(x => x.done).length;
+  $('bonus').className = `bonus${allDone ? '' : ' no'}`;
+  $('bonus').innerHTML = allDone ? `🎉 모든 모둠이 주문서를 완성! 반 전체 보너스 +${sc.classBonus}점` : `주문서 완성 ${doneN}/${ranked.length}모둠 · 모두 완성했다면 반 전체 +${sc.classBonus}점이었어요`;
+  const medal = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  $('ranklist').innerHTML = ranked.map(x => `<div class="rk" style="--tc:${x.team.color}"><span class="no">${medal[x.rank] || ''}${x.tie ? '공동' : ''}${x.rank}위</span><span class="nm">${x.team.emoji} ${esc(x.team.name)}</span><div class="bar"><i style="width:${x.pct}%"></i></div><span class="sc">${x.score}점</span></div>`).join('');
+}
+$('endTabs').addEventListener('click', e => { const b = e.target.closest('[data-pane]'); if (b) { endPane = b.dataset.pane; render(); } });
+
+/* ── 조작 버튼 ── */
+const CONFIRM = { arrive: '', finish: '' };
+function paintControls(st) {
+  const ph = st.phase, b = [], paused = !!st.paused;
+  if (ph === 'lobby') b.push(['startR1', 'primary', '1라운드 시작 ⛵']);
+  if (ph === 'r1' || ph === 'r2') { b.push(['minus', 'soft', '−1분']); b.push(['plus', 'soft', '+1분']); b.push(['pause', 'soft', paused ? '▶ 계속' : '⏸ 잠깐 멈춤']); }
+  if (ph === 'r1') b.push(['arrive', 'gold', '아라비아 상선 입항 ⛵']);
+  if (ph === 'event') { b.push(['showEvent', 'soft', '입항 화면 다시 보기']); b.push(['startR2', 'primary', '2라운드 시작 🔔']); }
+  if (ph === 'r2') b.push(['finish', 'redb', '무역 끝 · 정리 📋']);
+  if (ph === 'end') { b.push(['paneSum', endPane === 'pSum' ? 'primary' : 'soft', '📋 정리 표']); b.push(['paneRank', endPane === 'pRank' ? 'primary' : 'soft', '🏆 순위']); }
+  const html = b.map(([a, c, l]) => { const arm = armed && armed.act === a && now() < armed.until; return `<button class="ctl ${c}${arm ? ' armed' : ''}" data-act="${a}">${arm ? `한 번 더 누르면 ${l}` : l}</button>`; }).join('')
+    + `<span class="sp"></span><button class="ctl ghost" data-act="fix">⚙ 고치기</button><button class="ctl ghost" id="resetBtn" title="1.5초 누르기">초기화 <small>(길게)</small><div class="hold-fill"></div></button>`;
+  if ($('controls').dataset.html === html) return; $('controls').dataset.html = html; $('controls').innerHTML = html;
+  $('controls').querySelectorAll('.ctl[data-act]').forEach(el => el.addEventListener('click', () => act(el.dataset.act)));
+  bindHold($('resetBtn'));
+}
+async function cancelPending(reason) { return Object.values(C.offers).filter(o => o.status === 'pending').map(o => ({ op: 'update', col: 'offers', id: o.id, data: { status: 'canceled', reason, closedAt: now() } })); }
+async function act(a) {
+  const st = S(); if (!st) return;
+  if (a in CONFIRM) {
+    if (!(armed && armed.act === a && now() < armed.until)) { armed = { act: a, until: now() + 3500 }; paintControls(st); clearTimeout(armedTimer); armedTimer = setTimeout(() => { armed = null; paintControls(S()); }, 3600); return; }
+    armed = null; clearTimeout(armedTimer);
+  }
+  const min = (st.roundMin || DATA.roundMin) * 60000;
+  try {
+    if (a === 'startR1') {
+      const list = activeTeams(st, C.teams), empty = list.filter(t => !t.device);
+      if (empty.length && !confirm(`아직 빈 자리가 ${empty.length}곳 있어요 (${empty.map(t => t.name).join(', ')}).\n빈 자리의 주문서는 채울 수 없어서 반 전체 보너스가 어려워요.\n그래도 시작할까요? (취소 → 왼쪽에서 모둠 수를 줄이세요)`)) return;
+      await T.update('state', 'main', { phase: 'r1', endsAt: now() + min, paused: false, left: 0 }); toast('1라운드 시작! 흥정은 말로, 약속되면 태블릿으로 제안해요');
+    }
+    if (a === 'minus' || a === 'plus') { const d = a === 'plus' ? 60000 : -60000; if (st.paused) await T.update('state', 'main', { left: Math.max(5000, (st.left || 0) + d) }); else await T.update('state', 'main', { endsAt: Math.max(now() + 5000, (st.endsAt || now()) + d) }); }
+    if (a === 'pause') { if (st.paused) await T.update('state', 'main', { paused: false, endsAt: now() + Math.max(0, st.left || 0), left: 0 }); else await T.update('state', 'main', { paused: true, left: Math.max(0, (st.endsAt || 0) - now()) }); }
+    if (a === 'arrive') {
+      const ops = await cancelPending('아라비아 상선 입항으로 1라운드가 끝났어요');
+      activeTeams(st, C.teams).filter(isGoryeo).forEach(t => { const order = { ...(t.baseOrder || t.order) }; Object.entries(t.arabOrder || {}).forEach(([g, q]) => order[g] = (order[g] || 0) + q); ops.push({ op: 'update', col: 'teams', id: t.id, data: { order, newItems: Object.keys(t.arabOrder || {}) } }); });
+      ops.push({ op: 'update', col: 'state', id: 'main', data: { phase: 'event', paused: false, left: 0, arabOpen: false, arrivedAt: now() } });
+      await T.batch(ops); eventHidden = false;
+    }
+    if (a === 'showEvent') { eventHidden = false; render(); }
+    if (a === 'startR2') { await T.update('state', 'main', { phase: 'r2', endsAt: now() + min, paused: false, left: 0, arabOpen: true }); toast('2라운드 시작! 아라비아 상선 창구가 열렸어요'); }
+    if (a === 'finish') { const ops = await cancelPending('무역이 끝났어요'); ops.push({ op: 'update', col: 'state', id: 'main', data: { phase: 'end', paused: false, arabOpen: false, endedAt: now() } }); await T.batch(ops); }
+    if (a === 'paneSum' || a === 'paneRank') { endPane = a === 'paneSum' ? 'pSum' : 'pRank'; render(); }
+    if (a === 'fix') openFix();
+  } catch (e) { console.error(e); toast(e.message || '실패했어요', true); }
+}
+function bindHold(btn) {
+  if (!btn) return; let timer = 0;
+  const start = e => { e.preventDefault(); btn.classList.add('holding'); timer = setTimeout(async () => { btn.classList.remove('holding'); if (!S()) return; await reseed(S().teamCount, true); toast('처음으로 돌렸어요 (모둠 자리는 그대로)'); }, 1500); };
+  const cancel = () => { clearTimeout(timer); btn.classList.remove('holding'); };
+  btn.addEventListener('pointerdown', start); ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, cancel));
+}
+
+/* ── 타이머 ── */
+function tick() {
+  const st = S(), clock = $('clock'), lbl = $('clockLabel'); if (!st) return;
+  const ms = timeLeft(st);
+  clock.className = ''; lbl.textContent = '';
+  if (ms === null) { clock.textContent = st.phase === 'lobby' ? `${st.roundMin}:00` : st.phase === 'event' ? '⛵' : '끝'; lbl.textContent = st.phase === 'lobby' ? '라운드 시간' : ''; return; }
+  clock.textContent = mmss(ms);
+  if (st.paused) { clock.className = 'paused'; lbl.textContent = '잠깐 멈춤 · 거래도 멈춰요'; return; }
+  if (ms <= 0) { clock.className = 'over'; lbl.textContent = st.phase === 'r1' ? '시간 끝! 거래가 닫혔어요 → 입항 버튼' : '시간 끝! 거래가 닫혔어요 → 정리 버튼'; const k = `${st.phase}-${st.endsAt}`; if (overBeeped !== k) { overBeeped = k; beep('end'); } return; }
+  if (ms <= 30000) clock.className = 'hot';
+  lbl.textContent = `${PHASE_LABEL[st.phase]} 남은 시간`;
+}
+setInterval(tick, 250);
+
+/* ── 고치기 ── */
+const dlg = $('fixDlg');
+function openFix() { fillFix(); dlg.showModal(); }
+$('fixClose').addEventListener('click', () => dlg.close());
+$('fixTabs').addEventListener('click', e => { const b = e.target.closest('[data-pn]'); if (!b) return; $('fixTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); dlg.querySelectorAll('.pn').forEach(p => p.classList.toggle('on', p.id === b.dataset.pn)); });
+function fillFix() {
+  const st = S(); if (!st) return; const list = activeTeams(st, C.teams);
+  const logs = Object.values(C.log).sort((a, b) => b.ts - a.ts);
+  $('fLogBody').innerHTML = logs.map(l => `<tr style="${l.undone ? 'opacity:.45;text-decoration:line-through' : ''}"><td>${new Date(l.ts).toLocaleTimeString('ko-KR')}</td><td>${l.round}R</td><td><b>${esc(l.from)}</b> ${bundleChips(l.give)} ⇄ <b>${esc(l.to)}</b> ${bundleChips(l.take)}</td><td>${l.undone ? '되돌림' : `<button class="sm warn" data-undo="${l.id}">되돌리기</button>`}</td></tr>`).join('') || '<tr><td colspan="4">아직 거래가 없어요</td></tr>';
+  const sel = $('fInvTeam'), cur = sel.value || list[0]?.id;
+  sel.innerHTML = list.map(t => `<option value="${esc(t.id)}" ${t.id === cur ? 'selected' : ''}>${t.emoji} ${esc(t.label)}</option>`).join('');
+  const t = C.teams[sel.value];
+  $('fInvGrid').innerHTML = t ? Object.keys(goods()).map(g => `<div><span>${em(g)} ${esc(g)}${t.order[g] ? ` <small style="color:var(--red)">주문 ${t.order[g]}</small>` : ''}</span><button class="sm" data-inv="${esc(g)}" data-d="-1">−</button><b>${t.inv?.[g] || 0}</b><button class="sm" data-inv="${esc(g)}" data-d="1">+</button></div>`).join('') : '';
+  $('fSeatBody').innerHTML = list.map(t => `<tr><td style="color:${t.color};font:20px Jua">${t.emoji} ${esc(t.label)}</td><td>${online(t) ? '접속 중' : t.device ? '잠시 끊김' : '빈 자리'}</td><td><button class="sm" data-rel="${esc(t.id)}" ${t.device ? '' : 'disabled'}>자리 비우기</button></td></tr>`).join('');
+}
+$('fInvTeam').addEventListener('change', fillFix);
+$('fInvGrid').addEventListener('click', async e => { const b = e.target.closest('[data-inv]'); if (!b) return; const id = $('fInvTeam').value, g = b.dataset.inv, d = Number(b.dataset.d); try { await T.tx(async t => { const tm = await t.get('teams', id); if (!tm) return; t.update('teams', id, { inv: { [g]: Math.max(0, (tm.inv?.[g] || 0) + d) } }); }); } catch (err) { toast(err.message, true); } });
+$('fSeatBody').addEventListener('click', e => { const b = e.target.closest('[data-rel]'); if (b) askRelease(b.dataset.rel); });
+$('fReseat').addEventListener('click', async () => { if (!confirm('모든 태블릿의 자리를 비울까요? 태블릿들이 다시 자리를 받아요.')) return; await T.batch([...activeIds(S()).map(id => ({ op: 'update', col: 'teams', id, data: { device: null, claimedAt: 0 } })), ...Object.keys(C.waiting).map(id => ({ op: 'del', col: 'waiting', id })), { op: 'update', col: 'state', id: 'main', data: { epoch: now() } }]); toast('자리를 모두 비웠어요'); });
+$('fLog').addEventListener('click', async e => {
+  const b = e.target.closest('[data-undo]'); if (!b) return; const l = C.log[b.dataset.undo]; if (!l || !confirm('이 거래를 되돌릴까요? 물건이 원래 주인에게 돌아가요.')) return;
+  try {
+    await T.tx(async t => {
+      const lg = await t.get('log', l.id); if (!lg || lg.undone) return;
+      if (lg.kind === 'arabia') {
+        const me = await t.get('teams', lg.from), npc = await t.get('npc', 'arabia');
+        if (!hasAll(me.inv, lg.take)) throw new Error(`${lg.from} 창고에 돌려줄 물건이 없어요: ${lackText(me.inv, lg.take)}`);
+        const inv = { ...me.inv }, stock = { ...npc.stock }, got = { ...(npc.got || {}) };
+        Object.entries(lg.take).forEach(([g, n]) => { inv[g] -= n; stock[g] = (stock[g] || 0) + n; }); Object.entries(lg.give).forEach(([g, n]) => { inv[g] = (inv[g] || 0) + n; got[g] = Math.max(0, (got[g] || 0) - n); });
+        t.update('teams', lg.from, { inv }); t.update('npc', 'arabia', { stock, got });
+      } else {
+        const a = await t.get('teams', lg.from), bb = await t.get('teams', lg.to);
+        if (!hasAll(bb.inv, lg.give)) throw new Error(`${lg.to} 창고에 돌려줄 물건이 없어요: ${lackText(bb.inv, lg.give)}`);
+        if (!hasAll(a.inv, lg.take)) throw new Error(`${lg.from} 창고에 돌려줄 물건이 없어요: ${lackText(a.inv, lg.take)}`);
+        const ia = { ...a.inv }, ib = { ...bb.inv };
+        Object.entries(lg.give).forEach(([g, n]) => { ib[g] -= n; ia[g] = (ia[g] || 0) + n; }); Object.entries(lg.take).forEach(([g, n]) => { ia[g] -= n; ib[g] = (ib[g] || 0) + n; });
+        t.update('teams', lg.from, { inv: ia }); t.update('teams', lg.to, { inv: ib });
+      }
+      t.update('log', lg.id, { undone: true, undoneAt: Date.now() });
+    });
+    toast('거래를 되돌렸어요');
+  } catch (err) { toast(err.message, true); }
+});
+dlg.querySelectorAll('[data-ph]').forEach(b => b.addEventListener('click', async () => { const ph = b.dataset.ph, st = S(), min = (st.roundMin || 8) * 60000; if (!confirm(`진행 단계를 "${PHASE_LABEL[ph]}"(으)로 바꿀까요?`)) return; await T.update('state', 'main', { phase: ph, paused: false, ...(isTradePhase(ph) ? { endsAt: now() + min } : {}), arabOpen: ph === 'r2' }); toast('진행 단계를 바꿨어요'); }));
+
+/* ── 연결 ── */
+const chartOnly = params.get('chart') === '1';
+if (chartOnly) { chartN = Number(params.get('n')) || 8; paintChart(); $('chart').classList.add('on'); }   // 품목표만: DB 연결을 아예 하지 않음(와이파이 장애용)
+window.addEventListener('db-error', () => { $('badge').textContent = '연결 오류 · 규칙을 확인하거나 📜 품목표로 진행'; $('badge').className = 'badge err on'; });
+if (!chartOnly) try {
+  T = await createTransport();
+  if (T.demo) { $('badge').classList.add('on'); window.__game = { T, C, proposeTrade, acceptOffer, closeOffer, buyArabia, buildSetup }; }
+  let seeded = false;
+  T.watch('state', map => { C.state = map.main || null; if (!C.state && !seeded) { seeded = true; T.batch(seedOps(8, true)).then(() => toast('벽란도 무역항을 새로 차렸어요')); } if (C.state) { render(); if (dlg.open) fillFix(); } });
+  T.watch('teams', map => { C.teams = map; render(); if (dlg.open) fillFix(); });
+  T.watch('offers', map => { C.offers = map; });
+  T.watch('log', map => { C.log = map; render(); if (dlg.open) fillFix(); });
+  T.watch('npc', map => { C.npc = map; render(); });
+  T.watch('waiting', map => { C.waiting = map; render(); });
+  setInterval(render, 15000);
+} catch (e) { console.error(e); $('badge').textContent = '연결하지 못했어요 · 📜 품목표로 진행하세요'; $('badge').className = 'badge err on'; }
+</script>
+</body>
+</html>

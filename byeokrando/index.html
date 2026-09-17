@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>벽란도 무역항 · 바로가기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4ECDC;--ink:#23303B;--muted:#6E6556;--panel:#FFFCF5;--line:#E3D5BA;--sea:#1D4E6B;--sea2:#2E7A9A;--gold:#C9962B;--red:#B5432D;--celadon:#5E9C8F}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 10% 0%,#FFF7E6 0,transparent 40%),linear-gradient(180deg,transparent 60%,rgba(46,122,154,.14)),var(--bg);color:var(--ink);font-family:"Gowun Dodum","Malgun Gothic",sans-serif;padding:24px}
+main{display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center;width:min(1000px,100%)}
+h1{font:clamp(42px,6vw,72px)/1.1 "Jua",sans-serif;color:var(--sea)}h1 i{font-style:normal;display:inline-block;transform:rotate(-10deg)}
+p{color:var(--muted);font-size:clamp(16px,2vw,21px)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+.col{background:rgba(255,255,255,.55);border-radius:24px;padding:16px;display:grid;gap:10px;border-top:10px solid var(--c);align-content:start}
+.col h2{font:clamp(22px,3vw,30px) "Jua",sans-serif;color:var(--c)}
+a.lnk{display:flex;align-items:center;gap:14px;background:var(--panel);border-radius:18px;padding:14px 18px;text-decoration:none;color:var(--ink);box-shadow:0 3px 0 var(--line);border-left:8px solid var(--lc);text-align:left}
+a.lnk b{font:clamp(20px,2.4vw,27px) "Jua",sans-serif;color:var(--lc);white-space:nowrap}a.lnk small{color:var(--muted);font-size:15px;margin-left:auto;text-align:right}
+.tip{font-size:15px;color:var(--muted);line-height:1.7;background:rgba(255,255,255,.5);border-radius:16px;padding:12px 18px;text-align:left}
+</style>
+</head>
+<body>
+<main>
+  <h1><i>⚓</i> 벽란도 무역항</h1>
+  <p>5학년 사회 · 고려의 대외 교류 · 모둠 무역 게임 (40분)</p>
+  <div class="cols">
+    <div class="col" style="--c:var(--sea)">
+      <h2>수업용</h2>
+      <a class="lnk" href="board.html" style="--lc:var(--sea)"><b>board</b><small>전자칠판 · 교사 조작</small></a>
+      <a class="lnk" href="team.html" style="--lc:var(--sea2)"><b>team</b><small>모둠 태블릿 · 아이들에게 주는 주소</small></a>
+      <a class="lnk" href="board.html?chart=1" style="--lc:var(--gold)"><b>📜 품목표</b><small>와이파이가 안 될 때 · 인터넷 없이 열림</small></a>
+    </div>
+    <div class="col" style="--c:var(--celadon)">
+      <h2>점검 모드 (한 컴퓨터, 여러 탭)</h2>
+      <a class="lnk" href="board.html?demo=1" style="--lc:var(--celadon)"><b>board</b><small>점검용 칠판</small></a>
+      <a class="lnk" href="team.html?demo=1" style="--lc:var(--celadon)"><b>team</b><small>탭을 여러 개 열면 각각 다른 모둠</small></a>
+      <p class="tip">특정 모둠으로 열기: <code>team.html?demo=1&amp;team=송</code> · <code>&amp;team=고려1</code></p>
+    </div>
+  </div>
+  <p class="tip">① 칠판에서 <b>모둠 수(5~8)</b>를 먼저 고른 뒤 태블릿을 켜요. 태블릿은 빈 자리를 스스로 받고, 새로고침해도 같은 모둠으로 돌아와요.<br>② 칠판의 모둠 칸을 누르면 그 자리가 비어요. [초기화]를 1.5초 누르면 자리는 그대로 두고 게임만 처음으로 돌아가요.<br>③ 낱말 경매장·요리 경매장은 <a href="../">원래 주소</a>에서 그대로 쓸 수 있어요 (데이터가 서로 섞이지 않아요).</p>
+</main>
+</body>
+</html>

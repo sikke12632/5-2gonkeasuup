@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>벽란도 무역항 · 모둠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4ECDC;--ink:#23303B;--muted:#6E6556;--panel:#FFFCF5;--line:#E3D5BA;--sea:#1D4E6B;--sea2:#2E7A9A;--celadon:#5E9C8F;--red:#B5432D;--gold:#C9962B;--ok:#2E8B57;--warn:#D65A31;--tc:#888}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:"Gowun Dodum","Malgun Gothic",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+body{background:radial-gradient(circle at 0% 0%,color-mix(in srgb,var(--tc) 16%,transparent) 0,transparent 45%),var(--bg)}
+button{font:inherit;border:0;cursor:pointer;background:none;color:inherit;touch-action:manipulation}
+#app{height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;padding:8px 12px 10px}
+.head{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:18px;padding:6px 12px;box-shadow:0 3px 0 var(--line);border-left:12px solid var(--tc);min-height:64px}
+.head .tn{font:clamp(26px,3.4vw,38px)/1 "Jua",sans-serif;color:var(--tc);white-space:nowrap}
+.head .pct{font:clamp(20px,2.6vw,28px) "Jua",sans-serif;background:#F1E8D6;border-radius:999px;padding:.15em .7em;white-space:nowrap}
+.head .pct.done{background:var(--ok);color:#fff}
+.head .mid{margin-left:auto;display:flex;align-items:center;gap:8px}
+.pill{background:var(--ink);color:#fff;border-radius:999px;padding:.2em .9em;font:clamp(18px,2.3vw,26px) "Jua",sans-serif;white-space:nowrap}
+.pill.r1,.pill.r2{background:var(--sea2)}.pill.event{background:var(--gold)}.pill.end{background:var(--red)}
+.clock{font:clamp(28px,3.6vw,42px)/1 "Jua",sans-serif;font-variant-numeric:tabular-nums;min-width:3.1em;text-align:center;padding:4px 8px;border-radius:12px;background:#F1E8D6}
+.clock.hot{background:var(--warn);color:#fff;animation:pulse .8s infinite}.clock.off{background:var(--ink);color:#fff}
+@keyframes pulse{50%{transform:scale(1.06)}}
+.chg{font-size:13px;color:var(--muted);text-decoration:underline;padding:6px 2px;white-space:nowrap}
+.badge{border-radius:999px;padding:.3em .7em;font-size:13px;background:#FFF1C9;color:#7A5A00;display:none;white-space:nowrap}.badge.on{display:block}.badge.err{background:#FFE0D6;color:#A63A20}
+.view{display:none;min-height:0}.view.on{display:grid}
+.center{place-items:center;text-align:center}
+h2.big{font:clamp(32px,5vw,56px)/1.15 "Jua",sans-serif}
+.waitbox{background:var(--panel);border-radius:24px;padding:22px 28px;box-shadow:0 4px 0 var(--line);max-width:640px;font-size:clamp(18px,2.2vw,24px);line-height:1.6;color:var(--muted);margin-top:14px}
+.spin{display:inline-block;width:.9em;height:.9em;border:4px solid var(--line);border-top-color:var(--sea2);border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* game */
+#vGame{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:10px}
+.col{display:flex;flex-direction:column;gap:8px;min-height:0}
+.box{background:var(--panel);border-radius:18px;padding:8px 12px 10px;box-shadow:0 3px 0 var(--line);min-height:0;display:flex;flex-direction:column;gap:6px}
+.box h3{font:clamp(19px,2.3vw,25px) "Jua",sans-serif;color:var(--sea);display:flex;align-items:baseline;gap:8px}
+.box h3 small{font:clamp(13px,1.5vw,16px) "Gowun Dodum";color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(96px,11vw,128px),1fr));gap:6px;overflow:auto;min-height:0}
+.item{position:relative;border-radius:14px;background:#F6EFE1;border:3px solid var(--line);padding:4px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:clamp(62px,9vh,84px)}
+.item .e{font-size:clamp(22px,2.8vw,30px);line-height:1.1;margin-bottom:2px}
+.item .n{font:clamp(17px,2.1vw,22px)/1.1 "Jua",sans-serif}
+.item .q{font:clamp(19px,2.4vw,26px)/1 "Jua",sans-serif;font-variant-numeric:tabular-nums}
+.order .item{border-style:dashed}
+.order .item.ok{background:#E1F2E7;border:3px solid #7FC196}.order .item.ok::after{content:"✓";position:absolute;right:5px;top:1px;font:22px "Jua",sans-serif;color:var(--ok)}
+.order .item.new{border-color:var(--gold);box-shadow:0 0 0 3px #FFE08A}
+.inv .item{background:#fff}
+.inv .item .tag{position:absolute;left:3px;top:2px;font-size:11px;background:#FFE0D6;color:var(--red);border-radius:999px;padding:0 5px}
+.inv .item.bump{animation:bump .6s}
+@keyframes bump{30%{transform:scale(1.12);border-color:var(--ok)}}
+.bigbtn{height:clamp(74px,12vh,96px);border-radius:20px;background:var(--sea);color:#fff;font:clamp(28px,3.6vw,40px) "Jua",sans-serif;box-shadow:0 5px 0 #123447;flex:none}
+.bigbtn:active:not(:disabled){transform:translateY(4px);box-shadow:none}.bigbtn:disabled{background:#B9AE99;box-shadow:none}
+.bigbtn small{display:block;font:clamp(14px,1.7vw,17px) "Gowun Dodum";opacity:.9}
+.closed{background:#EFE6D4;border-radius:14px;padding:8px 12px;font:clamp(16px,2vw,20px) "Jua",sans-serif;color:var(--muted);text-align:center}
+.out{border:3px solid var(--sea2)}.out .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.out .txt{flex:1;font:clamp(16px,2vw,20px)/1.4 "Jua",sans-serif}
+.sm{height:44px;padding:0 14px;border-radius:12px;background:#EFE6D4;font:18px "Jua",sans-serif;white-space:nowrap}.sm.warn{background:var(--warn);color:#fff}
+.chip{display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:999px;background:#F3EADA;border:2px solid var(--line);font:clamp(16px,2vw,20px)/1.2 "Jua",sans-serif;white-space:nowrap}
+.arab{border:3px solid var(--gold);background:linear-gradient(180deg,#FFF8E3,#FFFCF5)}
+.arab h3{color:#8A6212}
+.abuy{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;overflow:auto}
+.abuy .g{font:clamp(18px,2.2vw,22px)/1.15 "Jua",sans-serif}.abuy .g small{color:var(--muted);font-size:.75em}
+.abuy .bs{display:flex;gap:6px;justify-content:flex-end}
+.abuy button{height:46px;padding:0 9px;border-radius:12px;background:var(--gold);color:#fff;font:clamp(15px,1.9vw,19px) "Jua",sans-serif;box-shadow:0 3px 0 #8F6A18;white-space:nowrap}
+.abuy button:disabled{background:#D9CFBC;box-shadow:none}
+.mylog{overflow:auto;display:flex;flex-direction:column;gap:4px;min-height:0}
+.mylog div{font:clamp(14px,1.7vw,17px)/1.35 "Jua",sans-serif;background:#F6EFE1;border-radius:10px;padding:4px 8px}
+/* overlay: composer / incoming / event */
+.ov{position:fixed;inset:0;z-index:40;display:none;background:rgba(25,35,45,.55);padding:10px}
+.ov.on{display:grid;place-items:center}
+.sheet{background:var(--panel);border-radius:24px;width:min(1180px,100%);height:100%;max-height:100%;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:8px;padding:10px 14px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.sheet header{display:flex;align-items:center;gap:10px}.sheet header h3{font:clamp(24px,3vw,32px) "Jua",sans-serif;margin-right:auto}
+.partners{display:flex;gap:6px;flex-wrap:wrap}
+.pbtn{height:clamp(52px,8vh,64px);padding:0 12px;border-radius:14px;background:#fff;border:4px solid var(--pc);color:var(--pc);font:clamp(19px,2.4vw,26px) "Jua",sans-serif;box-shadow:0 3px 0 var(--pc)}
+.pbtn.on{background:var(--pc);color:#fff}
+.pbtn.lock{opacity:.4;border-style:dashed;box-shadow:none}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0}
+.side{background:#F7F1E4;border-radius:18px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:0}
+.side h4{font:clamp(19px,2.4vw,25px) "Jua",sans-serif;text-align:center}.side.give h4{color:var(--red)}.side.take h4{color:var(--ok)}
+.rows{overflow:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
+.qrow{display:flex;align-items:center;gap:6px;background:#fff;border-radius:12px;padding:4px 6px;border:3px solid transparent}
+.qrow.sel{border-color:var(--sea2)}
+.qrow .nm{flex:1;font:clamp(18px,2.3vw,24px) "Jua",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.qrow .nm small{font-size:.65em;color:var(--muted)}.qrow .nm .need{color:var(--red)}
+.qrow button{width:clamp(44px,5.6vw,56px);height:clamp(44px,5.6vw,56px);border-radius:12px;background:#EFE6D4;font:30px/1 "Jua",sans-serif}
+.qrow button.plus{background:var(--sea2);color:#fff}
+.qrow button:disabled{opacity:.3}
+.qrow b{min-width:1.6em;text-align:center;font:clamp(24px,3vw,32px) "Jua",sans-serif}
+.empty{color:var(--muted);text-align:center;padding:20px;font-size:clamp(16px,2vw,20px)}
+.sheet footer{display:flex;align-items:center;gap:10px}
+.sum{flex:1;font:clamp(17px,2.1vw,22px)/1.4 "Jua",sans-serif}.sum .warnline{color:var(--red);font-size:.85em}
+.send{height:clamp(60px,9vh,74px);padding:0 26px;border-radius:18px;background:var(--ok);color:#fff;font:clamp(22px,2.8vw,30px) "Jua",sans-serif;box-shadow:0 4px 0 #1C6340;white-space:nowrap}.send:disabled{opacity:.35;box-shadow:none}
+.modal{background:var(--panel);border-radius:26px;width:min(720px,96vw);padding:16px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;border-top:14px solid var(--pc);animation:popin .3s}
+@keyframes popin{0%{transform:scale(.7);opacity:0}100%{transform:none;opacity:1}}
+.modal h3{font:clamp(26px,3.6vw,38px)/1.2 "Jua",sans-serif;color:var(--pc)}
+.modal .more{font-size:17px;color:var(--muted);margin-top:2px}
+.deal{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.deal div{background:#F7F1E4;border-radius:16px;padding:10px}.deal h4{font:clamp(18px,2.2vw,22px) "Jua",sans-serif;margin-bottom:6px}
+.deal .get h4{color:var(--ok)}.deal .pay h4{color:var(--red)}
+.deal .row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.deal .chip{font-size:clamp(20px,2.6vw,28px);padding:4px 12px}
+.modal .warnline{color:var(--red);font:18px "Jua",sans-serif;margin-bottom:8px}
+.modal .btns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+.modal .btns button{height:clamp(60px,9vh,76px);border-radius:18px;font:clamp(22px,3vw,32px) "Jua",sans-serif}
+.modal .no{background:#EFE6D4}.modal .yes{background:var(--ok);color:#fff;box-shadow:0 4px 0 #1C6340}
+.evbox{background:linear-gradient(180deg,#0E2F47,#2E86A8);color:#fff;border-radius:28px;width:min(760px,96vw);padding:22px 26px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.evbox .ship{font-size:90px;animation:bob 2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-5deg)}}
+.evbox h3{font:clamp(34px,5vw,54px) "Jua",sans-serif;color:#FFE08A}
+.evbox p{font-size:clamp(18px,2.3vw,24px);line-height:1.5;margin:8px 0}
+.evbox .chip{font-size:24px;color:var(--ink)}
+.evbox button{margin-top:10px;height:60px;padding:0 30px;border-radius:16px;background:#FFE08A;color:#4A3500;font:26px "Jua",sans-serif}
+/* end */
+#vEnd{place-items:center;overflow:auto}
+.endcard{display:flex;flex-direction:column;gap:10px;align-items:center;width:min(820px,100%)}
+.endcard .score{font:clamp(44px,7vw,80px)/1 "Jua",sans-serif;color:var(--tc)}
+.endcard .bonus{background:#FFE08A;border-radius:16px;padding:8px 16px;font:clamp(20px,2.6vw,28px) "Jua",sans-serif}
+.endcard .bonus.no{background:#EFE6D4;color:var(--muted)}
+.rank{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%}
+.rank div{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:14px;padding:6px 12px;font:clamp(18px,2.3vw,24px) "Jua",sans-serif;color:var(--pc);box-shadow:0 2px 0 var(--line)}
+.rank div.me{outline:4px solid var(--pc)}.rank div b{margin-left:auto;color:var(--ink)}
+.toast{position:fixed;left:50%;top:10px;transform:translate(-50%,-30px);background:var(--ink);color:#fff;border-radius:999px;padding:.6em 1.3em;font-size:clamp(17px,2.1vw,22px);opacity:0;pointer-events:none;transition:.25s;z-index:90;max-width:94vw;text-align:center}.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:#A63A20}.toast.win{background:var(--ok)}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:80}
+@media (orientation:portrait),(max-width:760px){#vGame{grid-template-columns:1fr;grid-template-rows:minmax(0,1.2fr) minmax(0,1fr);overflow:auto}.cols2{grid-template-columns:1fr}.rank{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="head">
+    <span id="tn" class="tn">벽란도 무역항</span><span id="pct" class="pct" hidden></span>
+    <div class="mid"><span id="badge" class="badge">점검 모드</span><span id="pill" class="pill">준비</span><span id="clock" class="clock">--:--</span><button id="chg" class="chg">다시 접속</button></div>
+  </header>
+
+  <section id="vPick" class="view center on"><div>
+    <h2 class="big" id="pickTitle"><span class="spin"></span>모둠 자리를 받는 중…</h2>
+    <div id="pickMsg" class="waitbox">잠깐만요, 빈 자리를 찾고 있어요</div>
+  </div></section>
+
+  <section id="vGame" class="view">
+    <div class="col">
+      <div class="box order" style="flex:1.1"><h3>📜 주문서 <small id="orderSub">구해 와야 할 물건</small></h3><div id="order" class="grid"></div></div>
+      <div class="box inv" style="flex:1"><h3>📦 우리 창고 <small>빨간 딱지 = 주문서에 쓸 몫</small></h3><div id="inv" class="grid"></div></div>
+    </div>
+    <div class="col">
+      <button id="proposeBtn" class="bigbtn">🤝 거래 제안하기<small>말로 약속한 다음에 눌러요</small></button>
+      <div id="closedMsg" class="closed" hidden></div>
+      <div id="outBox" class="box out" hidden></div>
+      <div id="arabBox" class="box arab" hidden><h3>⛵ 아라비아 상선 창구 <small id="arabSub">선착순 · 수량 한정</small></h3><div id="abuy" class="abuy"></div></div>
+      <div class="box" style="flex:1"><h3>🧾 우리 거래 <small id="logSub"></small></h3><div id="mylog" class="mylog"></div></div>
+    </div>
+  </section>
+
+  <section id="vEnd" class="view"><div class="endcard">
+    <h2 class="big">무역 끝!</h2>
+    <div id="endMine" style="text-align:center"></div>
+    <div id="endBonus" class="bonus"></div>
+    <div id="endRank" class="rank"></div>
+  </div></section>
+</div>
+
+<div id="ovCompose" class="ov"><div class="sheet">
+  <header><h3>🤝 누구와 거래할까요?</h3><button class="sm" id="cmpClose">닫기 ✕</button></header>
+  <div id="partners" class="partners"></div>
+  <div class="cols2">
+    <div class="side give"><h4>우리가 줄 것 ⬆</h4><div id="giveRows" class="rows"></div></div>
+    <div class="side take"><h4>우리가 받을 것 ⬇</h4><div id="takeRows" class="rows"></div></div>
+  </div>
+  <footer><div id="cmpSum" class="sum"></div><button id="sendBtn" class="send" disabled>제안 보내기 📨</button></footer>
+</div></div>
+
+<div id="ovIncoming" class="ov"><div class="modal" id="inModal"></div></div>
+<div id="ovEvent" class="ov"><div class="evbox" id="evBox"></div></div>
+
+<canvas id="fx"></canvas>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+/*
+  ══════════════════════════════════════════════════════════════
+   벽란도 무역항 · 공용 코드  (board.html / team.html 에 같은 내용이 들어 있음)
+  ══════════════════════════════════════════════════════════════
+  · Firebase 프로젝트는 낱말 경매장과 같은 open-cbd39 를 씁니다. 데이터 경로만 trade/{ROOM}/... 로 분리.
+  · Firestore 보안 규칙은 byeokrando/README.md 참고 (trade 블록 추가 필요).
+  · 주소 뒤에 ?demo=1 → 점검 모드(한 컴퓨터의 여러 탭끼리만 통신, 인터넷 불필요).
+  · 물건·수량·주문서 등 게임 내용은 board.html 의 DATA 한 곳에서만 고칩니다.
+    태블릿(team.html)은 칠판이 Firestore 에 적어 둔 값을 그대로 읽어 씁니다.
+*/
+const firebaseConfig = Object.freeze({
+  apiKey: "AIzaSyD9E86qHToh_f_fNVAcYQldyjCPpARZB-Q",
+  authDomain: "open-cbd39.firebaseapp.com",
+  projectId: "open-cbd39",
+  storageBucket: "open-cbd39.firebasestorage.app",
+  messagingSenderId: "322878081506",
+  appId: "1:322878081506:web:40efbcf61190f867b451bb"
+});
+const ROOM = "byeokrando";                 // Firestore 경로: trade/byeokrando/{state|teams|offers|log|npc|waiting}/...
+const OFFER_TTL = 180000;                  // 답이 없는 제안은 3분 뒤 화면에서 사라짐(보낸 쪽은 취소 가능)
+const FOREIGN_MSG = '외국끼리는 거래할 수 없어요. 벽란도의 고려 상인을 찾아가세요';
+const PHASE_LABEL = Object.freeze({ lobby: '준비', r1: '1라운드', event: '아라비아 상선 입항', r2: '2라운드', end: '무역 끝 · 정리' });
+const DEFAULT_SCORE = Object.freeze({ done: 20, classBonus: 30 });
+
+const fmt = n => Number(n || 0).toLocaleString('ko-KR');
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clone = v => JSON.parse(JSON.stringify(v ?? null));
+const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const newId = p => `${p}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+
+/* ── 게임 규칙 도우미 ── */
+const isTradePhase = p => p === 'r1' || p === 'r2';
+const isGoryeo = tm => tm?.nation === '고려';
+function timeLeft(st, t = Date.now()) { if (!st || !isTradePhase(st.phase)) return null; return st.paused ? (st.left || 0) : (st.endsAt || 0) - t; }
+function tradeOpen(st, t = Date.now()) { return !!st && isTradePhase(st.phase) && !st.paused && t < (st.endsAt || 0) + 3000; }   // 3초: 태블릿 시계 오차 완충
+function closedReason(st, t = Date.now()) {
+  if (!st) return '아직 연결 중이에요';
+  if (st.phase === 'lobby') return '아직 거래 시간이 아니에요. 선생님이 1라운드를 시작하면 열려요';
+  if (st.phase === 'event') return '지금은 아라비아 상선이 들어오는 시간이에요. 칠판을 보세요!';
+  if (st.phase === 'end') return '무역이 끝났어요';
+  if (st.paused) return '선생님이 잠깐 멈췄어요';
+  if (t >= (st.endsAt || 0)) return '이번 라운드 시간이 끝났어요';
+  return '';
+}
+function bundle(b) { const o = {}; for (const [k, v] of Object.entries(b || {})) { const n = Math.floor(Number(v)); if (k && n > 0) o[k] = n; } return o; }
+const hasAll = (inv, b) => Object.entries(b || {}).every(([g, n]) => (Number(inv?.[g]) || 0) >= n);
+const lackText = (inv, b) => Object.entries(b || {}).filter(([g, n]) => (Number(inv?.[g]) || 0) < n).map(([g, n]) => `${g} ${n}개(가진 것 ${Number(inv?.[g]) || 0}개)`).join(', ');
+function checkPair(a, b) {
+  if (!a?.nation || !b?.nation) throw new Error('상대 모둠을 찾을 수 없어요');
+  if (a.id === b.id) throw new Error('우리 모둠끼리는 거래할 수 없어요');
+  if (!isGoryeo(a) && !isGoryeo(b)) throw new Error(FOREIGN_MSG);      // 모든 거래의 한쪽은 반드시 고려
+}
+/* 주문서 달성: 창고에 있는 수량으로 계산(주문서 수량까지만 인정) */
+function orderStatus(tm) {
+  let filled = 0, total = 0;
+  for (const [g, n] of Object.entries(tm?.order || {})) { total += n; filled += Math.min(n, Number(tm.inv?.[g]) || 0); }
+  return { filled, total, done: total > 0 && filled >= total, pct: total ? Math.round(filled * 100 / total) : 0 };
+}
+const activeIds = st => (st?.teamIds || []);
+const activeTeams = (st, teams) => activeIds(st).map(id => teams?.[id]).filter(t => t?.nation);
+/* 점수 = 달성률(0~100) + 주문서 완성 보너스 + (모든 모둠 완성 시) 반 전체 보너스 */
+function ranking(st, teams) {
+  const sc = st?.score || DEFAULT_SCORE, list = activeTeams(st, teams).map(t => ({ id: t.id, team: t, ...orderStatus(t) }));
+  const allDone = list.length > 0 && list.every(x => x.done);
+  list.forEach(x => { x.score = x.pct + (x.done ? sc.done : 0) + (allDone ? sc.classBonus : 0); });
+  list.sort((a, b) => b.score - a.score || activeIds(st).indexOf(a.id) - activeIds(st).indexOf(b.id));
+  list.forEach(x => { x.rank = 1 + list.filter(y => y.score > x.score).length; x.tie = list.filter(y => y.score === x.score).length > 1; });   // 동점은 같은 순위
+  return { list, allDone };
+}
+
+/* ── 통신 계층: Firestore 또는 점검 모드(같은 컴퓨터의 탭끼리) ──  (낱말 경매장 team.html 에서 이식)
+   watch(col, cb)  : 컬렉션 구독. 변경분만 받아 누적 맵을 cb 에 넘김. 반환값은 구독 해제 함수
+   tx(fn)          : 트랜잭션. fn({get,set,update,del}) — get 을 모두 끝낸 뒤 쓰기
+   batch(ops)      : 일괄 쓰기 [{op:'set'|'update'|'del', col, id, data}]
+   update 는 set(merge) 의미: 중첩 객체는 병합, 배열은 교체, null 은 null 저장 */
+const validConfig = () => !Object.values(firebaseConfig).some(v => String(v).includes('PASTE_HERE'));
+function deepMerge(target, patch) {
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && target[k] && typeof target[k] === 'object' && !Array.isArray(target[k])) deepMerge(target[k], v);
+    else target[k] = clone(v);
+  }
+  return target;
+}
+function mockTransport() {
+  const key = `trade-demo-${ROOM}`, channel = new BroadcastChannel(key), listeners = {};
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } };
+  const emit = () => { const d = load(); Object.entries(listeners).forEach(([col, fns]) => fns.forEach(fn => fn(clone(d[col] || {})))); };
+  const save = d => { localStorage.setItem(key, JSON.stringify(d)); channel.postMessage('change'); emit(); };
+  channel.onmessage = emit;
+  window.addEventListener('storage', e => { if (e.key === key) emit(); });
+  const ops = d => ({
+    get: async (col, id) => clone(d[col]?.[id] ?? null),
+    set: (col, id, data) => { (d[col] ??= {})[id] = clone(data); },
+    update: (col, id, patch) => { (d[col] ??= {})[id] = deepMerge(d[col][id] || {}, patch); },
+    del: (col, id) => { if (d[col]) delete d[col][id]; }
+  });
+  return {
+    demo: true,
+    watch(col, cb) { (listeners[col] ??= []).push(cb); cb(clone(load()[col] || {})); return () => { listeners[col] = (listeners[col] || []).filter(f => f !== cb); }; },
+    async tx(fn) { const d = load(); const r = await fn(ops(d)); save(d); return r; },
+    async batch(list) { const d = load(); const o = ops(d); list.forEach(x => o[x.op](x.col, x.id, x.data)); save(d); }
+  };
+}
+async function firestoreTransport() {
+  const appMod = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js');
+  const fs = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js');
+  const app = appMod.initializeApp(firebaseConfig);
+  const db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() });
+  const ref = (col, id) => fs.doc(db, 'trade', ROOM, col, id);
+  const clean = v => clone(v);                         // undefined 제거
+  const writer = tx => ({
+    set: (col, id, data) => tx.set(ref(col, id), clean(data)),
+    update: (col, id, patch) => tx.set(ref(col, id), clean(patch), { merge: true }),
+    del: (col, id) => tx.delete(ref(col, id))
+  });
+  return {
+    demo: false,
+    watch(col, cb) {
+      const map = {};
+      return fs.onSnapshot(fs.collection(db, 'trade', ROOM, col), snap => {
+        snap.docChanges().forEach(ch => { if (ch.type === 'removed') delete map[ch.doc.id]; else map[ch.doc.id] = ch.doc.data(); });
+        cb({ ...map });
+      }, err => { console.error(err); window.dispatchEvent(new CustomEvent('db-error', { detail: err })); });
+    },
+    async tx(fn) {
+      return fs.runTransaction(db, async tx => fn({
+        get: async (col, id) => { const s = await tx.get(ref(col, id)); return s.exists() ? s.data() : null; },
+        ...writer(tx)
+      }));
+    },
+    async batch(list) {
+      for (let i = 0; i < list.length; i += 450) {          // Firestore 일괄 쓰기 한도 500
+        const b = fs.writeBatch(db), w = writer(b);
+        list.slice(i, i + 450).forEach(x => w[x.op](x.col, x.id, x.data));
+        await b.commit();
+      }
+    }
+  };
+}
+async function createTransport() {
+  const forceDemo = new URLSearchParams(location.search).get('demo') === '1';
+  const T = (forceDemo || !validConfig()) ? mockTransport() : await firestoreTransport();
+  T.update = (col, id, data) => T.batch([{ op: 'update', col, id, data }]);
+  return T;
+}
+
+/* ── 거래 트랜잭션 ── */
+/* 제안: 고려 포함 확인 → 거래 시간 확인 → 양쪽 재고 확인 → 제안 문서 생성. 한 모둠은 기다리는 제안을 하나만 보낼 수 있음 */
+async function proposeTrade(T, fromId, toId, give, take) {
+  give = bundle(give); take = bundle(take);
+  return T.tx(async t => {
+    const a = await t.get('teams', fromId), b = await t.get('teams', toId), st = await t.get('state', 'main');
+    checkPair(a, b);
+    if (!activeIds(st).includes(fromId) || !activeIds(st).includes(toId)) throw new Error('이번 판에 없는 모둠이에요');
+    if (!Object.keys(give).length || !Object.keys(take).length) throw new Error('줄 물건과 받을 물건을 모두 담아야 해요');
+    if (!tradeOpen(st)) throw new Error(closedReason(st) || '지금은 거래할 수 없어요');
+    if (!hasAll(a.inv, give)) throw new Error(`우리 창고에 물건이 모자라요: ${lackText(a.inv, give)}`);
+    if (!hasAll(b.inv, take)) throw new Error(`${b.name} 창고에 물건이 모자라요: ${lackText(b.inv, take)}`);
+    const prev = a.outOffer ? await t.get('offers', a.outOffer) : null;
+    if (prev && prev.status === 'pending' && Date.now() - (prev.createdAt || 0) < OFFER_TTL) throw new Error('보낸 제안이 아직 답을 기다려요. 먼저 취소하고 다시 보내요');
+    const id = newId('o'), offer = { id, from: fromId, to: toId, give, take, status: 'pending', phase: st.phase, createdAt: Date.now() };
+    if (prev && prev.status === 'pending') t.update('offers', prev.id, { status: 'canceled', reason: '시간이 지나 취소됨', closedAt: Date.now() });
+    t.set('offers', id, offer);
+    t.update('teams', fromId, { outOffer: id });
+    return offer;
+  });
+}
+/* 수락 = 체결: 제안 확인 → 고려 포함 확인 → 양쪽 재고 확인 → 교환 → 거래 로그 1건. 전부 한 트랜잭션
+   재고가 모자라면 아무것도 옮기지 않고 제안을 failed 로 닫음 → {ok:false, reason} */
+async function acceptOffer(T, offerId, byId) {
+  return T.tx(async t => {
+    const o = await t.get('offers', offerId);
+    if (!o) throw new Error('제안을 찾을 수 없어요');
+    if (o.to !== byId) throw new Error('우리에게 온 제안이 아니에요');
+    if (o.status !== 'pending') throw new Error({ accepted: '이미 거래가 끝난 제안이에요', rejected: '이미 거절한 제안이에요', canceled: '상대가 취소한 제안이에요', failed: '이미 실패한 제안이에요' }[o.status] || '받을 수 없는 제안이에요');
+    const a = await t.get('teams', o.from), b = await t.get('teams', o.to), st = await t.get('state', 'main');
+    checkPair(a, b);
+    if (!tradeOpen(st)) throw new Error(closedReason(st) || '지금은 거래할 수 없어요');
+    const give = bundle(o.give), take = bundle(o.take), now = Date.now();
+    if (!Object.keys(give).length || !Object.keys(take).length) throw new Error('물건이 빈 제안이에요');
+    const lackA = !hasAll(a.inv, give), lackB = !hasAll(b.inv, take);
+    if (lackA || lackB) {
+      const reason = lackA ? `${a.name} 창고에 이제 물건이 모자라요: ${lackText(a.inv, give)}` : `${b.name} 창고에 이제 물건이 모자라요: ${lackText(b.inv, take)}`;
+      t.update('offers', offerId, { status: 'failed', reason, closedAt: now });
+      if (a.outOffer === offerId) t.update('teams', a.id, { outOffer: null });
+      return { ok: false, reason };
+    }
+    const invA = { ...(a.inv || {}) }, invB = { ...(b.inv || {}) };
+    for (const [g, n] of Object.entries(give)) { invA[g] = (invA[g] || 0) - n; invB[g] = (invB[g] || 0) + n; }
+    for (const [g, n] of Object.entries(take)) { invB[g] = (invB[g] || 0) - n; invA[g] = (invA[g] || 0) + n; }
+    const logId = newId('L');
+    const log = { id: logId, kind: 'trade', round: st.phase === 'r2' ? 2 : 1, from: a.id, to: b.id, fromNation: a.nation, toNation: b.nation, give, take, ts: now, offer: offerId };
+    t.update('teams', a.id, { inv: invA, ...(a.outOffer === offerId ? { outOffer: null } : {}) });
+    t.update('teams', b.id, { inv: invB });
+    t.update('offers', offerId, { status: 'accepted', closedAt: now, log: logId });
+    t.set('log', logId, log);
+    return { ok: true, log };
+  });
+}
+async function closeOffer(T, offerId, byId, status) {         // status: 'rejected'(받은 쪽) | 'canceled'(보낸 쪽)
+  return T.tx(async t => {
+    const o = await t.get('offers', offerId); if (!o || o.status !== 'pending') return false;
+    if (status === 'rejected' && o.to !== byId) throw new Error('우리에게 온 제안이 아니에요');
+    if (status === 'canceled' && o.from !== byId) throw new Error('우리가 보낸 제안이 아니에요');
+    const a = await t.get('teams', o.from);
+    t.update('offers', offerId, { status, closedAt: Date.now() });
+    if (a?.outOffer === offerId) t.update('teams', o.from, { outOffer: null });
+    return true;
+  });
+}
+/* 아라비아 상선(NPC): 고려 상인단만, 2라운드에, 정해진 값으로 1개씩 선착순 */
+async function buyArabia(T, teamId, item, pay) {
+  return T.tx(async t => {
+    const me = await t.get('teams', teamId), npc = await t.get('npc', 'arabia'), st = await t.get('state', 'main');
+    if (!me?.nation) throw new Error('모둠 정보를 찾을 수 없어요');
+    if (!isGoryeo(me)) throw new Error('아라비아 상선은 벽란도의 고려 상인하고만 거래해요');
+    if (!npc || !st?.arabOpen || st.phase !== 'r2') throw new Error('아라비아 상선 창구는 2라운드에 열려요');
+    if (!tradeOpen(st)) throw new Error(closedReason(st) || '지금은 거래할 수 없어요');
+    const price = Number(npc.price?.[pay]) || 0;
+    if (!price) throw new Error(`아라비아 상인은 ${pay}을(를) 받지 않아요`);
+    if ((Number(npc.stock?.[item]) || 0) <= 0) throw new Error(`${item}은(는) 다 팔렸어요`);
+    if ((Number(me.inv?.[pay]) || 0) < price) throw new Error(`${pay}이(가) ${price}개 있어야 해요`);
+    const now = Date.now(), logId = newId('L');
+    t.update('npc', 'arabia', { stock: { [item]: npc.stock[item] - 1 }, got: { [pay]: (Number(npc.got?.[pay]) || 0) + price } });
+    t.update('teams', teamId, { inv: { [pay]: me.inv[pay] - price, [item]: (Number(me.inv?.[item]) || 0) + 1 } });
+    t.set('log', logId, { id: logId, kind: 'arabia', round: 2, from: teamId, to: '아라비아', fromNation: '고려', toNation: '아라비아', give: { [pay]: price }, take: { [item]: 1 }, ts: now });
+    return { item, pay, price };
+  });
+}
+/* 자리 배정: 이 기기가 이미 가진 모둠이 있으면 그대로(새로고침 복귀). 없으면 빈 외국 자리 무작위 → 빈 고려 자리 번호순.
+   (외국 자리를 먼저 채우므로, 태블릿이 모자라 모둠 수를 줄여도 이미 앉은 모둠은 대부분 그대로 남음) */
+async function claimTeam(T, deviceId, force = null) {
+  return T.tx(async t => {
+    const st = await t.get('state', 'main'), ids = activeIds(st), teams = {};
+    for (const id of ids) teams[id] = await t.get('teams', id);
+    const valid = ids.filter(id => teams[id]?.nation), stamp = { device: deviceId, claimedAt: Date.now(), lastSeen: Date.now() };
+    if (force && valid.includes(force)) { t.update('teams', force, stamp); valid.forEach(id => { if (id !== force && teams[id].device === deviceId) t.update('teams', id, { device: null }); }); return force; }
+    const mine = valid.find(id => teams[id].device === deviceId);
+    if (mine) return mine;
+    const free = valid.filter(id => !teams[id].device);
+    const foreign = free.filter(id => !isGoryeo(teams[id])), goryeo = free.filter(id => isGoryeo(teams[id]));
+    const pick = foreign.length ? foreign[Math.floor(Math.random() * foreign.length)] : goryeo[0];
+    if (!pick) return null;
+    t.update('teams', pick, stamp);
+    return pick;
+  });
+}
+async function releaseTeam(T, teamId, deviceId = null) {
+  return T.tx(async t => { const tm = await t.get('teams', teamId); if (!tm?.nation) return; if (deviceId && tm.device !== deviceId) return; t.update('teams', teamId, { device: null, claimedAt: 0 }); });
+}
+
+
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const DEMO = params.get('demo') === '1';
+const C = { state: null, teams: {}, offers: {}, log: {}, npc: {} };
+/* 기기 ID: 태블릿(브라우저)마다 하나 → 새로고침해도 같은 모둠으로 복귀.
+   점검 모드(?demo=1)에서는 탭마다 따로(sessionStorage) → 한 컴퓨터의 여러 탭이 서로 다른 모둠이 됨. ?dev=이름 으로 강제 가능 */
+let deviceId = params.get('dev') || '';
+if (!deviceId) { const store = (() => { try { return DEMO ? sessionStorage : localStorage; } catch { return null; } })(); try { deviceId = store?.getItem('byeokrando-device') || ''; if (!deviceId) { deviceId = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); store?.setItem('byeokrando-device', deviceId); } } catch { deviceId = 'd' + Math.random().toString(36).slice(2, 10); } }
+const forceTeam = params.get('team');                 // ?team=송 / ?team=고려1 : 교사 수동 배정(그 자리를 강제로 차지)
+let T, me = '', claiming = false, claimTimer = 0, waitingFull = false, forced = false, toastId = 0;
+let cmp = null;                                       // 작성 중인 제안 { to, give:{}, take:{} }
+let prevOffers = null, prevLogIds = null, prevInv = {}, prevDoneState = null, evSeen = '', busy = false, lastPhase = '';
+const now = () => Date.now();
+const S = () => C.state;
+const myTeam = () => C.teams[me] || null;
+const em = g => S()?.goods?.[g] || '📦';
+const chip = (g, n) => `<span class="chip">${em(g)} ${esc(g)}${n != null ? ` ${n}` : ''}</span>`;
+const chips = b => Object.entries(b || {}).map(([g, n]) => chip(g, n)).join(' ');
+const tinfo = id => id === '아라비아' ? { name: '아라비아', label: '아라비아 상선', emoji: '⛵', color: '#B8860B' } : (C.teams[id] || { name: id, label: id, emoji: '', color: '#888' });
+
+function toast(text, cls = '') { clearTimeout(toastId); const el = $('toast'); el.textContent = text; el.className = `toast on ${cls}`; toastId = setTimeout(() => el.classList.remove('on'), cls === 'err' ? 3600 : 2400); }
+let audio; function beep(kind) { try { audio ??= new (window.AudioContext || window.webkitAudioContext)(); const seq = { tap: [[660, .05]], win: [[523, .1], [784, .18]], lost: [[300, .2]], ding: [[880, .08], [1175, .12]], horn: [[196, .4], [247, .5]] }[kind] || []; let t = audio.currentTime; seq.forEach(([f, d]) => { const o = audio.createOscillator(), g = audio.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.16, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g).connect(audio.destination); o.start(t); o.stop(t + d + .02); t += d; }); } catch { } }
+const fx = $('fx'), fxc = fx.getContext('2d'); let parts = [];
+function resizeFx() { fx.width = innerWidth; fx.height = innerHeight; } resizeFx(); addEventListener('resize', resizeFx);
+function confetti(x, y, n = 40, colors = ['#C9962B', '#5E9C8F', '#B5432D', '#2F7FB5', '#FFE08A']) { const start = !parts.length; for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * 12, vy: -Math.random() * 11 - 3, r: 5 + Math.random() * 6, c: colors[i % colors.length], a: Math.random() * 6, s: (Math.random() - .5) * .3, life: 80 + Math.random() * 40 }); if (start) requestAnimationFrame(fxLoop); }
+function fxLoop() { fxc.clearRect(0, 0, fx.width, fx.height); parts = parts.filter(p => p.life > 0); parts.forEach(p => { p.x += p.vx; p.vy += .35; p.y += p.vy; p.a += p.s; p.life--; fxc.save(); fxc.translate(p.x, p.y); fxc.rotate(p.a); fxc.fillStyle = p.c; fxc.globalAlpha = Math.min(1, p.life / 30); fxc.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * .6); fxc.restore(); }); if (parts.length) requestAnimationFrame(fxLoop); }
+
+/* ── 자리 배정 ── */
+async function ensureSeat() {
+  if (!T || !S() || claiming) return;
+  if (me && C.teams[me]?.device === deviceId && activeIds(S()).includes(me)) { waitingFull = false; return; }
+  if (me) { me = ''; cmp = null; render(); }                           // 선생님이 자리를 비웠거나 모둠 수가 바뀜
+  const owned = activeIds(S()).find(id => C.teams[id]?.nation && C.teams[id].device === deviceId);
+  if (owned && !(forceTeam && !forced && forceTeam !== owned)) { me = owned; forced = true; waitingFull = false; render(); return; }   // 새로고침: 이미 내 자리 → 바로 복귀
+  if (!activeTeams(S(), C.teams).length) return;
+  claiming = true;
+  try {
+    const got = await claimTeam(T, deviceId, forceTeam && !forced ? forceTeam : null); forced = true;
+    if (got) { me = got; waitingFull = false; prevInv = {}; prevDoneState = null; try { await T.batch([{ op: 'del', col: 'waiting', id: deviceId }]); } catch { } toast(`${C.teams[me]?.label || me} 자리를 받았어요!`, 'win'); beep('win'); heartbeat(); }
+    else { waitingFull = true; try { await T.batch([{ op: 'update', col: 'waiting', id: deviceId, data: { lastSeen: now() } }]); } catch { } }
+  } catch (e) { console.error(e); clearTimeout(claimTimer); claimTimer = setTimeout(ensureSeat, 1500 + Math.random() * 1500); }
+  finally { claiming = false; render(); }
+}
+$('chg').addEventListener('click', async () => { if (!confirm('이 태블릿의 자리를 비우고 다시 받을까요? (선생님 확인 후에만!)')) return; try { if (me) await releaseTeam(T, me, deviceId); } catch { } me = ''; forced = true; render(); ensureSeat(); });
+const ownsSeat = () => Object.values(C.teams).some(x => x?.device === deviceId);
+async function heartbeat() { if (!T) return; try { if (me && C.teams[me]?.device === deviceId) await T.batch([{ op: 'update', col: 'teams', id: me, data: { lastSeen: now() } }]); else if (waitingFull) await T.batch([{ op: 'update', col: 'waiting', id: deviceId, data: { lastSeen: now() } }]); } catch { } }
+let hbTick = 0; setInterval(() => { hbTick++; if (S()?.phase === 'lobby' || hbTick % 3 === 0) heartbeat(); }, 40000);
+
+/* ── 렌더 ── */
+let raf = 0; function render() { clearTimeout(raf); raf = setTimeout(paint, 20); }
+function paint() {
+  const st = S(), t = myTeam();
+  document.documentElement.style.setProperty('--tc', t?.color || '#888');
+  $('tn').textContent = t ? `${t.emoji} ${t.label}` : '벽란도 무역항';
+  const view = !me || !t || !st ? 'Pick' : st.phase === 'end' ? 'End' : 'Game';
+  ['Pick', 'Game', 'End'].forEach(v => $('v' + v).classList.toggle('on', v === view));
+  $('pill').textContent = st ? PHASE_LABEL[st.phase] || st.phase : '연결 중'; $('pill').className = `pill ${st?.phase || ''}`;
+  if (view === 'Pick') { $('pct').hidden = true; $('pickTitle').innerHTML = waitingFull ? '자리가 다 찼어요' : '<span class="spin"></span>모둠 자리를 받는 중…'; $('pickMsg').innerHTML = waitingFull ? `모든 자리가 찼어요. <b>이 태블릿은 쓰지 않아도 돼요.</b><br>선생님이 자리를 비우면 자동으로 들어가요.` : st ? '잠깐만요, 빈 자리를 찾고 있어요' : '선생님이 칠판에서 무역항을 열면 자리가 정해져요'; closeAll(); }
+  if (t) { const o = orderStatus(t); $('pct').hidden = false; $('pct').textContent = o.done ? '주문서 완성! ✓' : `주문서 ${o.filled}/${o.total}`; $('pct').className = `pct${o.done ? ' done' : ''}`; }
+  if (view === 'Game') paintGame(st, t);
+  if (view === 'End') { paintEnd(st, t); closeAll(); }
+  if (view !== 'Pick') { paintIncoming(st); paintEvent(st, t); if (cmp) paintCompose(); }
+  detect(st, t); tick();
+}
+function closeAll() { cmp = null; ['ovCompose', 'ovIncoming', 'ovEvent'].forEach(id => $(id).classList.remove('on')); }
+function paintGame(st, t) {
+  const o = t.order || {}, inv = t.inv || {}, fresh = new Set(t.newItems || []);
+  $('orderSub').textContent = orderStatus(t).done ? '모두 채웠어요! 이제 다른 모둠을 도와요' : '구해 와야 할 물건';
+  $('order').innerHTML = Object.entries(o).map(([g, q]) => { const h = Math.min(q, inv[g] || 0); return `<div class="item${h >= q ? ' ok' : fresh.has(g) ? ' new' : ''}"><span class="e">${em(g)}</span><span class="n">${esc(g)}</span><span class="q">${h}/${q}</span></div>`; }).join('');
+  const invList = Object.entries(inv).filter(([, q]) => q > 0);
+  $('inv').innerHTML = invList.map(([g, q]) => `<div class="item${prevInv[g] != null && prevInv[g] !== q ? ' bump' : ''}">${o[g] ? `<span class="tag">주문 ${Math.min(o[g], q)}</span>` : ''}<span class="e">${em(g)}</span><span class="n">${esc(g)}</span><span class="q">${q}개</span></div>`).join('') || '<div class="empty">창고가 비었어요</div>';
+  prevInv = { ...inv };
+  const open = tradeOpen(st), reason = closedReason(st);
+  $('proposeBtn').disabled = !open; $('closedMsg').hidden = open; $('closedMsg').textContent = reason;
+  /* 보낸 제안 */
+  const out = t.outOffer ? C.offers[t.outOffer] : null;
+  if (out && out.status === 'pending') { const b = tinfo(out.to), old = now() - out.createdAt > OFFER_TTL; $('outBox').hidden = false; $('outBox').innerHTML = `<h3>📨 ${b.emoji} ${esc(b.name)}에게 보낸 제안 <small>${old ? '답이 없어요 · 취소하고 다시 말해 봐요' : '상대 태블릿에서 수락을 기다려요…'}</small></h3><div class="row"><div class="txt">줄 것 ${chips(out.give)}<br>받을 것 ${chips(out.take)}</div><button class="sm warn" id="cancelOut">취소</button></div>`; }
+  else $('outBox').hidden = true;
+  /* 아라비아 */
+  const npc = C.npc.arabia, showArab = isGoryeo(t) && npc && (st.phase === 'event' || st.phase === 'r2');
+  $('arabBox').hidden = !showArab;
+  if (showArab) {
+    const can = st.arabOpen && st.phase === 'r2' && open;
+    $('arabSub').textContent = can ? '선착순 · 수량 한정' : '2라운드가 시작되면 열려요';
+    $('abuy').innerHTML = Object.entries(npc.stock || {}).map(([g, q]) => `<span class="g">${em(g)} ${esc(g)} <small>남은 ${q}개${o[g] ? ' · 주문서' : ''}<br>이것으로 사기 →</small></span><span class="bs">${Object.entries(npc.price || {}).map(([p, n]) => `<button data-item="${esc(g)}" data-pay="${esc(p)}" ${!can || q <= 0 || (inv[p] || 0) < n ? 'disabled' : ''}>${em(p)}${esc(p)} ${n}개</button>`).join('')}</span>`).join('');
+  }
+  /* 우리 거래 */
+  const mine = Object.values(C.log).filter(l => !l.undone && (l.from === me || l.to === me)).sort((a, b) => b.ts - a.ts);
+  $('logSub').textContent = mine.length ? `${mine.length}건` : '';
+  $('mylog').innerHTML = mine.map(l => { const other = l.from === me ? l.to : l.from, gave = l.from === me ? l.give : l.take, got = l.from === me ? l.take : l.give, b = tinfo(other); return `<div><b style="color:${b.color}">${b.emoji} ${esc(b.name)}</b> · 줌 ${Object.entries(gave).map(([g, n]) => `${em(g)}${n}`).join(' ')} → 받음 ${Object.entries(got).map(([g, n]) => `${em(g)}${n}`).join(' ')}</div>`; }).join('') || '<div style="background:none;color:var(--muted)">아직 거래가 없어요</div>';
+}
+$('outBox').addEventListener('click', async e => { if (e.target.id !== 'cancelOut') return; const t = myTeam(); if (!t?.outOffer) return; try { await closeOffer(T, t.outOffer, me, 'canceled'); toast('제안을 취소했어요'); } catch (err) { toast(err.message, 'err'); } });
+$('abuy').addEventListener('click', async e => { const b = e.target.closest('button[data-item]'); if (!b || b.disabled || busy) return; busy = true; b.disabled = true; try { const r = await buyArabia(T, me, b.dataset.item, b.dataset.pay); toast(`⛵ ${r.pay} ${r.price}개로 ${r.item}을(를) 샀어요!`, 'win'); beep('win'); } catch (err) { toast(err.message, 'err'); beep('lost'); } finally { busy = false; render(); } });
+
+/* ── 제안 만들기 ── */
+$('proposeBtn').addEventListener('click', () => { if (!tradeOpen(S())) return toast(closedReason(S()), 'err'); const t = myTeam(); const out = t?.outOffer && C.offers[t.outOffer]; if (out?.status === 'pending' && now() - out.createdAt < OFFER_TTL) return toast('보낸 제안이 답을 기다리는 중이에요. 먼저 취소해요', 'err'); cmp = { to: null, give: {}, take: {} }; $('ovCompose').classList.add('on'); paintCompose(); beep('tap'); });
+$('cmpClose').addEventListener('click', () => { cmp = null; $('ovCompose').classList.remove('on'); });
+function qrows(inv, sel, side, need) {
+  const list = Object.entries(inv || {}).filter(([, q]) => q > 0);
+  if (!list.length) return '<div class="empty">물건이 없어요</div>';
+  return list.map(([g, q]) => { const v = sel[g] || 0, nd = need[g] || 0; return `<div class="qrow${v ? ' sel' : ''}"><span class="nm">${em(g)} ${esc(g)} <small>가진 ${q}${side === 'give' && nd ? ` · <span class="need">주문서에 ${nd}개 필요</span>` : ''}${side === 'take' && nd ? ` · <span class="need">우리 주문서!</span>` : ''}</small></span><button data-side="${side}" data-g="${esc(g)}" data-d="-1" ${v ? '' : 'disabled'}>−</button><b>${v}</b><button class="plus" data-side="${side}" data-g="${esc(g)}" data-d="1" ${v >= q ? 'disabled' : ''}>+</button></div>`; }).join('');
+}
+function paintCompose() {
+  const t = myTeam(), st = S(); if (!t || !cmp) return;
+  const others = activeTeams(st, C.teams).filter(x => x.id !== me);
+  $('partners').innerHTML = others.map(x => { const lock = !isGoryeo(t) && !isGoryeo(x); return `<button class="pbtn${cmp.to === x.id ? ' on' : ''}${lock ? ' lock' : ''}" style="--pc:${x.color}" data-to="${esc(x.id)}">${lock ? '🔒' : x.emoji} ${esc(x.name)}</button>`; }).join('');
+  const b = cmp.to ? C.teams[cmp.to] : null;
+  const lacking = {}; Object.entries(t.order || {}).forEach(([g, q]) => { const l = q - (t.inv?.[g] || 0); if (l > 0) lacking[g] = l; });
+  const sg = $('giveRows').scrollTop, stk = $('takeRows').scrollTop;
+  $('giveRows').innerHTML = qrows(t.inv, cmp.give, 'give', t.order || {});
+  $('takeRows').innerHTML = b ? qrows(b.inv, cmp.take, 'take', lacking) : '<div class="empty">⬆ 먼저 거래할 모둠을 골라요</div>';
+  $('giveRows').scrollTop = sg; $('takeRows').scrollTop = stk;
+  const g = bundle(cmp.give), k = bundle(cmp.take);
+  const warn = Object.entries(g).filter(([x, n]) => (t.order?.[x] || 0) > 0 && (t.inv?.[x] || 0) - n < t.order[x]).map(([x]) => x);
+  $('cmpSum').innerHTML = !b ? '거래할 모둠을 먼저 골라요' : `<b style="color:${b.color}">${b.emoji} ${esc(b.name)}</b>에게 · 줄 것 ${Object.keys(g).length ? chips(g) : '<span style="color:var(--muted)">없음</span>'} ⇄ 받을 것 ${Object.keys(k).length ? chips(k) : '<span style="color:var(--muted)">없음</span>'}${warn.length ? `<div class="warnline">⚠ ${warn.join('·')}은(는) 우리 주문서에도 필요해요. 정말 줄까요?</div>` : ''}`;
+  $('sendBtn').disabled = !b || !Object.keys(g).length || !Object.keys(k).length || busy;
+}
+$('partners').addEventListener('click', e => { const p = e.target.closest('[data-to]'); if (!p || !cmp) return; const t = myTeam(), x = C.teams[p.dataset.to]; try { checkPair(t, x); } catch (err) { toast(err.message, 'err'); beep('lost'); return; } if (cmp.to !== x.id) cmp.take = {}; cmp.to = x.id; beep('tap'); paintCompose(); });
+$('ovCompose').addEventListener('click', e => { const b = e.target.closest('button[data-side]'); if (!b || b.disabled || !cmp) return; const m = cmp[b.dataset.side], g = b.dataset.g; m[g] = Math.max(0, (m[g] || 0) + Number(b.dataset.d)); beep('tap'); paintCompose(); });
+$('sendBtn').addEventListener('click', async () => {
+  if (!cmp?.to || busy) return; busy = true; $('sendBtn').disabled = true;
+  try { const o = await proposeTrade(T, me, cmp.to, cmp.give, cmp.take); toast(`📨 ${C.teams[o.to]?.name}에게 제안을 보냈어요. 수락을 기다려요`, 'win'); cmp = null; $('ovCompose').classList.remove('on'); beep('ding'); }
+  catch (err) { toast(err.message, 'err'); beep('lost'); }
+  finally { busy = false; render(); }
+});
+
+/* ── 받은 제안(여러 개 동시에 올 수 있음 → 오래된 것부터 하나씩) ── */
+function incomingList() { return Object.values(C.offers).filter(o => o.to === me && o.status === 'pending' && now() - (o.createdAt || 0) < OFFER_TTL).sort((a, b) => a.createdAt - b.createdAt); }
+function paintIncoming(st) {
+  const list = incomingList(), ov = $('ovIncoming');
+  if (!list.length || st?.phase === 'end') { ov.classList.remove('on'); $('inModal').dataset.id = ''; return; }
+  const o = list[0], a = tinfo(o.from), t = myTeam();
+  const lackMe = !hasAll(t?.inv, o.take), lackThem = !hasAll(C.teams[o.from]?.inv, o.give);
+  const html = `<h3>${a.emoji} ${esc(a.label)}의 제안</h3>${list.length > 1 ? `<div class="more">기다리는 제안이 ${list.length - 1}개 더 있어요</div>` : ''}<div class="deal"><div class="get"><h4>우리가 받을 것 ⬇</h4><div class="row">${chips(o.give)}</div></div><div class="pay"><h4>우리가 줄 것 ⬆</h4><div class="row">${chips(o.take)}</div></div></div>${lackMe ? `<div class="warnline">⚠ 우리 창고에 물건이 모자라요: ${esc(lackText(t?.inv, o.take))}</div>` : ''}${lackThem ? `<div class="warnline">⚠ 상대 창고에 물건이 모자라요</div>` : ''}<div class="btns"><button class="no" data-rej="${o.id}">거절 ✋</button><button class="yes" data-acc="${o.id}">수락 🤝</button></div>`;
+  if ($('inModal').dataset.html !== html) { $('inModal').dataset.html = html; $('inModal').innerHTML = html; $('inModal').style.setProperty('--pc', a.color); }
+  if ($('inModal').dataset.id !== o.id) { $('inModal').dataset.id = o.id; beep('ding'); }
+  ov.classList.add('on');
+}
+$('inModal').addEventListener('click', async e => {
+  const acc = e.target.closest('[data-acc]'), rej = e.target.closest('[data-rej]'); if ((!acc && !rej) || busy) return;
+  busy = true; e.target.closest('button').disabled = true;
+  try {
+    if (acc) { const r = await acceptOffer(T, acc.dataset.acc, me); if (r.ok) { toast('🤝 거래 성공!', 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .4, 40, [myTeam()?.color || '#C9962B', '#FFE08A', '#fff']); } else { toast(`거래 실패: ${r.reason}`, 'err'); beep('lost'); } }
+    else { await closeOffer(T, rej.dataset.rej, me, 'rejected'); toast('제안을 거절했어요'); }
+  } catch (err) { toast(err.message, 'err'); beep('lost'); }
+  finally { busy = false; $('inModal').dataset.html = ''; render(); }
+});
+
+/* ── 입항 이벤트 ── */
+function paintEvent(st, t) {
+  const key = st?.phase === 'event' ? `ev${st.arrivedAt || ''}` : '';
+  if (!key) { $('ovEvent').classList.remove('on'); return; }
+  if (evSeen === key) return;
+  const npc = C.npc.arabia || {}, add = t.arabOrder || {};
+  $('evBox').innerHTML = `<div class="ship">⛵</div><h3>아라비아 상선 입항!</h3><p>멀리 서쪽에서 온 상인들이 벽란도에 들어왔어요.<br>이 상인들이 고려를 <b style="color:#FFE08A">'코리아'</b>라고 불렀대요. <b>칠판을 보세요!</b></p>${isGoryeo(t) ? `<p>우리 주문서에 새로 추가: ${chips(add)}</p><p>2라운드에 <b>아라비아 상선 창구</b>에서 ${Object.entries(npc.price || {}).map(([p, n]) => `${em(p)}${esc(p)} ${n}개`).join(' 또는 ')}로 1개씩 살 수 있어요 (선착순!)</p>` : `<p>고려 상인들이 아라비아 상인에게 줄 <b>금·비단</b>을 구하러 다닐 거예요.<br>우리 주문서는 그대로! 계속 벽란도에서 거래해요.</p>`}<button id="evOk">알겠어요!</button>`;
+  $('ovEvent').classList.add('on');
+  if (lastPhase && lastPhase !== 'event') beep('horn');
+}
+$('evBox').addEventListener('click', e => { if (e.target.id === 'evOk') { evSeen = S()?.phase === 'event' ? `ev${S().arrivedAt || ''}` : ''; $('ovEvent').classList.remove('on'); } });
+
+/* ── 끝 ── */
+function paintEnd(st, t) {
+  const { list, allDone } = ranking(st, C.teams), mine = list.find(x => x.id === me), sc = st.score || DEFAULT_SCORE;
+  if (mine) $('endMine').innerHTML = `<div class="score">${mine.score}점</div><div style="font:clamp(20px,2.6vw,28px) Jua">주문서 ${mine.filled}/${mine.total} (${mine.pct}%)${mine.done ? ` · 완성 +${sc.done}` : ''} · ${mine.tie ? '공동 ' : ''}${mine.rank}위</div>`;
+  const gave = {}, got = {}; Object.values(C.log).filter(l => !l.undone && (l.from === me || l.to === me)).forEach(l => { const [a, b] = l.from === me ? [l.give, l.take] : [l.take, l.give]; Object.entries(a).forEach(([g, n]) => gave[g] = (gave[g] || 0) + n); Object.entries(b).forEach(([g, n]) => got[g] = (got[g] || 0) + n); });
+  if (mine) $('endMine').innerHTML += `<div style="font:clamp(17px,2.1vw,22px)/1.6 Jua;margin-top:6px">우리가 판 것 ${chips(gave) || '없음'}<br>우리가 사 온 것 ${chips(got) || '없음'}</div>`;
+  $('endBonus').className = `bonus${allDone ? '' : ' no'}`;
+  $('endBonus').textContent = allDone ? `🎉 모든 모둠이 주문서 완성! 반 전체 +${sc.classBonus}점` : `주문서 완성 ${list.filter(x => x.done).length}/${list.length}모둠`;
+  const medal = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  $('endRank').innerHTML = list.map(x => `<div class="${x.id === me ? 'me' : ''}" style="--pc:${x.team.color}">${medal[x.rank] || ''} ${x.tie ? '공동 ' : ''}${x.rank}위 ${x.team.emoji} ${esc(x.team.name)}<b>${x.score}점</b></div>`).join('');
+}
+
+/* ── 사건 감지: 보낸 제안 결과, 새 거래, 주문서 완성 ── */
+function detect(st, t) {
+  if (!me || !t) { prevOffers = null; return; }
+  if (prevOffers) Object.values(C.offers).forEach(o => { const p = prevOffers[o.id]; if (!p || p.status !== 'pending' || o.status === 'pending') return;
+    if (o.from === me) { const b = tinfo(o.to); if (o.status === 'accepted') { toast(`🤝 ${b.name}이(가) 수락했어요! 거래 성공`, 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .35, 50, [t.color, '#FFE08A', '#fff']); } if (o.status === 'rejected') { toast(`${b.name}이(가) 거절했어요. 다시 흥정해 봐요`, 'err'); beep('lost'); } if (o.status === 'failed') { toast(`거래 실패: ${o.reason || ''}`, 'err'); beep('lost'); } if (o.status === 'canceled' && o.reason) toast(o.reason); }
+  });
+  prevOffers = clone(C.offers);
+  const o = orderStatus(t), key = `${o.done}-${o.total}`;
+  if (prevDoneState && prevDoneState !== key && o.done) { toast('📜 주문서 완성! 이제 다른 모둠을 도와 반 전체 보너스를 노려요', 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .3, 90, [t.color, '#FFE08A', '#fff', '#5E9C8F']); }
+  prevDoneState = key;
+  if (st && st.phase !== lastPhase) { if (lastPhase && st.phase === 'r2') toast('2라운드 시작!', 'win'); if (lastPhase && st.phase === 'r1') toast('1라운드 시작! 말로 흥정하고 제안해요', 'win'); lastPhase = st.phase; }
+}
+
+/* ── 시계 ── */
+function tick() {
+  const st = S(), el = $('clock'), ms = timeLeft(st);
+  el.className = 'clock';
+  if (ms === null) { el.textContent = st?.phase === 'event' ? '⛵' : '--:--'; return; }
+  el.textContent = mmss(ms);
+  if (st.paused || ms <= 0) el.classList.add('off'); else if (ms <= 30000) el.classList.add('hot');
+  const open = tradeOpen(st), btn = $('proposeBtn');
+  if (me && $('vGame').classList.contains('on') && btn.disabled === open) render();
+}
+setInterval(tick, 500);
+setInterval(() => { if (incomingList().length || myTeam()?.outOffer) render(); }, 5000);   // 오래된 제안 정리
+
+/* ── 연결 ── */
+window.addEventListener('db-error', () => { $('badge').textContent = '연결 오류'; $('badge').className = 'badge err on'; });
+try {
+  T = await createTransport(); if (T.demo) { $('badge').classList.add('on'); window.__game = { T, C, get me() { return me; }, proposeTrade, acceptOffer, closeOffer, buyArabia }; }
+  T.watch('state', map => { C.state = map.main || null; render(); clearTimeout(claimTimer); claimTimer = setTimeout(ensureSeat, me || ownsSeat() ? 0 : 200 + Math.random() * 800); });
+  T.watch('teams', map => { C.teams = map; render(); clearTimeout(claimTimer); claimTimer = setTimeout(ensureSeat, me || ownsSeat() ? 0 : 300 + Math.random() * 1200); });   // 자리 확인(대기 중이면 무작위 지연 후 재시도)
+  T.watch('offers', map => { C.offers = map; render(); });
+  T.watch('log', map => { C.log = map; render(); });
+  T.watch('npc', map => { C.npc = map; render(); });
+  heartbeat();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { heartbeat(); render(); } });
+} catch (e) { console.error(e); $('badge').textContent = '연결하지 못했어요 · 새로고침'; $('badge').className = 'badge err on'; }
+render();
+</script>
+</body>
+</html>
