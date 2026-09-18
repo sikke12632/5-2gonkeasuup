@@ -34,7 +34,7 @@ function simulate(N, seed) {
   const short = (id, x) => Math.max(0, needT(id, x) - haveT(id, x));                   // 팀이 아직 구해야 하는 수
   const spare = (p, x) => Math.min(p.items[x] || 0, Math.max(0, haveT(p.team, x) - needT(p.team, x)));
   const spareList = p => Object.keys(p.items).filter(x => spare(p, x) > 0);
-  const ok = (a, b) => a.gor !== b.gor;
+  const ok = (a, b) => a.team !== b.team && (a.gor || b.gor);   // 한 팀끼리·외국끼리 금지, 고려 상단끼리는 가능
   let trades = 0;
   const swap = (a, x, b, y) => { a.items[x]--; b.items[x] = (b.items[x] || 0) + 1; b.items[y]--; a.items[y] = (a.items[y] || 0) + 1; trades++; };
   const deliverAll = p => { Object.keys(p.items).forEach(x => { const n = Math.min(p.items[x], needT(p.team, x)); if (n > 0) { p.items[x] -= n; T[p.team].got[x] = (T[p.team].got[x] || 0) + n; } }); };

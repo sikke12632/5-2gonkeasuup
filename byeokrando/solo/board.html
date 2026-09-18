@@ -262,11 +262,11 @@ const DATA = {
   },
   /* 팀 = 나라. weight 는 자동 배정 비중(26명이면 고려 13 = 5·4·4, 외국 13 = 송 4·거란 3·여진 3·일본 3)
      고려 상인 수 = 외국 상인 수가 되도록 번갈아 배정 → 모든 거래가 "고려 1명 ↔ 외국 1명"이라 짝이 남지 않음
-     perPerson 을 팀에 적으면 그 팀만 주문서 칸 수가 달라짐(난이도 조절) */
+     perPerson 을 팀에 적으면 그 팀만 주문서 칸 수가 달라짐. 고려 상단은 거래 상대가 많아서(외국 + 다른 상단) 4칸 */
   teams: [
-    { id: '개경', short: '개경', nation: '고려', label: '고려 · 개경 상단', emoji: '⚓', color: '#1E8C7E', weight: 1 },
-    { id: '예성강', short: '예성', nation: '고려', label: '고려 · 예성강 상단', emoji: '⚓', color: '#2F7FB5', weight: 1 },
-    { id: '벽란', short: '벽란', nation: '고려', label: '고려 · 벽란 상단', emoji: '⚓', color: '#5B8C2A', weight: 1 },
+    { id: '개경', short: '개경', nation: '고려', label: '고려 · 개경 상단', emoji: '⚓', color: '#1E8C7E', weight: 1, perPerson: 4 },
+    { id: '예성강', short: '예성', nation: '고려', label: '고려 · 예성강 상단', emoji: '⚓', color: '#2F7FB5', weight: 1, perPerson: 4 },
+    { id: '벽란', short: '벽란', nation: '고려', label: '고려 · 벽란 상단', emoji: '⚓', color: '#5B8C2A', weight: 1, perPerson: 4 },
     { id: '송', short: '송', nation: '송', label: '송나라 상인', emoji: '🏯', color: '#C0392B', weight: 1.34 },
     { id: '거란', short: '거란', nation: '거란', label: '거란 상인', emoji: '🏹', color: '#7D5BA6', weight: 1 },
     { id: '여진', short: '여진', nation: '여진', label: '여진 상인', emoji: '🐎', color: '#8E5B2E', weight: 1 },
@@ -359,7 +359,7 @@ function lateKit(nation, seed = 0, D = DATA) { const s = D.nations[nation]?.sell
   ══════════════════════════════════════════════════════════════
   · 학생 한 명 = 디벗 한 대 = 상인 한 명. 나라(팀)에 자동 배정.
   · 개인 창고의 물건으로 다른 나라 상인과 거래 → 우리나라 창고에 납품 → 나라 주문서 완성.
-  · 모든 거래는 "고려 상인 ↔ 외국 상인" (같은 나라끼리·외국끼리 금지).
+  · 거래: 고려 ↔ 외국, 고려 상단 ↔ 다른 고려 상단(라이벌) 가능 / 같은 팀(같은 상단·같은 나라)끼리, 외국끼리 금지.
   · Firebase 는 모둠판과 같은 open-cbd39, 경로도 같은 trade/byeokrando 문서 아래에 두고
     컬렉션 이름 앞에 p_ 를 붙여 모둠판 데이터와 섞이지 않게 함 → 보안 규칙을 바꿀 필요 없음.
   · 주소 뒤에 ?demo=1 → 점검 모드(한 컴퓨터의 여러 탭끼리만 통신).
@@ -408,14 +408,12 @@ function bundle(b) { const o = {}; for (const [k, v] of Object.entries(b || {}))
 const hasAll = (items, b) => Object.entries(b || {}).every(([g, n]) => (Number(items?.[g]) || 0) >= n);
 const lackText = (items, b) => Object.entries(b || {}).filter(([g, n]) => (Number(items?.[g]) || 0) < n).map(([g, n]) => `${g} ${n}개(가진 것 ${Number(items?.[g]) || 0}개)`).join(', ');
 const FOREIGN_MSG = '외국 상인끼리는 거래할 수 없어요. 벽란도의 고려 상인을 찾아가세요';
-const SAME_MSG = '같은 나라 상인끼리는 거래할 수 없어요. 다른 나라 상인을 찾아가세요';
-const GORYEO_MSG = '고려 상인끼리는 거래할 수 없어요. 외국 상인을 찾아가세요';
-/* 모든 거래 = 고려 상인 ↔ 외국 상인 */
+const SAME_MSG = '같은 팀(같은 상단·같은 나라)끼리는 거래할 수 없어요. 다른 팀 상인을 찾아가세요';
+/* 거래 규칙: 한 팀끼리는 금지 · 외국끼리는 금지(벽란도를 거쳐야 함) · 고려 상단끼리는 라이벌이라 가능 */
 function checkPair(a, b) {
   if (!a?.nation || !b?.nation) throw new Error('상대 상인을 찾을 수 없어요');
   if (a.id === b.id) throw new Error('나와는 거래할 수 없어요');
-  if (a.nation === b.nation && !isGoryeo(a)) throw new Error(SAME_MSG);
-  if (isGoryeo(a) && isGoryeo(b)) throw new Error(GORYEO_MSG);
+  if ((a.team && a.team === b.team) || (a.nation === b.nation && !isGoryeo(a))) throw new Error(SAME_MSG);
   if (!isGoryeo(a) && !isGoryeo(b)) throw new Error(FOREIGN_MSG);
 }
 const pairOk = (a, b) => { try { checkPair(a, b); return true; } catch { return false; } };
@@ -733,7 +731,7 @@ function paintChart() {
   const byNation = [...new Set(DATA.teams.map(d => d.nation))];
   $('chartBody').innerHTML = byNation.map(n => { const d = DATA.teams.find(x => x.nation === n), nat = DATA.nations[n]; const wants = n === '고려' ? Object.entries(DATA.nations).filter(([k]) => k !== '고려').flatMap(([, v]) => v.sells) : [...new Set(nat.wants)]; return `<tr style="--tc:${d.color}"><td>${d.emoji} ${esc(n)}${n === '고려' ? ' <small style="font-size:18px">(상단 3팀)</small>' : ''}</td><td><div class="row">${[...nat.sells, ...(nat.extra || [])].map(g => chip(g)).join('')}</div></td><td><div class="row">${wants.map(g => chip(g)).join('')}${n === '고려' ? DATA.arabia.sells.map(g => chip(g, null, 'new')).join('') : ''}</div></td><td>${esc(nat.fact)}</td></tr>`; }).join('')
     + `<tr style="--tc:${DATA.arabia.color}"><td>${DATA.arabia.emoji} 아라비아</td><td><div class="row">${DATA.arabia.sells.map(g => chip(g)).join('')}</div></td><td><div class="row">${Object.keys(DATA.arabia.price).map(g => chip(g)).join('')}</div></td><td>${esc(DATA.arabia.fact)}</td></tr>`;
-  $('chartSay').innerHTML = `🗣 모든 거래는 <b>고려 상인 ↔ 외국 상인</b> · 같은 나라끼리, 외국끼리는 거래 금지 · 구한 물건은 <b>우리나라 창고에 납품</b>해야 점수가 돼요 · 노란 칸은 아라비아 상선이 들어온 뒤 고려 주문서에 더해지는 물건`;
+  $('chartSay').innerHTML = `🗣 거래는 <b>고려 ↔ 외국</b>, <b>고려 상단 ↔ 다른 고려 상단</b> · 같은 팀끼리, 외국끼리는 금지 · 구한 물건은 <b>우리나라 창고에 납품</b>해야 점수가 돼요 · 노란 칸은 아라비아 상선이 들어온 뒤 고려 주문서에 더해지는 물건`;
 }
 $('chartBtn').addEventListener('click', () => { paintChart(); $('chart').classList.add('on'); });
 $('chartClose').addEventListener('click', () => { $('chart').classList.remove('on'); if (params.get('chart') === '1' && !T) location.href = location.pathname + (params.get('demo') === '1' ? '?demo=1' : ''); });
