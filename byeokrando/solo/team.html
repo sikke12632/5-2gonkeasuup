@@ -199,9 +199,9 @@ const firebaseConfig = Object.freeze({
 const ROOM = "byeokrando", PREFIX = "p_";     // Firestore: trade/byeokrando/p_state, p_players, p_inv, p_teams, p_offers, p_inbox, p_log, p_npc, p_meta, p_seen
 /* 스팸 제안 막기 */
 const SPAM = Object.freeze({
-  ttl: 90000,          // 답이 없는 제안은 90초 뒤 사라짐
+  ttl: 30000,          // 답이 없는 제안은 30초 뒤 사라짐
   inbox: 3,            // 한 사람이 동시에 받을 수 있는 제안 수
-  cool: 30000          // 거절당한 상대에게 다시 제안하려면 30초 기다림
+  cool: 10000          // 거절당한 상대에게 다시 제안하려면 10초 기다림
 });
 const PHASE_LABEL = Object.freeze({ lobby: '준비', r1: '1라운드', event: '아라비아 상선 입항', r2: '2라운드', end: '무역 끝 · 정리' });
 const DEFAULT_SCORE = Object.freeze({ classBonus: true });
@@ -663,7 +663,7 @@ function detect(st, p, tm) {
   if (!p) return;
   if (prevFrom) Object.values(C.from).forEach(o => { const q = prevFrom[o.id]; if (!q || q.status !== 'pending' || o.status === 'pending') return;
     if (o.status === 'accepted') { toast(`🤝 ${o.toTag}이(가) 수락했어요! 필요한 물건은 납품해요`, 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .35, 50, [teamColor(p.team), '#FFE08A', '#fff']); }
-    if (o.status === 'rejected') { toast(`${o.toTag}이(가) 거절했어요. 30초 뒤에 다시 제안할 수 있어요. 다시 흥정해 봐요`, 'err'); beep('lost'); }
+    if (o.status === 'rejected') { toast(`${o.toTag}이(가) 거절했어요. 10초 뒤에 다시 제안할 수 있어요. 다시 흥정해 봐요`, 'err'); beep('lost'); }
     if (o.status === 'failed') { toast(`거래 실패: ${o.reason || ''}`, 'err'); beep('lost'); }
     if (o.status === 'canceled' && o.reason) toast(o.reason);
   });
