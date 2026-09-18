@@ -10,10 +10,10 @@
 :root{--bg:#F4ECDC;--ink:#23303B;--muted:#6E6556;--panel:#FFFCF5;--line:#E3D5BA;--sea:#1D4E6B;--sea2:#2E7A9A;--celadon:#5E9C8F;--red:#B5432D;--gold:#C9962B;--ok:#2E8B57;--warn:#D65A31;--tc:#888}
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
-html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:"Gowun Dodum","Malgun Gothic",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);color:var(--ink);font-family:"Gowun Dodum","Malgun Gothic",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 body{background:radial-gradient(circle at 0% 0%,color-mix(in srgb,var(--tc) 16%,transparent) 0,transparent 45%),var(--bg)}
 button{font:inherit;border:0;cursor:pointer;background:none;color:inherit;touch-action:manipulation}
-#app{height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;padding:8px 12px 10px}
+#app{height:100dvh;min-height:600px;display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;padding:8px 12px 10px}
 .head{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:18px;padding:6px 12px;box-shadow:0 3px 0 var(--line);border-left:12px solid var(--tc);min-height:64px}
 .head .tn{font:clamp(26px,3.4vw,38px)/1 "Jua",sans-serif;color:var(--tc);white-space:nowrap}
 .head .pct{font:clamp(20px,2.6vw,28px) "Jua",sans-serif;background:#F1E8D6;border-radius:999px;padding:.15em .7em;white-space:nowrap}
@@ -68,9 +68,10 @@ h2.big{font:clamp(32px,5vw,56px)/1.15 "Jua",sans-serif}
 .mylog{overflow:auto;display:flex;flex-direction:column;gap:4px;min-height:0}
 .mylog div{font:clamp(14px,1.7vw,17px)/1.35 "Jua",sans-serif;background:#F6EFE1;border-radius:10px;padding:4px 8px}
 /* overlay: composer / incoming / event */
-.ov{position:fixed;inset:0;z-index:40;display:none;background:rgba(25,35,45,.55);padding:10px}
-.ov.on{display:grid;place-items:center}
-.sheet{background:var(--panel);border-radius:24px;width:min(1180px,100%);height:100%;max-height:100%;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:8px;padding:10px 14px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.ov{position:fixed;inset:0;z-index:40;display:none;background:rgba(25,35,45,.55);padding:10px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.ov.on{display:flex}
+.ov.on>*{margin:auto}   /* 화면보다 크면 위에서부터 스크롤, 작으면 가운데 */
+.sheet{background:var(--panel);border-radius:24px;width:min(1180px,100%);min-height:100%;display:grid;grid-template-rows:auto auto 1fr auto;gap:8px;padding:10px 14px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
 .sheet header{display:flex;align-items:center;gap:10px}.sheet header h3{font:clamp(24px,3vw,32px) "Jua",sans-serif;margin-right:auto}
 .partners{display:flex;gap:6px;flex-wrap:wrap}
 .pbtn{height:clamp(52px,8vh,64px);padding:0 12px;border-radius:14px;background:#fff;border:4px solid var(--pc);color:var(--pc);font:clamp(19px,2.4vw,26px) "Jua",sans-serif;box-shadow:0 3px 0 var(--pc)}
@@ -79,7 +80,7 @@ h2.big{font:clamp(32px,5vw,56px)/1.15 "Jua",sans-serif}
 .cols2{display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0}
 .side{background:#F7F1E4;border-radius:18px;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:0}
 .side h4{font:clamp(19px,2.4vw,25px) "Jua",sans-serif;text-align:center}.side.give h4{color:var(--red)}.side.take h4{color:var(--ok)}
-.rows{overflow:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
+.rows{display:flex;flex-direction:column;gap:5px}
 .qrow{display:flex;align-items:center;gap:6px;background:#fff;border-radius:12px;padding:4px 6px;border:3px solid transparent}
 .qrow.sel{border-color:var(--sea2)}
 .qrow .nm{flex:1;font:clamp(18px,2.3vw,24px) "Jua",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.qrow .nm small{font-size:.65em;color:var(--muted)}.qrow .nm .need{color:var(--red)}
@@ -88,7 +89,7 @@ h2.big{font:clamp(32px,5vw,56px)/1.15 "Jua",sans-serif}
 .qrow button:disabled{opacity:.3}
 .qrow b{min-width:1.6em;text-align:center;font:clamp(24px,3vw,32px) "Jua",sans-serif}
 .empty{color:var(--muted);text-align:center;padding:20px;font-size:clamp(16px,2vw,20px)}
-.sheet footer{display:flex;align-items:center;gap:10px}
+.sheet footer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;bottom:-10px;background:var(--panel);padding:8px 0 10px;border-top:2px solid var(--line);z-index:2}
 .sum{flex:1;font:clamp(17px,2.1vw,22px)/1.4 "Jua",sans-serif}.sum .warnline{color:var(--red);font-size:.85em}
 .send{height:clamp(60px,9vh,74px);padding:0 26px;border-radius:18px;background:var(--ok);color:#fff;font:clamp(22px,2.8vw,30px) "Jua",sans-serif;box-shadow:0 4px 0 #1C6340;white-space:nowrap}.send:disabled{opacity:.35;box-shadow:none}
 .modal{background:var(--panel);border-radius:26px;width:min(720px,96vw);padding:16px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;border-top:14px solid var(--pc);animation:popin .3s}
@@ -102,6 +103,7 @@ h2.big{font:clamp(32px,5vw,56px)/1.15 "Jua",sans-serif}
 .modal .warnline{color:var(--red);font:18px "Jua",sans-serif;margin-bottom:8px}
 .modal .btns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
 .modal .btns button{height:clamp(60px,9vh,76px);border-radius:18px;font:clamp(22px,3vw,32px) "Jua",sans-serif}
+.modal.locked .btns button{opacity:.45}
 .modal .no{background:#EFE6D4}.modal .yes{background:var(--ok);color:#fff;box-shadow:0 4px 0 #1C6340}
 .evbox{background:linear-gradient(180deg,#0E2F47,#2E86A8);color:#fff;border-radius:28px;width:min(760px,96vw);padding:22px 26px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .evbox .ship{font-size:90px;animation:bob 2s ease-in-out infinite}
@@ -122,7 +124,7 @@ h2.big{font:clamp(32px,5vw,56px)/1.15 "Jua",sans-serif}
 .toast{position:fixed;left:50%;top:10px;transform:translate(-50%,-30px);background:var(--ink);color:#fff;border-radius:999px;padding:.6em 1.3em;font-size:clamp(17px,2.1vw,22px);opacity:0;pointer-events:none;transition:.25s;z-index:90;max-width:94vw;text-align:center}.toast.on{opacity:1;transform:translate(-50%,0)}
 .toast.err{background:#A63A20}.toast.win{background:var(--ok)}
 canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:80}
-@media (orientation:portrait),(max-width:760px){#vGame{grid-template-columns:1fr;grid-template-rows:minmax(0,1.2fr) minmax(0,1fr);overflow:auto}.cols2{grid-template-columns:1fr}.rank{grid-template-columns:1fr}}
+@media (orientation:portrait),(max-width:760px){#app{height:auto;min-height:100dvh}#vGame{grid-template-columns:1fr;grid-template-rows:auto auto}.grid{overflow:visible}.cols2{grid-template-columns:1fr}.rank{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -565,10 +567,13 @@ function paintIncoming(st) {
   const lackMe = !hasAll(t?.inv, o.take), lackThem = !hasAll(C.teams[o.from]?.inv, o.give);
   const html = `<h3>${a.emoji} ${esc(a.label)}의 제안</h3>${list.length > 1 ? `<div class="more">기다리는 제안이 ${list.length - 1}개 더 있어요</div>` : ''}<div class="deal"><div class="get"><h4>우리가 받을 것 ⬇</h4><div class="row">${chips(o.give)}</div></div><div class="pay"><h4>우리가 줄 것 ⬆</h4><div class="row">${chips(o.take)}</div></div></div>${lackMe ? `<div class="warnline">⚠ 우리 창고에 물건이 모자라요: ${esc(lackText(t?.inv, o.take))}</div>` : ''}${lackThem ? `<div class="warnline">⚠ 상대 창고에 물건이 모자라요</div>` : ''}<div class="btns"><button class="no" data-rej="${o.id}">거절 ✋</button><button class="yes" data-acc="${o.id}">수락 🤝</button></div>`;
   if ($('inModal').dataset.html !== html) { $('inModal').dataset.html = html; $('inModal').innerHTML = html; $('inModal').style.setProperty('--pc', a.color); }
-  if ($('inModal').dataset.id !== o.id) { $('inModal').dataset.id = o.id; beep('ding'); }
+  if ($('inModal').dataset.id !== o.id) { $('inModal').dataset.id = o.id; beep('ding'); lockModal(); }   // 새 제안이 같은 자리에 뜨면 1초 잠금(연속 터치로 잘못 거절 방지)
   ov.classList.add('on');
 }
+let modalReadyAt = 0;
+function lockModal() { modalReadyAt = now() + 1000; $('inModal').classList.add('locked'); setTimeout(() => $('inModal').classList.remove('locked'), 1000); }
 $('inModal').addEventListener('click', async e => {
+  if (now() < modalReadyAt) return;
   const acc = e.target.closest('[data-acc]'), rej = e.target.closest('[data-rej]'); if ((!acc && !rej) || busy) return;
   busy = true; e.target.closest('button').disabled = true;
   try {

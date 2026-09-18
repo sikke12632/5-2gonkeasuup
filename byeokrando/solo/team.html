@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>벽란도 무역항 · 개인 상인</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4ECDC;--ink:#23303B;--muted:#6E6556;--panel:#FFFCF5;--line:#E3D5BA;--sea:#1D4E6B;--sea2:#2E7A9A;--red:#B5432D;--gold:#C9962B;--ok:#2E8B57;--warn:#D65A31;--tc:#888}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{min-height:100dvh;color:var(--ink);font-family:"Gowun Dodum","Malgun Gothic",sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;background:radial-gradient(circle at 0% 0%,color-mix(in srgb,var(--tc) 16%,transparent) 0,transparent 45%),var(--bg);overflow-x:hidden}
+button,input{font:inherit;color:inherit}button{border:0;cursor:pointer;background:none;touch-action:manipulation}
+#app{max-width:1200px;margin:0 auto;padding:8px 12px 24px;display:flex;flex-direction:column;gap:10px}
+.head{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border-radius:18px;padding:6px 12px;box-shadow:0 3px 0 var(--line);border-left:12px solid var(--tc);min-height:60px}
+.head .tn{font:clamp(22px,3vw,32px)/1.1 "Jua",sans-serif;color:var(--tc)}.head .tn small{font-size:.6em;color:var(--muted);margin-left:6px}
+.head .mid{margin-left:auto;display:flex;align-items:center;gap:8px}
+.pill{background:var(--ink);color:#fff;border-radius:999px;padding:.2em .9em;font:clamp(16px,2vw,22px) "Jua",sans-serif;white-space:nowrap}
+.pill.r1,.pill.r2{background:var(--sea2)}.pill.event{background:var(--gold)}.pill.end{background:var(--red)}
+.clock{font:clamp(24px,3.2vw,36px)/1 "Jua",sans-serif;font-variant-numeric:tabular-nums;min-width:3em;text-align:center;padding:4px 8px;border-radius:12px;background:#F1E8D6}
+.clock.hot{background:var(--warn);color:#fff;animation:pulse .8s infinite}.clock.off{background:var(--ink);color:#fff}
+@keyframes pulse{50%{transform:scale(1.06)}}
+.badge{border-radius:999px;padding:.3em .7em;font-size:13px;background:#FFF1C9;color:#7A5A00;display:none;white-space:nowrap}.badge.on{display:block}.badge.err{background:#FFE0D6;color:#A63A20}
+.view{display:none}.view.on{display:flex;flex-direction:column;gap:10px}
+.center{align-items:center;text-align:center;padding-top:6vh}
+h2.big{font:clamp(30px,5vw,52px)/1.2 "Jua",sans-serif}
+.lead{font-size:clamp(18px,2.4vw,24px);color:var(--muted);line-height:1.6}
+.joinbox{background:var(--panel);border-radius:26px;padding:22px;box-shadow:0 4px 0 var(--line);width:min(560px,100%);display:flex;flex-direction:column;gap:12px}
+.joinbox input{height:72px;border-radius:18px;border:3px solid var(--line);background:#fff;font:32px "Jua",sans-serif;text-align:center;padding:0 12px;-webkit-user-select:text;user-select:text}
+.joinbox input:focus{outline:none;border-color:var(--sea2)}
+.bigbtn{min-height:72px;padding:10px 20px;border-radius:20px;background:var(--sea);color:#fff;font:clamp(26px,3.4vw,36px) "Jua",sans-serif;box-shadow:0 5px 0 #123447}
+.bigbtn:active:not(:disabled){transform:translateY(4px);box-shadow:none}.bigbtn:disabled{background:#B9AE99;box-shadow:none}
+.bigbtn small{display:block;font:clamp(14px,1.7vw,17px) "Gowun Dodum";opacity:.9}
+.bigbtn.deliver{background:var(--ok);box-shadow:0 5px 0 #1C6340}.bigbtn.deliver:disabled{background:#B9AE99;box-shadow:none}
+.idcard{background:var(--panel);border-radius:26px;border:6px solid var(--tc);padding:18px 26px;box-shadow:0 6px 0 var(--tc);width:min(620px,100%)}
+.idcard .e{font-size:80px;line-height:1}.idcard .nm{font:clamp(34px,5vw,50px) "Jua",sans-serif;color:var(--tc)}.idcard .tag{font:28px "Jua",sans-serif;background:var(--tc);color:#fff;border-radius:999px;padding:2px 16px;display:inline-block;margin-top:6px}
+.cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:10px;align-items:start}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.box{background:var(--panel);border-radius:18px;padding:10px 12px 12px;box-shadow:0 3px 0 var(--line);display:flex;flex-direction:column;gap:8px}
+.box h3{font:clamp(19px,2.3vw,25px) "Jua",sans-serif;color:var(--sea);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.box h3 small{font:clamp(13px,1.5vw,16px) "Gowun Dodum";color:var(--muted)}
+.box h3 .pct{margin-left:auto;font:clamp(22px,2.8vw,30px) "Jua",sans-serif;color:var(--tc)}
+.bar{height:12px;border-radius:999px;background:#EDE3D0;overflow:hidden}.bar i{display:block;height:100%;background:var(--tc);border-radius:999px;transition:width .5s}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(92px,11vw,120px),1fr));gap:6px}
+.item{position:relative;border-radius:14px;background:#F6EFE1;border:3px solid var(--line);padding:4px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:78px}
+.item .e{font-size:clamp(22px,2.8vw,30px);line-height:1.1;margin-bottom:2px}.item .n{font:clamp(16px,2vw,21px)/1.1 "Jua",sans-serif}.item .q{font:clamp(18px,2.3vw,24px)/1 "Jua",sans-serif;font-variant-numeric:tabular-nums}
+.order .item{border-style:dashed}.order .item.ok{background:#E1F2E7;border:3px solid #7FC196}.order .item.ok::after{content:"✓";position:absolute;right:5px;top:1px;font:20px "Jua",sans-serif;color:var(--ok)}
+.order .item.new{border-color:var(--gold);box-shadow:0 0 0 3px #FFE08A}
+.inv .item{background:#fff}.inv .item.need{border-color:var(--ok);background:#F2FAF4}
+.inv .item .tag{position:absolute;left:3px;top:2px;font-size:11px;background:var(--ok);color:#fff;border-radius:999px;padding:0 6px}
+.inv .item.bump{animation:bump .6s}@keyframes bump{30%{transform:scale(1.12)}}
+.closed{background:#EFE6D4;border-radius:14px;padding:8px 12px;font:clamp(16px,2vw,20px) "Jua",sans-serif;color:var(--muted);text-align:center}
+.out{border:3px solid var(--sea2)}.out .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.out .txt{flex:1;font:clamp(16px,2vw,20px)/1.5 "Jua",sans-serif}
+.sm{min-height:44px;padding:0 14px;border-radius:12px;background:#EFE6D4;font:18px "Jua",sans-serif;white-space:nowrap}.sm.warn{background:var(--warn);color:#fff}
+.chip{display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:999px;background:#F3EADA;border:2px solid var(--line);font:clamp(16px,2vw,20px)/1.2 "Jua",sans-serif;white-space:nowrap}
+.arab{border:3px solid var(--gold);background:linear-gradient(180deg,#FFF8E3,#FFFCF5)}.arab h3{color:#8A6212}
+.abuy{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
+.abuy .g{font:clamp(18px,2.2vw,22px)/1.15 "Jua",sans-serif}.abuy .g small{color:var(--muted);font-size:.75em}
+.abuy .bs{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.abuy button{min-height:46px;padding:0 10px;border-radius:12px;background:var(--gold);color:#fff;font:clamp(15px,1.9vw,19px) "Jua",sans-serif;box-shadow:0 3px 0 #8F6A18;white-space:nowrap}.abuy button:disabled{background:#D9CFBC;box-shadow:none}
+.stats{display:flex;gap:10px;flex-wrap:wrap;font:clamp(17px,2.1vw,21px) "Jua",sans-serif}.stats span{background:#F6EFE1;border-radius:12px;padding:4px 12px}
+.mylog{display:flex;flex-direction:column;gap:4px}.mylog div{font:clamp(14px,1.7vw,17px)/1.35 "Jua",sans-serif;background:#F6EFE1;border-radius:10px;padding:4px 8px}
+.mates{display:flex;flex-wrap:wrap;gap:6px}.mates span{font:17px "Jua",sans-serif;background:#F6EFE1;border-radius:10px;padding:3px 10px}
+/* 겹쳐 뜨는 창: 화면보다 크면 스크롤 */
+.ov{position:fixed;inset:0;z-index:40;display:none;background:rgba(25,35,45,.55);padding:10px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.ov.on{display:flex}.ov.on>*{margin:auto}
+.sheet{background:var(--panel);border-radius:24px;width:min(1180px,100%);min-height:100%;display:flex;flex-direction:column;gap:8px;padding:10px 14px 0}
+.sheet header{display:flex;align-items:center;gap:10px}.sheet header h3{font:clamp(22px,3vw,30px) "Jua",sans-serif;margin-right:auto}
+.lab{font:clamp(16px,2vw,19px) "Jua",sans-serif;color:var(--muted)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tbtn{min-height:54px;padding:0 14px;border-radius:14px;background:#fff;border:4px solid var(--pc);color:var(--pc);font:clamp(18px,2.3vw,24px) "Jua",sans-serif}.tbtn.on{background:var(--pc);color:#fff}
+.people{display:flex;gap:6px;flex-wrap:wrap}
+.pbtn{min-height:54px;padding:4px 12px;border-radius:14px;background:#fff;border:3px solid var(--pc);color:var(--ink);font:clamp(17px,2.1vw,22px) "Jua",sans-serif;text-align:left}
+.pbtn b{color:var(--pc);font-weight:400;margin-right:4px}.pbtn.on{background:var(--pc);color:#fff}.pbtn.on b{color:#fff}
+.pbtn.cool{opacity:.45}.pbtn small{display:block;font-size:.7em;opacity:.8}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.side{background:#F7F1E4;border-radius:18px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.side h4{font:clamp(19px,2.4vw,24px) "Jua",sans-serif;text-align:center;display:flex;justify-content:center;gap:8px;align-items:center}.side.give h4{color:var(--red)}.side.take h4{color:var(--ok)}
+.rows{display:flex;flex-direction:column;gap:5px}
+.qrow{display:flex;align-items:center;gap:6px;background:#fff;border-radius:12px;padding:4px 6px;border:3px solid transparent}.qrow.sel{border-color:var(--sea2)}
+.qrow .nm{flex:1;min-width:0;font:clamp(18px,2.3vw,23px) "Jua",sans-serif}.qrow .nm small{font-size:.65em;color:var(--muted);display:block}.qrow .nm .need{color:var(--ok)}.qrow .nm .mine{color:var(--red)}
+.qrow button{width:52px;height:52px;border-radius:12px;background:#EFE6D4;font:30px/1 "Jua",sans-serif;flex:none}.qrow button.plus{background:var(--sea2);color:#fff}.qrow button:disabled{opacity:.3}
+.qrow b{min-width:1.5em;text-align:center;font:clamp(24px,3vw,30px) "Jua",sans-serif}
+.empty{color:var(--muted);text-align:center;padding:16px;font-size:clamp(16px,2vw,20px)}
+.sheet footer{position:sticky;bottom:-10px;background:var(--panel);display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0 14px;border-top:2px solid var(--line);margin-top:auto}
+.sum{flex:1;min-width:220px;font:clamp(17px,2.1vw,21px)/1.5 "Jua",sans-serif}.sum .warnline{color:var(--red);font-size:.85em}
+.send{min-height:66px;padding:0 26px;border-radius:18px;background:var(--ok);color:#fff;font:clamp(22px,2.8vw,30px) "Jua",sans-serif;box-shadow:0 4px 0 #1C6340;white-space:nowrap}.send:disabled{opacity:.35;box-shadow:none}
+.modal{background:var(--panel);border-radius:26px;width:min(720px,100%);padding:16px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;border-top:14px solid var(--pc);animation:popin .3s}
+@keyframes popin{0%{transform:scale(.7);opacity:0}100%{transform:none;opacity:1}}
+.modal h3{font:clamp(26px,3.6vw,36px)/1.2 "Jua",sans-serif;color:var(--pc)}.modal .more{font-size:17px;color:var(--muted);margin-top:2px}
+.deal{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.deal div{background:#F7F1E4;border-radius:16px;padding:10px}.deal h4{font:clamp(18px,2.2vw,22px) "Jua",sans-serif;margin-bottom:6px}
+.deal .get h4{color:var(--ok)}.deal .pay h4{color:var(--red)}
+.deal .row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.deal .chip{font-size:clamp(20px,2.6vw,26px);padding:4px 12px}
+.modal .warnline{color:var(--red);font:18px "Jua",sans-serif;margin-bottom:8px}
+.modal .btns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+.modal .btns button{min-height:68px;border-radius:18px;font:clamp(22px,3vw,30px) "Jua",sans-serif}
+.modal.locked .btns button{opacity:.45}
+.modal .no{background:#EFE6D4}.modal .yes{background:var(--ok);color:#fff;box-shadow:0 4px 0 #1C6340}
+.evbox{background:linear-gradient(180deg,#0E2F47,#2E86A8);color:#fff;border-radius:28px;width:min(760px,100%);padding:22px 26px;text-align:center}
+.evbox .ship{font-size:84px;animation:bob 2s ease-in-out infinite}@keyframes bob{50%{transform:translateY(-6px) rotate(-5deg)}}
+.evbox h3{font:clamp(32px,5vw,50px) "Jua",sans-serif;color:#FFE08A}.evbox p{font-size:clamp(18px,2.3vw,23px);line-height:1.5;margin:8px 0}.evbox .chip{font-size:22px;color:var(--ink)}
+.evbox button{margin-top:10px;min-height:60px;padding:0 30px;border-radius:16px;background:#FFE08A;color:#4A3500;font:26px "Jua",sans-serif}
+.endcard{display:flex;flex-direction:column;gap:10px;align-items:center;width:min(820px,100%);margin:0 auto}
+.endcard .score{font:clamp(40px,7vw,72px)/1 "Jua",sans-serif;color:var(--tc)}
+.rank{display:flex;flex-direction:column;gap:6px;width:100%}
+.rank div{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:14px;padding:8px 14px;font:clamp(18px,2.3vw,24px) "Jua",sans-serif;color:var(--pc);box-shadow:0 2px 0 var(--line)}
+.rank div.me{outline:4px solid var(--pc)}.rank div b{margin-left:auto;color:var(--ink)}
+.toast{position:fixed;left:50%;top:10px;transform:translate(-50%,-30px);background:var(--ink);color:#fff;border-radius:999px;padding:.6em 1.3em;font-size:clamp(17px,2.1vw,22px);opacity:0;pointer-events:none;transition:.25s;z-index:90;max-width:94vw;text-align:center}.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:#A63A20}.toast.win{background:var(--ok)}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:80}
+@media (max-width:820px){.cols{grid-template-columns:1fr}.cols2{grid-template-columns:1fr}.deal{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="head">
+    <span id="tn" class="tn">⚓ 벽란도 무역항</span>
+    <div class="mid"><span id="badge" class="badge">점검 모드</span><span id="pill" class="pill">준비</span><span id="clock" class="clock">--:--</span></div>
+  </header>
+
+  <section id="vJoin" class="view center">
+    <h2 class="big">벽란도에 온 걸 환영해요!</h2>
+    <p class="lead">이름을 적으면 어느 나라 상인이 될지 정해져요</p>
+    <div class="joinbox"><input id="nameIn" maxlength="8" placeholder="내 이름" autocomplete="off"><button id="joinBtn" class="bigbtn">입장하기 ⚓</button></div>
+    <p class="lead" id="joinMsg"></p>
+  </section>
+
+  <section id="vLobby" class="view center">
+    <div class="idcard"><div class="e" id="idEmoji"></div><div class="nm" id="idName"></div><div class="tag" id="idTag"></div></div>
+    <p class="lead" id="idLead"></p>
+    <div class="box" style="width:min(620px,100%)"><h3>같은 나라 친구들</h3><div id="mates" class="mates"></div></div>
+    <p class="lead">선생님이 1라운드를 시작하면 내 물건과 우리나라 주문서가 나와요</p>
+  </section>
+
+  <section id="vGame" class="view">
+    <div class="cols">
+      <div class="col">
+        <div class="box order"><h3>📜 우리나라 주문서 <small id="teamSub"></small><span class="pct" id="teamPct"></span></h3><div class="bar"><i id="teamBar"></i></div><div id="order" class="grid"></div></div>
+        <div class="box inv"><h3>🎒 내 물건 <small>초록 딱지 = 우리나라에 필요한 물건</small></h3><div id="inv" class="grid"></div>
+          <button id="deliverBtn" class="bigbtn deliver">📦 우리나라에 납품하기</button></div>
+      </div>
+      <div class="col">
+        <button id="proposeBtn" class="bigbtn">🤝 거래 제안하기<small>말로 약속한 다음에 눌러요</small></button>
+        <div id="closedMsg" class="closed" hidden></div>
+        <div id="outBox" class="box out" hidden></div>
+        <div id="arabBox" class="box arab" hidden><h3>⛵ 아라비아 상선 창구 <small id="arabSub">선착순 · 수량 한정</small></h3><div id="abuy" class="abuy"></div></div>
+        <div class="box"><h3>🧾 내 기록</h3><div class="stats" id="stats"></div><div id="mylog" class="mylog"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="vEnd" class="view"><div class="endcard">
+    <h2 class="big">무역 끝!</h2>
+    <div id="endMine" style="text-align:center"></div>
+    <div id="endRank" class="rank"></div>
+  </div></section>
+</div>
+
+<div id="ovCompose" class="ov"><div class="sheet">
+  <header><h3>🤝 누구와 거래할까요?</h3><button class="sm" id="cmpClose">닫기 ✕</button></header>
+  <div class="lab">① 나라 고르기</div><div id="cmpTeams" class="tabs"></div>
+  <div class="lab">② 상인 고르기</div><div id="cmpPeople" class="people"></div>
+  <div class="lab">③ 주고받을 물건 담기</div>
+  <div class="cols2">
+    <div class="side give"><h4>내가 줄 것 ⬆</h4><div id="giveRows" class="rows"></div></div>
+    <div class="side take"><h4>내가 받을 것 ⬇ <button class="sm" id="refreshTake">🔄</button></h4><div id="takeRows" class="rows"></div></div>
+  </div>
+  <footer><div id="cmpSum" class="sum"></div><button id="sendBtn" class="send" disabled>제안 보내기 📨</button></footer>
+</div></div>
+<div id="ovIncoming" class="ov"><div class="modal" id="inModal"></div></div>
+<div id="ovEvent" class="ov"><div class="evbox" id="evBox"></div></div>
+
+<canvas id="fx"></canvas>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+/*
+  ══════════════════════════════════════════════════════════════
+   벽란도 무역항 · 개인 상인판 · 공용 코드  (board.html / team.html 에 같은 내용이 들어 있음)
+  ══════════════════════════════════════════════════════════════
+  · 학생 한 명 = 디벗 한 대 = 상인 한 명. 나라(팀)에 자동 배정.
+  · 개인 창고의 물건으로 다른 나라 상인과 거래 → 우리나라 창고에 납품 → 나라 주문서 완성.
+  · 모든 거래는 "고려 상인 ↔ 외국 상인" (같은 나라끼리·외국끼리 금지).
+  · Firebase 는 모둠판과 같은 open-cbd39, 경로도 같은 trade/byeokrando 문서 아래에 두고
+    컬렉션 이름 앞에 p_ 를 붙여 모둠판 데이터와 섞이지 않게 함 → 보안 규칙을 바꿀 필요 없음.
+  · 주소 뒤에 ?demo=1 → 점검 모드(한 컴퓨터의 여러 탭끼리만 통신).
+*/
+const firebaseConfig = Object.freeze({
+  apiKey: "AIzaSyD9E86qHToh_f_fNVAcYQldyjCPpARZB-Q",
+  authDomain: "open-cbd39.firebaseapp.com",
+  projectId: "open-cbd39",
+  storageBucket: "open-cbd39.firebasestorage.app",
+  messagingSenderId: "322878081506",
+  appId: "1:322878081506:web:40efbcf61190f867b451bb"
+});
+const ROOM = "byeokrando", PREFIX = "p_";     // Firestore: trade/byeokrando/p_state, p_players, p_inv, p_teams, p_offers, p_inbox, p_log, p_npc, p_meta, p_seen
+/* 스팸 제안 막기 */
+const SPAM = Object.freeze({
+  ttl: 90000,          // 답이 없는 제안은 90초 뒤 사라짐
+  inbox: 3,            // 한 사람이 동시에 받을 수 있는 제안 수
+  cool: 30000          // 거절당한 상대에게 다시 제안하려면 30초 기다림
+});
+const PHASE_LABEL = Object.freeze({ lobby: '준비', r1: '1라운드', event: '아라비아 상선 입항', r2: '2라운드', end: '무역 끝 · 정리' });
+const DEFAULT_SCORE = Object.freeze({ classBonus: true });
+
+const fmt = n => Number(n || 0).toLocaleString('ko-KR');
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clone = v => JSON.parse(JSON.stringify(v ?? null));
+const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const newId = p => `${p}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+const sum = o => Object.values(o || {}).reduce((s, n) => s + (Number(n) || 0), 0);
+
+/* ── 규칙 도우미 ── */
+const isTradePhase = p => p === 'r1' || p === 'r2';
+const isGoryeo = x => x?.nation === '고려';
+function timeLeft(st, t = Date.now()) { if (!st || !isTradePhase(st.phase)) return null; return st.paused ? (st.left || 0) : (st.endsAt || 0) - t; }
+function tradeOpen(st, t = Date.now()) { return !!st && isTradePhase(st.phase) && !st.paused && t < (st.endsAt || 0) + 3000; }
+const deliverOpen = st => !!st && ['r1', 'event', 'r2'].includes(st.phase);
+function closedReason(st, t = Date.now()) {
+  if (!st) return '아직 연결 중이에요';
+  if (st.phase === 'lobby') return '아직 거래 시간이 아니에요. 선생님이 1라운드를 시작하면 열려요';
+  if (st.phase === 'event') return '아라비아 상선이 들어오는 중이에요. 칠판을 보세요! (납품은 할 수 있어요)';
+  if (st.phase === 'end') return '무역이 끝났어요';
+  if (st.paused) return '선생님이 잠깐 멈췄어요';
+  if (t >= (st.endsAt || 0)) return '이번 라운드 시간이 끝났어요';
+  return '';
+}
+function bundle(b) { const o = {}; for (const [k, v] of Object.entries(b || {})) { const n = Math.floor(Number(v)); if (k && n > 0) o[k] = n; } return o; }
+const hasAll = (items, b) => Object.entries(b || {}).every(([g, n]) => (Number(items?.[g]) || 0) >= n);
+const lackText = (items, b) => Object.entries(b || {}).filter(([g, n]) => (Number(items?.[g]) || 0) < n).map(([g, n]) => `${g} ${n}개(가진 것 ${Number(items?.[g]) || 0}개)`).join(', ');
+const FOREIGN_MSG = '외국 상인끼리는 거래할 수 없어요. 벽란도의 고려 상인을 찾아가세요';
+const SAME_MSG = '같은 나라 상인끼리는 거래할 수 없어요. 다른 나라 상인을 찾아가세요';
+const GORYEO_MSG = '고려 상인끼리는 거래할 수 없어요. 외국 상인을 찾아가세요';
+/* 모든 거래 = 고려 상인 ↔ 외국 상인 */
+function checkPair(a, b) {
+  if (!a?.nation || !b?.nation) throw new Error('상대 상인을 찾을 수 없어요');
+  if (a.id === b.id) throw new Error('나와는 거래할 수 없어요');
+  if (a.nation === b.nation && !isGoryeo(a)) throw new Error(SAME_MSG);
+  if (isGoryeo(a) && isGoryeo(b)) throw new Error(GORYEO_MSG);
+  if (!isGoryeo(a) && !isGoryeo(b)) throw new Error(FOREIGN_MSG);
+}
+const pairOk = (a, b) => { try { checkPair(a, b); return true; } catch { return false; } };
+/* 나라(팀) 주문서 달성: 창고(got)에 납품된 수로 계산 */
+function teamStatus(tm) {
+  let filled = 0, total = 0;
+  for (const [g, n] of Object.entries(tm?.order || {})) { total += n; filled += Math.min(n, Number(tm.got?.[g]) || 0); }
+  return { filled, total, done: total > 0 && filled >= total, pct: total ? Math.round(filled * 100 / total) : 0 };
+}
+const need = (tm, g) => Math.max(0, (tm?.order?.[g] || 0) - (tm?.got?.[g] || 0));
+const activeTeams = (st, teams) => (st?.teamIds || []).map(id => teams?.[id]).filter(t => t?.nation);
+/* 순위: 달성률 → 먼저 완성한 팀 → 납품한 개수 */
+function ranking(st, teams) {
+  const list = activeTeams(st, teams).map(t => ({ id: t.id, team: t, ...teamStatus(t) }));
+  const allDone = list.length > 0 && list.every(x => x.done);
+  list.sort((a, b) => b.pct - a.pct || (a.team.doneAt || 9e15) - (b.team.doneAt || 9e15) || b.filled - a.filled);
+  list.forEach((x, i) => { const p = list[i - 1]; x.rank = p && p.pct === x.pct && (p.team.doneAt || 0) === (x.team.doneAt || 0) ? p.rank : i + 1; });
+  list.forEach(x => { x.tie = list.filter(y => y.rank === x.rank).length > 1; });
+  return { list, allDone };
+}
+
+/* ── 통신 계층 (모둠판에서 이식 + get / watchDoc / watchWhere 추가) ──
+   watch(col, cb) · watchDoc(col,id,cb) · watchWhere(col,field,value,cb) · get(col,id) · tx(fn) · batch(ops) */
+const validConfig = () => !Object.values(firebaseConfig).some(v => String(v).includes('PASTE_HERE'));
+function deepMerge(target, patch) {
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && target[k] && typeof target[k] === 'object' && !Array.isArray(target[k])) deepMerge(target[k], v);
+    else target[k] = clone(v);
+  }
+  return target;
+}
+function mockTransport() {
+  const key = `trade-demo-${ROOM}-${PREFIX}`, channel = new BroadcastChannel(key), subs = [];
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } };
+  const emit = () => { const d = load(); subs.forEach(s => s(d)); };
+  const save = d => { localStorage.setItem(key, JSON.stringify(d)); channel.postMessage('change'); emit(); };
+  channel.onmessage = emit;
+  window.addEventListener('storage', e => { if (e.key === key) emit(); });
+  const ops = d => ({
+    get: async (col, id) => clone(d[col]?.[id] ?? null),
+    set: (col, id, data) => { (d[col] ??= {})[id] = clone(data); },
+    update: (col, id, patch) => { (d[col] ??= {})[id] = deepMerge(d[col][id] || {}, patch); },
+    del: (col, id) => { if (d[col]) delete d[col][id]; }
+  });
+  const sub = fn => { subs.push(fn); fn(load()); return () => { const i = subs.indexOf(fn); if (i >= 0) subs.splice(i, 1); }; };
+  return {
+    demo: true,
+    watch: (col, cb) => sub(d => cb(clone(d[col] || {}))),
+    watchDoc: (col, id, cb) => sub(d => cb(clone(d[col]?.[id] ?? null))),
+    watchWhere: (col, field, value, cb) => sub(d => cb(Object.fromEntries(Object.entries(clone(d[col] || {})).filter(([, x]) => x?.[field] === value)))),
+    get: async (col, id) => clone(load()[col]?.[id] ?? null),
+    async tx(fn) { const d = load(); const r = await fn(ops(d)); save(d); return r; },
+    async batch(list) { const d = load(); const o = ops(d); list.forEach(x => o[x.op](x.col, x.id, x.data)); save(d); }
+  };
+}
+async function firestoreTransport() {
+  const appMod = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js');
+  const fs = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js');
+  const app = appMod.initializeApp(firebaseConfig);
+  const db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() });
+  const colRef = col => fs.collection(db, 'trade', ROOM, PREFIX + col);
+  const ref = (col, id) => fs.doc(db, 'trade', ROOM, PREFIX + col, id);
+  const clean = v => clone(v);
+  const onErr = err => { console.error(err); window.dispatchEvent(new CustomEvent('db-error', { detail: err })); };
+  const writer = tx => ({
+    set: (col, id, data) => tx.set(ref(col, id), clean(data)),
+    update: (col, id, patch) => tx.set(ref(col, id), clean(patch), { merge: true }),
+    del: (col, id) => tx.delete(ref(col, id))
+  });
+  const mapSnap = (q, cb) => { const map = {}; return fs.onSnapshot(q, snap => { snap.docChanges().forEach(ch => { if (ch.type === 'removed') delete map[ch.doc.id]; else map[ch.doc.id] = ch.doc.data(); }); cb({ ...map }); }, onErr); };
+  return {
+    demo: false,
+    watch: (col, cb) => mapSnap(colRef(col), cb),
+    watchWhere: (col, field, value, cb) => mapSnap(fs.query(colRef(col), fs.where(field, '==', value)), cb),
+    watchDoc: (col, id, cb) => fs.onSnapshot(ref(col, id), s => cb(s.exists() ? s.data() : null), onErr),
+    get: async (col, id) => { const s = await fs.getDoc(ref(col, id)); return s.exists() ? s.data() : null; },
+    async tx(fn) {
+      return fs.runTransaction(db, async tx => fn({
+        get: async (col, id) => { const s = await tx.get(ref(col, id)); return s.exists() ? s.data() : null; },
+        ...writer(tx)
+      }));
+    },
+    async batch(list) {
+      for (let i = 0; i < list.length; i += 450) {
+        const b = fs.writeBatch(db), w = writer(b);
+        list.slice(i, i + 450).forEach(x => w[x.op](x.col, x.id, x.data));
+        await b.commit();
+      }
+    }
+  };
+}
+async function createTransport() {
+  const forceDemo = new URLSearchParams(location.search).get('demo') === '1';
+  const T = (forceDemo || !validConfig()) ? mockTransport() : await firestoreTransport();
+  T.update = (col, id, data) => T.batch([{ op: 'update', col, id, data }]);
+  return T;
+}
+
+/* ── 입장: 이름 → 나라 자동 배정 ──
+   고려 상인 수와 외국 상인 수가 같아지도록 번갈아 넣고, 그 안에서는 (인원 ÷ 비중)이 가장 작은 팀에 넣음 */
+function pickTeam(defs, counts) {
+  const n = id => counts?.[id] || 0;
+  const gCount = defs.filter(d => d.nation === '고려').reduce((s, d) => s + n(d.id), 0), fCount = defs.filter(d => d.nation !== '고려').reduce((s, d) => s + n(d.id), 0);
+  const side = defs.filter(d => (gCount < fCount) === (d.nation === '고려'));
+  const pool = side.length ? side : defs;
+  return [...pool].sort((a, b) => n(a.id) / (a.weight || 1) - n(b.id) / (b.weight || 1) || defs.indexOf(a) - defs.indexOf(b))[0];
+}
+async function joinGame(T, me, name) {
+  name = String(name || '').trim().slice(0, 8);
+  if (!name) throw new Error('이름을 적어 주세요');
+  return T.tx(async t => {
+    const st = await t.get('state', 'main'), p = await t.get('players', me), meta = await t.get('meta', 'roster');
+    if (!st) throw new Error('선생님이 아직 무역항을 열지 않았어요');
+    if (p?.team) { if (p.name !== name) t.update('players', me, { name }); return { ...p, name }; }
+    const defs = st.teamDefs || [], counts = { ...(meta?.counts || {}) }, nos = { ...(meta?.nos || {}) };
+    const d = pickTeam(defs, counts); if (!d) throw new Error('나라 정보가 없어요');
+    const no = (nos[d.id] || 0) + 1;
+    const player = { id: me, name, team: d.id, nation: d.nation, no, tag: `${d.short || d.id}-${no}`, joinedAt: Date.now() };
+    counts[d.id] = (counts[d.id] || 0) + 1; nos[d.id] = no;
+    t.set('players', me, player);
+    t.set('meta', 'roster', { counts, nos });
+    return player;
+  });
+}
+
+/* ── 거래 ── */
+/* 제안: 고려↔외국 확인 → 시간 → 재고 → 스팸 규칙(보낸 제안 1개, 상대 대기 3개, 거절 후 30초) → 제안 생성 */
+async function proposeTrade(T, fromId, toId, give, take) {
+  give = bundle(give); take = bundle(take);
+  return T.tx(async t => {
+    const a = await t.get('players', fromId), b = await t.get('players', toId), st = await t.get('state', 'main');
+    checkPair(a, b);
+    if (!Object.keys(give).length || !Object.keys(take).length) throw new Error('줄 물건과 받을 물건을 모두 담아야 해요');
+    if (!tradeOpen(st)) throw new Error(closedReason(st) || '지금은 거래할 수 없어요');
+    const ia = await t.get('inv', fromId), ib = await t.get('inv', toId), box = await t.get('inbox', toId);
+    const prev = ia?.out ? await t.get('offers', ia.out) : null;
+    const now = Date.now();
+    if (!hasAll(ia?.items, give)) throw new Error(`내 창고에 물건이 모자라요: ${lackText(ia?.items, give)}`);
+    if (!hasAll(ib?.items, take)) throw new Error(`${b.tag} 창고에 물건이 모자라요: ${lackText(ib?.items, take)}`);
+    if (prev && prev.status === 'pending' && now - (prev.createdAt || 0) < SPAM.ttl) throw new Error('보낸 제안이 아직 답을 기다려요. 먼저 취소하고 다시 보내요');
+    const coolUntil = ia?.cool?.[toId] || 0;
+    if (now < coolUntil) throw new Error(`${b.tag}에게 거절당했어요. ${Math.ceil((coolUntil - now) / 1000)}초 뒤에 다시 제안할 수 있어요`);
+    const waiting = Object.entries(box?.ids || {}).filter(([, at]) => at && now - at < SPAM.ttl);
+    if (waiting.length >= SPAM.inbox) throw new Error(`${b.tag}은(는) 제안을 ${SPAM.inbox}개나 기다리고 있어요. 조금 뒤에 보내요`);
+    const id = newId('o');
+    const offer = { id, from: fromId, to: toId, fromTag: a.tag, toTag: b.tag, fromName: a.name, toName: b.name, fromTeam: a.team, toTeam: b.team, give, take, status: 'pending', phase: st.phase, createdAt: now };
+    if (prev && prev.status === 'pending') { t.update('offers', prev.id, { status: 'canceled', reason: '시간이 지나 사라짐', closedAt: now }); t.update('inbox', prev.to, { ids: { [prev.id]: 0 } }); }
+    t.set('offers', id, offer);
+    t.update('inv', fromId, { out: id });
+    t.update('inbox', toId, { ids: { [id]: now } });
+    return offer;
+  });
+}
+/* 수락 = 체결: 한 트랜잭션에서 양쪽 재고 확인 → 교환 → 기록. 재고가 모자라면 옮기지 않고 failed */
+async function acceptOffer(T, offerId, byId) {
+  return T.tx(async t => {
+    const o = await t.get('offers', offerId);
+    if (!o) throw new Error('제안을 찾을 수 없어요');
+    if (o.to !== byId) throw new Error('나에게 온 제안이 아니에요');
+    if (o.status !== 'pending') throw new Error({ accepted: '이미 거래가 끝난 제안이에요', rejected: '이미 거절한 제안이에요', canceled: '상대가 취소한 제안이에요', failed: '이미 실패한 제안이에요' }[o.status] || '받을 수 없는 제안이에요');
+    const a = await t.get('players', o.from), b = await t.get('players', o.to), st = await t.get('state', 'main');
+    const ia = await t.get('inv', o.from), ib = await t.get('inv', o.to);
+    checkPair(a, b);
+    if (!tradeOpen(st)) throw new Error(closedReason(st) || '지금은 거래할 수 없어요');
+    const give = bundle(o.give), take = bundle(o.take), now = Date.now();
+    const close = { ...(ia?.out === offerId ? { out: null } : {}) };
+    t.update('inbox', o.to, { ids: { [offerId]: 0 } });
+    if (!hasAll(ia?.items, give) || !hasAll(ib?.items, take)) {
+      const reason = !hasAll(ia?.items, give) ? `${a.tag} 창고에 이제 물건이 모자라요: ${lackText(ia?.items, give)}` : `내 창고에 이제 물건이 모자라요: ${lackText(ib?.items, take)}`;
+      t.update('offers', offerId, { status: 'failed', reason, closedAt: now });
+      if (Object.keys(close).length) t.update('inv', o.from, close);
+      return { ok: false, reason };
+    }
+    const A = { ...(ia.items || {}) }, B = { ...(ib.items || {}) };
+    for (const [g, n] of Object.entries(give)) { A[g] = (A[g] || 0) - n; B[g] = (B[g] || 0) + n; }
+    for (const [g, n] of Object.entries(take)) { B[g] = (B[g] || 0) - n; A[g] = (A[g] || 0) + n; }
+    const logId = newId('L'), round = st.phase === 'r2' ? 2 : 1;
+    const hist = (inv, line) => [line, ...(inv?.hist || [])].slice(0, 6);
+    t.update('inv', o.from, { items: A, ...close, trades: (ia.trades || 0) + 1, hist: hist(ia, { with: b.tag, gave: give, got: take, ts: now }) });
+    t.update('inv', o.to, { items: B, trades: (ib.trades || 0) + 1, hist: hist(ib, { with: a.tag, gave: take, got: give, ts: now }) });
+    t.update('offers', offerId, { status: 'accepted', closedAt: now, log: logId });
+    t.set('log', logId, { id: logId, kind: 'trade', round, from: a.id, to: b.id, fromTag: a.tag, toTag: b.tag, fromTeam: a.team, toTeam: b.team, fromNation: a.nation, toNation: b.nation, give, take, ts: now });
+    return { ok: true };
+  });
+}
+/* 거절(받은 사람) / 취소(보낸 사람). 거절당하면 보낸 사람은 그 상대에게 30초 동안 다시 못 보냄 */
+async function closeOffer(T, offerId, byId, status) {
+  return T.tx(async t => {
+    const o = await t.get('offers', offerId); if (!o || o.status !== 'pending') return false;
+    if (status === 'rejected' && o.to !== byId) throw new Error('나에게 온 제안이 아니에요');
+    if (status === 'canceled' && o.from !== byId) throw new Error('내가 보낸 제안이 아니에요');
+    const ia = await t.get('inv', o.from), now = Date.now();
+    t.update('offers', offerId, { status, closedAt: now });
+    t.update('inbox', o.to, { ids: { [offerId]: 0 } });
+    t.update('inv', o.from, { ...(ia?.out === offerId ? { out: null } : {}), ...(status === 'rejected' ? { cool: { [o.to]: now + SPAM.cool } } : {}) });
+    return true;
+  });
+}
+/* 납품: 내 창고에서 우리나라 주문서에 아직 필요한 만큼만 나라 창고로 옮김 */
+async function deliver(T, me) {
+  return T.tx(async t => {
+    const p = await t.get('players', me), st = await t.get('state', 'main');
+    if (!p?.team) throw new Error('나라 정보가 없어요');
+    const inv = await t.get('inv', me), tm = await t.get('teams', p.team);
+    if (!deliverOpen(st)) throw new Error('지금은 납품할 수 없어요');
+    const items = { ...(inv?.items || {}) }, got = { ...(tm?.got || {}) }, moved = {};
+    for (const [g, q] of Object.entries(items)) { const n = Math.min(q, need(tm, g)); if (n > 0) { moved[g] = n; items[g] = q - n; got[g] = (got[g] || 0) + n; } }
+    if (!Object.keys(moved).length) throw new Error('지금 납품할 물건이 없어요. 우리나라 주문서에 필요한 물건을 구해 와요');
+    const now = Date.now(), done = teamStatus({ ...tm, got }).done;
+    t.update('inv', me, { items, delivered: (inv?.delivered || 0) + sum(moved) });
+    t.update('teams', p.team, { got, ...(done && !tm.doneAt ? { doneAt: now } : {}) });
+    const logId = newId('D');
+    t.set('log', logId, { id: logId, kind: 'deliver', from: me, fromTag: p.tag, fromName: p.name, team: p.team, give: moved, ts: now, round: st.phase === 'r2' ? 2 : 1 });
+    return { moved, done };
+  });
+}
+/* 아라비아 상선: 고려 상인만, 2라운드, 정해진 값으로 1개씩 선착순 */
+async function buyArabia(T, me, item, pay) {
+  return T.tx(async t => {
+    const p = await t.get('players', me), npc = await t.get('npc', 'arabia'), st = await t.get('state', 'main'), inv = await t.get('inv', me);
+    if (!p?.nation) throw new Error('상인 정보를 찾을 수 없어요');
+    if (!isGoryeo(p)) throw new Error('아라비아 상선은 벽란도의 고려 상인하고만 거래해요');
+    if (!npc || !st?.arabOpen || st.phase !== 'r2') throw new Error('아라비아 상선 창구는 2라운드에 열려요');
+    if (!tradeOpen(st)) throw new Error(closedReason(st) || '지금은 거래할 수 없어요');
+    const price = Number(npc.price?.[pay]) || 0;
+    if (!price) throw new Error(`아라비아 상인은 ${pay}을(를) 받지 않아요`);
+    if ((Number(npc.stock?.[item]) || 0) <= 0) throw new Error(`${item}은(는) 다 팔렸어요`);
+    if ((Number(inv?.items?.[pay]) || 0) < price) throw new Error(`${pay}이(가) ${price}개 있어야 해요`);
+    const now = Date.now(), logId = newId('L');
+    t.update('npc', 'arabia', { stock: { [item]: npc.stock[item] - 1 }, got: { [pay]: (Number(npc.got?.[pay]) || 0) + price } });
+    t.update('inv', me, { items: { [pay]: inv.items[pay] - price, [item]: (Number(inv.items?.[item]) || 0) + 1 }, hist: [{ with: '아라비아', gave: { [pay]: price }, got: { [item]: 1 }, ts: now }, ...(inv.hist || [])].slice(0, 6) });
+    t.set('log', logId, { id: logId, kind: 'arabia', round: 2, from: me, to: '아라비아', fromTag: p.tag, toTag: '아라비아', fromTeam: p.team, toTeam: '아라비아', fromNation: '고려', toNation: '아라비아', give: { [pay]: price }, take: { [item]: 1 }, ts: now });
+    return { item, pay, price };
+  });
+}
+
+
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const DEMO = params.get('demo') === '1';
+const store = (() => { try { return DEMO ? sessionStorage : localStorage; } catch { return null; } })();
+const sget = k => { try { return store?.getItem(k) || ''; } catch { return ''; } }, sset = (k, v) => { try { store?.setItem(k, v); } catch { } };
+/* 기기 ID = 이 디벗의 상인. 새로고침해도 같은 사람. (점검 모드는 탭마다 따로, ?dev=이름 으로 강제 가능) */
+let me = params.get('dev') || sget('byeokrando-solo-device');
+if (!me) { me = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); sset('byeokrando-solo-device', me); }
+const C = { state: null, teams: {}, players: {}, inv: null, to: {}, from: {}, npc: {} };
+let T, cmp = null, busy = false, prevFrom = null, prevItems = {}, prevDone = null, evSeen = '', lastPhase = '', joining = false, wasJoined = false;
+const now = () => Date.now();
+const S = () => C.state, P = () => C.players[me] || null, TM = () => C.teams[P()?.team] || null;
+const em = g => S()?.goods?.[g] || '📦';
+const chip = (g, n) => `<span class="chip">${em(g)} ${esc(g)}${n != null ? ` ${n}` : ''}</span>`;
+const chips = b => Object.entries(b || {}).map(([g, n]) => chip(g, n)).join(' ');
+const tinfo = id => C.teams[id] || (S()?.teamDefs || []).find(d => d.id === id) || { id, label: id, color: '#888', emoji: '' };
+const teamColor = id => C.teams[id]?.color || ({ 개경: '#1E8C7E', 예성강: '#2F7FB5', 벽란: '#5B8C2A', 송: '#C0392B', 거란: '#7D5BA6', 여진: '#8E5B2E', 일본: '#C2528B' })[id] || '#888';
+const teamEmoji = id => C.teams[id]?.emoji || ({ 송: '🏯', 거란: '🏹', 여진: '🐎', 일본: '🗾' })[id] || '⚓';
+const teamLabel = id => C.teams[id]?.label || ({ 개경: '고려 · 개경 상단', 예성강: '고려 · 예성강 상단', 벽란: '고려 · 벽란 상단', 송: '송나라 상인', 거란: '거란 상인', 여진: '여진 상인', 일본: '일본 상인' })[id] || id;
+
+function toast(text, cls = '') { const el = $('toast'); el.textContent = text; el.className = `toast on ${cls}`; clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), cls === 'err' ? 3600 : 2400); }
+let audio; function beep(kind) { try { audio ??= new (window.AudioContext || window.webkitAudioContext)(); const seq = { tap: [[660, .05]], win: [[523, .1], [784, .18]], lost: [[300, .2]], ding: [[880, .08], [1175, .12]], horn: [[196, .4], [247, .5]] }[kind] || []; let t = audio.currentTime; seq.forEach(([f, d]) => { const o = audio.createOscillator(), g = audio.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.16, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g).connect(audio.destination); o.start(t); o.stop(t + d + .02); t += d; }); } catch { } }
+const fx = $('fx'), fxc = fx.getContext('2d'); let parts = [];
+function resizeFx() { fx.width = innerWidth; fx.height = innerHeight; } resizeFx(); addEventListener('resize', resizeFx);
+function confetti(x, y, n = 40, colors = ['#C9962B', '#5E9C8F', '#B5432D', '#2F7FB5', '#FFE08A']) { const start = !parts.length; for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * 12, vy: -Math.random() * 11 - 3, r: 5 + Math.random() * 6, c: colors[i % colors.length], a: Math.random() * 6, s: (Math.random() - .5) * .3, life: 80 + Math.random() * 40 }); if (start) requestAnimationFrame(fxLoop); }
+function fxLoop() { fxc.clearRect(0, 0, fx.width, fx.height); parts = parts.filter(p => p.life > 0); parts.forEach(p => { p.x += p.vx; p.vy += .35; p.y += p.vy; p.a += p.s; p.life--; fxc.save(); fxc.translate(p.x, p.y); fxc.rotate(p.a); fxc.fillStyle = p.c; fxc.globalAlpha = Math.min(1, p.life / 30); fxc.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * .6); fxc.restore(); }); if (parts.length) requestAnimationFrame(fxLoop); }
+
+/* ── 입장 ── */
+$('nameIn').value = sget('byeokrando-solo-name');
+async function doJoin() {
+  if (joining) return; const name = $('nameIn').value.trim(); if (!name) { $('nameIn').focus(); return toast('이름을 적어 주세요', 'err'); }
+  joining = true; $('joinBtn').disabled = true;
+  try { const p = await joinGame(T, me, name); sset('byeokrando-solo-name', name); toast(`${teamLabel(p.team)}이(가) 됐어요!`, 'win'); beep('win'); }
+  catch (e) { toast(e.message, 'err'); } finally { joining = false; $('joinBtn').disabled = false; }
+}
+$('joinBtn').addEventListener('click', doJoin);
+$('nameIn').addEventListener('keydown', e => { if (e.key === 'Enter') doJoin(); });
+async function heartbeat() { if (T && P()) try { await T.batch([{ op: 'set', col: 'seen', id: me, data: { t: now() } }]); } catch { } }
+setInterval(heartbeat, 60000);
+
+/* ── 렌더 ── */
+let raf = 0; function render() { clearTimeout(raf); raf = setTimeout(paint, 20); }
+function paint() {
+  const st = S(), p = P(), tm = TM();
+  document.documentElement.style.setProperty('--tc', p ? teamColor(p.team) : '#888');
+  $('tn').innerHTML = p ? `${teamEmoji(p.team)} ${esc(p.tag)} <small>${esc(p.name)}</small>` : '⚓ 벽란도 무역항';
+  $('pill').textContent = st ? PHASE_LABEL[st.phase] || st.phase : '연결 중'; $('pill').className = `pill ${st?.phase || ''}`;
+  if (p) wasJoined = true;
+  const view = !p ? 'Join' : !st?.started || st.phase === 'lobby' ? 'Lobby' : st.phase === 'end' ? 'End' : 'Game';
+  ['Join', 'Lobby', 'Game', 'End'].forEach(v => $('v' + v).classList.toggle('on', v === view));
+  if (view === 'Join') { $('joinMsg').textContent = !st ? '선생님이 칠판에서 무역항을 열면 들어올 수 있어요' : wasJoined ? '선생님이 명단을 새로 만들었어요. 다시 입장해요' : ''; closeAll(); }
+  if (view === 'Lobby') paintLobby(p);
+  if (view === 'Game') { if (!C.inv) { $('closedMsg').hidden = false; } paintGame(st, p, tm); paintIncoming(st); paintEvent(st, p, tm); if (cmp) paintCompose(); }
+  if (view === 'End') { paintEnd(st, p); closeAll(); }
+  detect(st, p, tm); tick();
+}
+function closeAll() { cmp = null; ['ovCompose', 'ovIncoming', 'ovEvent'].forEach(id => $(id).classList.remove('on')); }
+function paintLobby(p) {
+  $('idEmoji').textContent = teamEmoji(p.team); $('idName').textContent = teamLabel(p.team); $('idTag').textContent = `${p.tag} · ${p.name}`;
+  $('idLead').innerHTML = p.nation === '고려' ? '너는 <b>벽란도의 고려 상인</b>이에요. 외국 상인들이 찾아와요!<br>외국 물건을 모아 우리 상단 창고에 납품해요.' : `너는 <b>${esc(p.nation)}에서 온 상인</b>이에요.<br>벽란도의 <b>고려 상인</b>하고만 거래할 수 있어요.`;
+  $('mates').innerHTML = Object.values(C.players).filter(x => x.team === p.team).sort((a, b) => a.no - b.no).map(x => `<span>${esc(x.tag)} ${esc(x.name)}${x.id === me ? ' (나)' : ''}</span>`).join('');
+}
+const deliverable = (items, tm) => Object.entries(items || {}).reduce((s, [g, q]) => s + Math.min(q, need(tm, g)), 0);
+function paintGame(st, p, tm) {
+  const items = C.inv?.items || {}, s = teamStatus(tm), fresh = new Set(tm?.newItems || []);
+  $('teamSub').textContent = tm ? `${teamLabel(p.team)} · ${tm.members || ''}명` : '';
+  $('teamPct').textContent = `${s.pct}%`; $('teamBar').style.width = `${s.pct}%`;
+  $('order').innerHTML = Object.entries(tm?.order || {}).map(([g, q]) => { const h = Math.min(q, tm.got?.[g] || 0); return `<div class="item${h >= q ? ' ok' : fresh.has(g) ? ' new' : ''}"><span class="e">${em(g)}</span><span class="n">${esc(g)}</span><span class="q">${h}/${q}</span></div>`; }).join('') || '<div class="empty">주문서를 받는 중…</div>';
+  const list = Object.entries(items).filter(([, q]) => q > 0);
+  $('inv').innerHTML = list.map(([g, q]) => { const n = need(tm, g); return `<div class="item${n ? ' need' : ''}${prevItems[g] != null && prevItems[g] !== q ? ' bump' : ''}">${n ? '<span class="tag">필요!</span>' : ''}<span class="e">${em(g)}</span><span class="n">${esc(g)}</span><span class="q">${q}개</span></div>`; }).join('') || `<div class="empty">${C.inv ? '물건이 없어요' : '선생님 칠판이 물건을 나눠 주는 중…'}</div>`;
+  prevItems = { ...items };
+  const dn = deliverable(items, tm), dOpen = deliverOpen(st);
+  $('deliverBtn').disabled = !dn || !dOpen || busy;
+  $('deliverBtn').innerHTML = dn ? `📦 우리나라에 납품하기 (${dn}개)<small>필요한 만큼만 들어가요</small>` : `📦 납품할 물건이 없어요<small>우리나라 주문서에 필요한 물건을 구해 와요</small>`;
+  const open = tradeOpen(st);
+  $('proposeBtn').disabled = !open || !C.inv; $('closedMsg').hidden = open; $('closedMsg').textContent = closedReason(st);
+  const out = C.inv?.out ? C.from[C.inv.out] : null;
+  if (out && out.status === 'pending') { const old = now() - out.createdAt > SPAM.ttl; $('outBox').hidden = false; $('outBox').innerHTML = `<h3>📨 ${esc(out.toTag)} ${esc(out.toName)}에게 보낸 제안 <small>${old ? '답이 없어요 · 취소하고 다시 말해 봐요' : '상대 디벗에서 답을 기다려요…'}</small></h3><div class="row"><div class="txt">줄 것 ${chips(out.give)}<br>받을 것 ${chips(out.take)}</div><button class="sm warn" id="cancelOut">취소</button></div>`; }
+  else $('outBox').hidden = true;
+  const npc = C.npc.arabia, showArab = isGoryeo(p) && npc && (st.phase === 'event' || st.phase === 'r2');
+  $('arabBox').hidden = !showArab;
+  if (showArab) {
+    const can = st.arabOpen && st.phase === 'r2' && open;
+    $('arabSub').textContent = can ? '선착순 · 수량 한정 · 산 물건은 납품해요' : '2라운드가 시작되면 열려요';
+    $('abuy').innerHTML = Object.entries(npc.stock || {}).map(([g, q]) => `<span class="g">${em(g)} ${esc(g)} <small>남은 ${q}개${need(tm, g) ? ' · 우리나라에 필요!' : ''}</small></span><span class="bs">${Object.entries(npc.price || {}).map(([pay, n]) => `<button data-item="${esc(g)}" data-pay="${esc(pay)}" ${!can || q <= 0 || (items[pay] || 0) < n ? 'disabled' : ''}>${em(pay)}${esc(pay)} ${n}개로 사기</button>`).join('')}</span>`).join('');
+  }
+  $('stats').innerHTML = `<span>📦 납품 ${C.inv?.delivered || 0}개</span><span>🤝 거래 ${C.inv?.trades || 0}번</span>`;
+  $('mylog').innerHTML = (C.inv?.hist || []).map(h => `<div><b>${esc(h.with)}</b> · 줌 ${Object.entries(h.gave || {}).map(([g, n]) => `${em(g)}${n}`).join(' ')} → 받음 ${Object.entries(h.got || {}).map(([g, n]) => `${em(g)}${n}`).join(' ')}</div>`).join('') || '<div style="background:none;color:var(--muted)">아직 거래가 없어요</div>';
+}
+$('deliverBtn').addEventListener('click', async () => {
+  if (busy) return; busy = true; $('deliverBtn').disabled = true;
+  try { const r = await deliver(T, me); toast(`📦 ${Object.entries(r.moved).map(([g, n]) => `${g} ${n}개`).join(', ')} 납품했어요!${r.done ? ' 우리나라 주문서 완성!' : ''}`, 'win'); beep('win'); const b = $('deliverBtn').getBoundingClientRect(); confetti(b.left + b.width / 2, b.top, 30, [teamColor(P().team), '#FFE08A', '#fff']); }
+  catch (e) { toast(e.message, 'err'); beep('lost'); } finally { busy = false; render(); }
+});
+$('outBox').addEventListener('click', async e => { if (e.target.id !== 'cancelOut' || !C.inv?.out) return; try { await closeOffer(T, C.inv.out, me, 'canceled'); toast('제안을 취소했어요'); } catch (err) { toast(err.message, 'err'); } });
+$('abuy').addEventListener('click', async e => { const b = e.target.closest('button[data-item]'); if (!b || b.disabled || busy) return; busy = true; b.disabled = true; try { const r = await buyArabia(T, me, b.dataset.item, b.dataset.pay); toast(`⛵ ${r.pay} ${r.price}개로 ${r.item}을(를) 샀어요! 이제 납품해요`, 'win'); beep('win'); } catch (err) { toast(err.message, 'err'); beep('lost'); } finally { busy = false; render(); } });
+
+/* ── 제안 만들기: 나라 → 상인 → 물건 ── */
+$('proposeBtn').addEventListener('click', () => {
+  if (!tradeOpen(S())) return toast(closedReason(S()), 'err');
+  const out = C.inv?.out && C.from[C.inv.out]; if (out?.status === 'pending' && now() - out.createdAt < SPAM.ttl) return toast('보낸 제안이 답을 기다리는 중이에요. 먼저 취소해요', 'err');
+  cmp = { team: null, to: null, give: {}, take: {}, their: null }; $('ovCompose').classList.add('on'); $('ovCompose').scrollTop = 0; paintCompose(); beep('tap');
+});
+$('cmpClose').addEventListener('click', () => { cmp = null; $('ovCompose').classList.remove('on'); });
+function qrows(items, sel, side, tm) {
+  const list = Object.entries(items || {}).filter(([, q]) => q > 0);
+  if (!list.length) return '<div class="empty">물건이 없어요</div>';
+  return list.map(([g, q]) => { const v = sel[g] || 0, n = need(tm, g); const note = side === 'give' ? (n ? ` · <span class="mine">우리나라에 ${n}개 필요</span>` : '') : (n ? ' · <span class="need">우리나라에 필요!</span>' : ''); return `<div class="qrow${v ? ' sel' : ''}"><span class="nm">${em(g)} ${esc(g)}<small>가진 ${q}개${note}</small></span><button data-side="${side}" data-g="${esc(g)}" data-d="-1" ${v ? '' : 'disabled'}>−</button><b>${v}</b><button class="plus" data-side="${side}" data-g="${esc(g)}" data-d="1" ${v >= q ? 'disabled' : ''}>+</button></div>`; }).join('');
+}
+function paintCompose() {
+  const p = P(), tm = TM(); if (!p || !cmp) return;
+  const allowed = (S()?.teamIds || []).filter(id => { const d = (S().teamDefs || []).find(x => x.id === id); return d && pairOk(p, { id: 'x', nation: d.nation }); });
+  $('cmpTeams').innerHTML = allowed.map(id => `<button class="tbtn${cmp.team === id ? ' on' : ''}" style="--pc:${teamColor(id)}" data-team="${esc(id)}">${teamEmoji(id)} ${esc(teamLabel(id).replace('고려 · ', ''))}</button>`).join('') || '<span class="empty">거래할 수 있는 나라가 없어요</span>';
+  const cool = C.inv?.cool || {};
+  const people = cmp.team ? Object.values(C.players).filter(x => x.team === cmp.team).sort((a, b) => a.no - b.no) : [];
+  $('cmpPeople').innerHTML = cmp.team ? people.map(x => { const c = (cool[x.id] || 0) - now(); return `<button class="pbtn${cmp.to === x.id ? ' on' : ''}${c > 0 ? ' cool' : ''}" style="--pc:${teamColor(x.team)}" data-to="${esc(x.id)}"><b>${esc(x.tag)}</b>${esc(x.name)}${c > 0 ? `<small>⏳ ${Math.ceil(c / 1000)}초 뒤에</small>` : ''}</button>`; }).join('') || '<span class="empty">이 나라에 아직 상인이 없어요</span>' : '<span class="empty">⬆ 먼저 나라를 골라요</span>';
+  const sg = $('giveRows').scrollTop, stk = $('takeRows').scrollTop;
+  $('giveRows').innerHTML = qrows(C.inv?.items, cmp.give, 'give', tm);
+  $('takeRows').innerHTML = !cmp.to ? '<div class="empty">⬆ 상인을 고르면 그 사람 물건이 보여요</div>' : cmp.their ? qrows(cmp.their, cmp.take, 'take', tm) : '<div class="empty">불러오는 중…</div>';
+  $('giveRows').scrollTop = sg; $('takeRows').scrollTop = stk;
+  const g = bundle(cmp.give), k = bundle(cmp.take), b = cmp.to ? C.players[cmp.to] : null;
+  const warn = Object.entries(g).filter(([x, n]) => need(tm, x) > 0).map(([x]) => x);
+  $('cmpSum').innerHTML = !b ? '거래할 상인을 먼저 골라요' : `<b style="color:${teamColor(b.team)}">${esc(b.tag)} ${esc(b.name)}</b>에게 · 줄 것 ${Object.keys(g).length ? chips(g) : '<span style="color:var(--muted)">없음</span>'} ⇄ 받을 것 ${Object.keys(k).length ? chips(k) : '<span style="color:var(--muted)">없음</span>'}${warn.length ? `<div class="warnline">⚠ ${warn.join('·')}은(는) 우리나라에도 필요해요. 납품하는 게 나을 수도!</div>` : ''}`;
+  $('sendBtn').disabled = !b || !Object.keys(g).length || !Object.keys(k).length || busy;
+}
+async function loadTheir() { if (!cmp?.to) return; const id = cmp.to; cmp.their = null; paintCompose(); try { const inv = await T.get('inv', id); if (cmp?.to === id) { cmp.their = inv?.items || {}; Object.keys(cmp.take).forEach(g => { if ((cmp.their[g] || 0) < cmp.take[g]) cmp.take[g] = cmp.their[g] || 0; }); paintCompose(); } } catch (e) { toast('상대 물건을 불러오지 못했어요', 'err'); } }
+$('cmpTeams').addEventListener('click', e => { const b = e.target.closest('[data-team]'); if (!b || !cmp) return; if (cmp.team !== b.dataset.team) { cmp.team = b.dataset.team; cmp.to = null; cmp.take = {}; cmp.their = null; } beep('tap'); paintCompose(); });
+$('cmpPeople').addEventListener('click', e => { const b = e.target.closest('[data-to]'); if (!b || !cmp) return; const x = C.players[b.dataset.to]; try { checkPair(P(), x); } catch (err) { toast(err.message, 'err'); return; } const c = (C.inv?.cool?.[x.id] || 0) - now(); if (c > 0) { toast(`${x.tag}에게 거절당했어요. ${Math.ceil(c / 1000)}초 뒤에 다시 제안할 수 있어요`, 'err'); return; } if (cmp.to !== x.id) { cmp.to = x.id; cmp.take = {}; loadTheir(); } beep('tap'); paintCompose(); });
+$('refreshTake').addEventListener('click', loadTheir);
+$('ovCompose').addEventListener('click', e => { const b = e.target.closest('button[data-side]'); if (!b || b.disabled || !cmp) return; const m = cmp[b.dataset.side], g = b.dataset.g; m[g] = Math.max(0, (m[g] || 0) + Number(b.dataset.d)); beep('tap'); paintCompose(); });
+$('sendBtn').addEventListener('click', async () => {
+  if (!cmp?.to || busy) return; busy = true; $('sendBtn').disabled = true;
+  try { const o = await proposeTrade(T, me, cmp.to, cmp.give, cmp.take); toast(`📨 ${o.toTag}에게 제안을 보냈어요. 답을 기다려요`, 'win'); cmp = null; $('ovCompose').classList.remove('on'); beep('ding'); }
+  catch (err) { toast(err.message, 'err'); beep('lost'); if (cmp && /창고/.test(err.message)) loadTheir(); }
+  finally { busy = false; render(); }
+});
+
+/* ── 받은 제안: 오래된 것부터 하나씩. 새 제안이 뜨면 1초 잠금(연속 터치로 잘못 누르기 방지) ── */
+const incomingList = () => Object.values(C.to).filter(o => o.status === 'pending' && now() - (o.createdAt || 0) < SPAM.ttl).sort((a, b) => a.createdAt - b.createdAt);
+let modalReadyAt = 0;
+function paintIncoming(st) {
+  const list = incomingList(), ov = $('ovIncoming');
+  if (!list.length) { ov.classList.remove('on'); $('inModal').dataset.id = ''; return; }
+  const o = list[0], items = C.inv?.items || {}, tm = TM();
+  const useful = Object.keys(o.give).filter(g => need(tm, g) > 0);
+  const html = `<h3>${teamEmoji(o.fromTeam)} ${esc(o.fromTag)} ${esc(o.fromName)}의 제안</h3>${list.length > 1 ? `<div class="more">기다리는 제안이 ${list.length - 1}개 더 있어요</div>` : ''}<div class="deal"><div class="get"><h4>내가 받을 것 ⬇</h4><div class="row">${chips(o.give)}</div>${useful.length ? `<div style="color:var(--ok);font:17px Jua;margin-top:4px">✓ ${useful.join('·')} 우리나라에 필요!</div>` : ''}</div><div class="pay"><h4>내가 줄 것 ⬆</h4><div class="row">${chips(o.take)}</div></div></div>${!hasAll(items, o.take) ? `<div class="warnline">⚠ 내 물건이 모자라요: ${esc(lackText(items, o.take))}</div>` : ''}<div class="btns"><button class="no" data-rej="${o.id}">거절 ✋</button><button class="yes" data-acc="${o.id}">수락 🤝</button></div>`;
+  const m = $('inModal');
+  if (m.dataset.html !== html) { m.dataset.html = html; m.innerHTML = html; m.style.setProperty('--pc', teamColor(o.fromTeam)); }
+  if (m.dataset.id !== o.id) { m.dataset.id = o.id; beep('ding'); modalReadyAt = now() + 1000; m.classList.add('locked'); setTimeout(() => m.classList.remove('locked'), 1000); }
+  ov.classList.add('on');
+}
+$('inModal').addEventListener('click', async e => {
+  if (now() < modalReadyAt) return;
+  const acc = e.target.closest('[data-acc]'), rej = e.target.closest('[data-rej]'); if ((!acc && !rej) || busy) return;
+  busy = true; e.target.closest('button').disabled = true;
+  try {
+    if (acc) { const r = await acceptOffer(T, acc.dataset.acc, me); if (r.ok) { toast('🤝 거래 성공! 필요한 물건은 납품해요', 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .4, 40, [teamColor(P().team), '#FFE08A', '#fff']); } else { toast(`거래 실패: ${r.reason}`, 'err'); beep('lost'); } }
+    else { await closeOffer(T, rej.dataset.rej, me, 'rejected'); toast(`거절했어요. 그 상인은 ${SPAM.cool / 1000}초 동안 나에게 다시 제안할 수 없어요`); }
+  } catch (err) { toast(err.message, 'err'); beep('lost'); }
+  finally { busy = false; $('inModal').dataset.html = ''; render(); }
+});
+
+/* ── 입항 ── */
+function paintEvent(st, p, tm) {
+  const key = st?.phase === 'event' ? `ev${st.arrivedAt || ''}` : '';
+  if (!key) { $('ovEvent').classList.remove('on'); return; }
+  if (evSeen === key) return;
+  const npc = C.npc.arabia || {};
+  $('evBox').innerHTML = `<div class="ship">⛵</div><h3>아라비아 상선 입항!</h3><p>멀리 서쪽에서 온 상인들이 벽란도에 들어왔어요.<br>이 상인들이 고려를 <b style="color:#FFE08A">'코리아'</b>라고 불렀대요. <b>칠판을 보세요!</b></p>${isGoryeo(p) ? `<p>우리 상단 주문서에 새로 추가: ${chips(tm?.arabOrder)}</p><p>2라운드에 <b>아라비아 상선 창구</b>에서 ${Object.entries(npc.price || {}).map(([x, n]) => `${em(x)}${esc(x)} ${n}개`).join(' 또는 ')}로 1개씩 살 수 있어요 (선착순!)</p>` : `<p>고려 상인들이 아라비아 상인에게 줄 <b>금·비단</b>을 구하러 다닐 거예요.<br>우리 주문서는 그대로! 계속 고려 상인과 거래해요.</p>`}<button id="evOk">알겠어요!</button>`;
+  $('ovEvent').classList.add('on');
+}
+$('evBox').addEventListener('click', e => { if (e.target.id === 'evOk') { evSeen = S()?.phase === 'event' ? `ev${S().arrivedAt || ''}` : ''; $('ovEvent').classList.remove('on'); } });
+
+/* ── 끝 ── */
+function paintEnd(st, p) {
+  const { list, allDone } = ranking(st, C.teams), mine = list.find(x => x.id === p.team);
+  $('endMine').innerHTML = mine ? `<div class="score">${mine.tie ? '공동 ' : ''}${mine.rank}위</div><div style="font:clamp(20px,2.6vw,28px) Jua">${esc(teamLabel(p.team))} · 주문서 ${mine.pct}%</div><div style="font:clamp(18px,2.3vw,24px)/1.6 Jua;margin-top:6px">나는 📦 ${C.inv?.delivered || 0}개 납품 · 🤝 ${C.inv?.trades || 0}번 거래</div>${allDone ? '<div style="font:24px Jua;background:#FFE08A;border-radius:14px;padding:6px 14px;margin-top:8px">🎉 모든 나라가 주문서 완성!</div>' : ''}` : '';
+  const medal = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  $('endRank').innerHTML = list.map(x => `<div class="${x.id === p.team ? 'me' : ''}" style="--pc:${x.team.color}">${medal[x.rank] || ''} ${x.tie ? '공동 ' : ''}${x.rank}위 ${x.team.emoji} ${esc(x.team.label.replace('고려 · ', ''))}<b>${x.pct}%</b></div>`).join('');
+}
+
+/* ── 알림: 보낸 제안 결과, 주문서 완성 ── */
+function detect(st, p, tm) {
+  if (!p) return;
+  if (prevFrom) Object.values(C.from).forEach(o => { const q = prevFrom[o.id]; if (!q || q.status !== 'pending' || o.status === 'pending') return;
+    if (o.status === 'accepted') { toast(`🤝 ${o.toTag}이(가) 수락했어요! 필요한 물건은 납품해요`, 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .35, 50, [teamColor(p.team), '#FFE08A', '#fff']); }
+    if (o.status === 'rejected') { toast(`${o.toTag}이(가) 거절했어요. 30초 뒤에 다시 제안할 수 있어요. 다시 흥정해 봐요`, 'err'); beep('lost'); }
+    if (o.status === 'failed') { toast(`거래 실패: ${o.reason || ''}`, 'err'); beep('lost'); }
+    if (o.status === 'canceled' && o.reason) toast(o.reason);
+  });
+  prevFrom = clone(C.from);
+  const s = teamStatus(tm), key = `${s.done}-${s.total}`;
+  if (prevDone && prevDone !== key && s.done) { toast('📜 우리나라 주문서 완성! 다른 나라를 도와줘요', 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .3, 90, [teamColor(p.team), '#FFE08A', '#fff']); }
+  prevDone = tm ? key : prevDone;
+  if (st && st.phase !== lastPhase) { if (lastPhase && st.phase === 'r2') toast('2라운드 시작!', 'win'); if (lastPhase === 'lobby' && st.phase === 'r1') { toast('1라운드 시작! 내 물건을 확인해요', 'win'); beep('win'); } lastPhase = st.phase; }
+}
+
+/* ── 시계 ── */
+function tick() {
+  const st = S(), el = $('clock'), ms = timeLeft(st);
+  el.className = 'clock';
+  if (ms === null) { el.textContent = st?.phase === 'event' ? '⛵' : '--:--'; return; }
+  el.textContent = mmss(ms);
+  if (st.paused || ms <= 0) el.classList.add('off'); else if (ms <= 30000) el.classList.add('hot');
+  if (P() && $('vGame').classList.contains('on') && $('proposeBtn').disabled === tradeOpen(st) && C.inv) render();
+}
+setInterval(tick, 500);
+setInterval(() => { if (incomingList().length || C.inv?.out || cmp) render(); }, 3000);
+
+/* ── 연결: 내 것만 구독(읽기 절약) ── */
+window.addEventListener('db-error', () => { $('badge').textContent = '연결 오류'; $('badge').className = 'badge err on'; });
+try {
+  T = await createTransport(); if (T.demo) { $('badge').classList.add('on'); window.__game = { T, C, me, proposeTrade, acceptOffer, closeOffer, deliver, buyArabia }; }
+  T.watchDoc('state', 'main', d => { C.state = d; render(); });
+  T.watch('teams', m => { C.teams = m; render(); });
+  T.watch('players', m => { C.players = m; render(); });
+  T.watchDoc('inv', me, d => { C.inv = d; render(); });
+  T.watchWhere('offers', 'to', me, m => { C.to = m; render(); });
+  T.watchWhere('offers', 'from', me, m => { C.from = m; render(); });
+  T.watchDoc('npc', 'arabia', d => { C.npc = d ? { arabia: d } : {}; render(); });
+  heartbeat();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { heartbeat(); render(); } });
+} catch (e) { console.error(e); $('badge').textContent = '연결하지 못했어요 · 새로고침'; $('badge').className = 'badge err on'; }
+render();
+</script>
+</body>
+</html>
