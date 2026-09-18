@@ -62,6 +62,19 @@ h2.big{font:clamp(30px,5vw,52px)/1.2 "Jua",sans-serif}
 .stats{display:flex;gap:10px;flex-wrap:wrap;font:clamp(17px,2.1vw,21px) "Jua",sans-serif}.stats span{background:#F6EFE1;border-radius:12px;padding:4px 12px}
 .mylog{display:flex;flex-direction:column;gap:4px}.mylog div{font:clamp(14px,1.7vw,17px)/1.35 "Jua",sans-serif;background:#F6EFE1;border-radius:10px;padding:4px 8px}
 .mates{display:flex;flex-wrap:wrap;gap:6px}.mates span{font:17px "Jua",sans-serif;background:#F6EFE1;border-radius:10px;padding:3px 10px}
+.nick{font:clamp(40px,6vw,64px)/1.1 "Jua",sans-serif;color:var(--ink);margin-top:4px}
+.realbox{display:flex;gap:8px;width:min(620px,100%)}.realbox input{flex:1;min-width:0;height:56px;border-radius:14px;border:3px solid var(--line);background:#fff;font:24px "Jua",sans-serif;text-align:center;-webkit-user-select:text;user-select:text}
+.special{background:#FFF7DE;border:3px dashed var(--gold);border-radius:14px;padding:6px 10px;font:clamp(17px,2.1vw,21px) "Jua",sans-serif;color:#7A5A00}
+.quota{border-radius:12px;padding:4px 12px}.quota.low{background:#FFE0D6!important;color:var(--red)}.quota.ok{background:#E1F2E7!important;color:var(--ok)}
+.report{border:3px solid var(--red);background:#FFF5F2}.report h3{color:var(--red)}.report p{font-size:clamp(14px,1.7vw,17px);color:var(--muted);line-height:1.5}
+.report button.go{min-height:56px;border-radius:14px;background:var(--red);color:#fff;font:clamp(20px,2.4vw,24px) "Jua",sans-serif;box-shadow:0 4px 0 #7E2E1E}.report button.go:disabled{background:#D9CFBC;box-shadow:none}
+.rlist{display:flex;flex-direction:column;gap:6px}.rlist button{min-height:58px;border-radius:14px;background:#fff;border:3px solid var(--line);font:clamp(19px,2.4vw,24px) "Jua",sans-serif;text-align:left;padding:4px 14px}.rlist button small{color:var(--muted);font-size:.7em;margin-left:6px}
+.aw{display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center;width:min(820px,100%);margin:0 auto;padding-top:3vh}
+.aw .big1{font:clamp(44px,8vw,84px)/1.05 "Jua",sans-serif;color:var(--tc)}.aw .big2{font:clamp(26px,4vw,40px) "Jua",sans-serif}
+.aw .me{background:var(--panel);border:5px solid var(--tc);border-radius:24px;padding:14px 22px;font:clamp(22px,3vw,32px)/1.4 "Jua",sans-serif}
+.aw .mvp{background:var(--gold);color:#fff;border-radius:16px;padding:6px 18px;font:clamp(24px,3.4vw,36px) "Jua",sans-serif}
+.aw .list{display:flex;flex-direction:column;gap:6px;width:100%}.aw .list div{display:flex;gap:8px;align-items:center;background:var(--panel);border-radius:14px;padding:8px 14px;font:clamp(18px,2.3vw,24px) "Jua",sans-serif;border-left:10px solid var(--pc)}.aw .list div.mine{outline:4px solid var(--pc)}.aw .list b{margin-left:auto}
+.aw .wait{font:clamp(26px,4vw,40px) "Jua",sans-serif;color:var(--muted)}
 /* 겹쳐 뜨는 창: 화면보다 크면 스크롤 */
 .ov{position:fixed;inset:0;z-index:40;display:none;background:rgba(25,35,45,.55);padding:10px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .ov.on{display:flex}.ov.on>*{margin:auto}
@@ -123,14 +136,14 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:80}
 
   <section id="vJoin" class="view center">
     <h2 class="big">벽란도에 온 걸 환영해요!</h2>
-    <p class="lead">이름을 적으면 어느 나라 상인이 될지 정해져요</p>
-    <div class="joinbox"><input id="nameIn" maxlength="8" placeholder="내 이름" autocomplete="off"><button id="joinBtn" class="bigbtn">입장하기 ⚓</button></div>
-    <p class="lead" id="joinMsg"></p>
+    <p class="lead" id="joinMsg">어느 나라 상인이 될지 정하는 중…</p>
+    <button id="rejoinBtn" class="bigbtn" hidden>다시 입장하기 ⚓</button>
   </section>
 
   <section id="vLobby" class="view center">
-    <div class="idcard"><div class="e" id="idEmoji"></div><div class="nm" id="idName"></div><div class="tag" id="idTag"></div></div>
+    <div class="idcard"><div class="e" id="idEmoji"></div><div class="nm" id="idName"></div><div class="nick" id="idNick"></div><div class="tag" id="idTag"></div></div>
     <p class="lead" id="idLead"></p>
+    <div class="realbox"><input id="realIn" maxlength="8" placeholder="진짜 이름 (선생님용 · 안 적어도 돼요)" autocomplete="off"><button class="sm" id="realBtn">저장</button></div>
     <div class="box" style="width:min(620px,100%)"><h3>같은 나라 친구들</h3><div id="mates" class="mates"></div></div>
     <p class="lead">선생님이 1라운드를 시작하면 내 물건과 우리나라 주문서가 나와요</p>
   </section>
@@ -138,7 +151,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:80}
   <section id="vGame" class="view">
     <div class="cols">
       <div class="col">
-        <div class="box order"><h3>📜 우리나라 주문서 <small id="teamSub"></small><span class="pct" id="teamPct"></span></h3><div class="bar"><i id="teamBar"></i></div><div id="order" class="grid"></div></div>
+        <div class="box order"><h3>📜 우리나라 주문서 <small id="teamSub"></small><span class="pct" id="teamPct"></span></h3><div class="bar"><i id="teamBar"></i></div><div id="special" class="special"></div><div id="order" class="grid"></div></div>
         <div class="box inv"><h3>🎒 내 물건 <small>초록 딱지 = 우리나라에 필요한 물건</small></h3><div id="inv" class="grid"></div>
           <button id="deliverBtn" class="bigbtn deliver">📦 우리나라에 납품하기</button></div>
       </div>
@@ -147,16 +160,13 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:80}
         <div id="closedMsg" class="closed" hidden></div>
         <div id="outBox" class="box out" hidden></div>
         <div id="arabBox" class="box arab" hidden><h3>⛵ 아라비아 상선 창구 <small id="arabSub">선착순 · 수량 한정</small></h3><div id="abuy" class="abuy"></div></div>
+        <div id="reportBox" class="box report" hidden><h3>🚨 관청에 고발하기 <small>2라운드 · 한 번만</small></h3><p>같은 나라 친구가 <b>최소 납품(<span id="minN">3</span>개)</b>도 안 하면서 우리나라에 필요한 물건을 숨기고 있나요? 맞으면 그 물건을 몰수해 나라 창고로! 틀리면 내 물건 1개를 벌금으로 줘요. 누가 고발했는지는 비밀이에요.</p><button id="reportBtn" class="go">🚨 고발할 친구 고르기</button></div>
         <div class="box"><h3>🧾 내 기록</h3><div class="stats" id="stats"></div><div id="mylog" class="mylog"></div></div>
       </div>
     </div>
   </section>
 
-  <section id="vEnd" class="view"><div class="endcard">
-    <h2 class="big">무역 끝!</h2>
-    <div id="endMine" style="text-align:center"></div>
-    <div id="endRank" class="rank"></div>
-  </div></section>
+  <section id="vEnd" class="view"><div id="endBox" class="aw"></div></section>
 </div>
 
 <div id="ovCompose" class="ov"><div class="sheet">
@@ -170,6 +180,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:80}
   </div>
   <footer><div id="cmpSum" class="sum"></div><button id="sendBtn" class="send" disabled>제안 보내기 📨</button></footer>
 </div></div>
+<div id="ovReport" class="ov"><div class="modal" style="--pc:var(--red);text-align:left"><h3 style="text-align:center">🚨 누구를 고발할까요?</h3><p class="more" style="text-align:center">같은 나라 친구만 · 딱 한 번 · 고발한 사람은 비밀</p><div id="rlist" class="rlist" style="margin:12px 0"></div><button class="sm" id="reportClose" style="width:100%">그만두기</button></div></div>
 <div id="ovIncoming" class="ov"><div class="modal" id="inModal"></div></div>
 <div id="ovEvent" class="ov"><div class="evbox" id="evBox"></div></div>
 
@@ -243,11 +254,22 @@ function checkPair(a, b) {
   if (!isGoryeo(a) && !isGoryeo(b)) throw new Error(FOREIGN_MSG);
 }
 const pairOk = (a, b) => { try { checkPair(a, b); return true; } catch { return false; } };
-/* 나라(팀) 주문서 달성: 창고(got)에 납품된 수로 계산 */
+/* 나라(팀) 주문서 달성: 창고(got)에 납품된 수 + 100% 뒤 특별 주문(bonus)은 한 칸과 같은 값 → 100%를 넘을 수 있음 */
 function teamStatus(tm) {
   let filled = 0, total = 0;
   for (const [g, n] of Object.entries(tm?.order || {})) { total += n; filled += Math.min(n, Number(tm.got?.[g]) || 0); }
-  return { filled, total, done: total > 0 && filled >= total, pct: total ? Math.round(filled * 100 / total) : 0 };
+  const bonus = Number(tm?.bonus) || 0;
+  return { filled, total, bonus, done: total > 0 && filled >= total, pct: total ? Math.round((filled + bonus) * 100 / total) : 0 };
+}
+/* 납품 계획: 주문서에 모자란 만큼 → 주문서를 다 채웠으면 특별 주문(하나씩 끝없이) */
+function deliverPlan(items, tm) {
+  items = { ...(items || {}) };
+  const got = { ...(tm?.got || {}) }, moved = {}, extra = {}, list = tm?.specialList || [];
+  let bonus = Number(tm?.bonus) || 0, sp = tm?.special ? { ...tm.special } : (list.length ? { item: list[0], seq: 0 } : null);
+  for (const [g, q] of Object.entries(items)) { const n = Math.min(q, Math.max(0, (tm?.order?.[g] || 0) - (got[g] || 0))); if (n > 0) { moved[g] = n; items[g] = q - n; got[g] = (got[g] || 0) + n; } }
+  const done = teamStatus({ ...tm, got, bonus: 0 }).done;
+  if (done && sp) for (let i = 0; i < 60 && (items[sp.item] || 0) > 0; i++) { items[sp.item]--; extra[sp.item] = (extra[sp.item] || 0) + 1; bonus++; const seq = sp.seq + 1; sp = { item: list[seq % list.length], seq }; }
+  return { items, got, moved, extra, bonus, special: sp, done, count: sum(moved) + sum(extra) };
 }
 const need = (tm, g) => Math.max(0, (tm?.order?.[g] || 0) - (tm?.got?.[g] || 0));
 const activeTeams = (st, teams) => (st?.teamIds || []).map(id => teams?.[id]).filter(t => t?.nation);
@@ -255,7 +277,7 @@ const activeTeams = (st, teams) => (st?.teamIds || []).map(id => teams?.[id]).fi
 function ranking(st, teams) {
   const list = activeTeams(st, teams).map(t => ({ id: t.id, team: t, ...teamStatus(t) }));
   const allDone = list.length > 0 && list.every(x => x.done);
-  list.sort((a, b) => b.pct - a.pct || (a.team.doneAt || 9e15) - (b.team.doneAt || 9e15) || b.filled - a.filled);
+  list.sort((a, b) => b.pct - a.pct || (a.team.doneAt || 9e15) - (b.team.doneAt || 9e15) || b.filled - a.filled);   // 특별 주문까지 합친 % → 먼저 100% 된 나라
   list.forEach((x, i) => { const p = list[i - 1]; x.rank = p && p.pct === x.pct && (p.team.doneAt || 0) === (x.team.doneAt || 0) ? p.rank : i + 1; });
   list.forEach(x => { x.tie = list.filter(y => y.rank === x.rank).length > 1; });
   return { list, allDone };
@@ -347,23 +369,34 @@ function pickTeam(defs, counts) {
   const pool = side.length ? side : defs;
   return [...pool].sort((a, b) => n(a.id) / (a.weight || 1) - n(b.id) / (b.weight || 1) || defs.indexOf(a) - defs.indexOf(b))[0];
 }
-async function joinGame(T, me, name) {
-  name = String(name || '').trim().slice(0, 8);
-  if (!name) throw new Error('이름을 적어 주세요');
+/* 나라 풍 별명: 성(surname) × 이름(given)을 번호 순서대로 조합 → 같은 팀 안에서 겹치지 않음
+   거란은 야율·소 씨, 여진은 완안·포찰 씨(실제 두 나라의 대표 성씨), 일본은 헤이안 시대 귀족 성씨 */
+const NICK = {
+  고려: { s: ['김', '이', '최', '정', '윤', '강', '한', '서', '권', '유', '문', '조', '임'], g: ['예성', '청운', '해동', '수경', '정안', '덕진', '문헌', '석주', '도원', '광서', '경수', '송학', '진명', '현보', '연우', '단오', '의방'] },
+  송:   { s: ['왕', '장', '조', '진', '양', '황', '주', '오', '소', '범', '구'], g: ['운룡', '자앙', '덕보', '백기', '문원', '천우', '보산', '청송', '사명', '운학', '자명', '경덕'] },
+  거란: { s: ['야율', '소'], g: ['바투', '알로', '테무', '쿠라', '사린', '오도', '마로', '타가', '홍기', '초라', '올리', '바얀', '아사'] },
+  여진: { s: ['완안', '포찰'], g: ['오고', '합리', '사타', '모르', '아리', '우룬', '바르', '니칸', '타로', '호룬', '살합', '알출', '구루'] },
+  일본: { s: ['후지와라', '다이라', '미나모토', '스가와라', '다치바나', '오노'], g: ['사다', '츠네', '요리', '노부', '마사', '토모', '히로', '카즈', '미치', '타다', '유키'] }
+};
+function nickname(nation, no) { const n = NICK[nation]; if (!n) return nation + no; return n.s[(no - 1) % n.s.length] + ' ' + n.g[(no - 1) % n.g.length]; }
+/* 링크로 들어오면 바로 입장: 이름 입력 없이 나라 자동 배정 + 별명 */
+async function joinGame(T, me) {
   return T.tx(async t => {
     const st = await t.get('state', 'main'), p = await t.get('players', me), meta = await t.get('meta', 'roster');
     if (!st) throw new Error('선생님이 아직 무역항을 열지 않았어요');
-    if (p?.team) { if (p.name !== name) t.update('players', me, { name }); return { ...p, name }; }
-    const defs = st.teamDefs || [], counts = { ...(meta?.counts || {}) }, nos = { ...(meta?.nos || {}) };
+    if (p?.team) return p;
+    const defs = st.teamDefs || [], counts = { ...(meta?.counts || {}) }, nos = { ...(meta?.nos || {}) }, nat = { ...(meta?.nat || {}) };
     const d = pickTeam(defs, counts); if (!d) throw new Error('나라 정보가 없어요');
-    const no = (nos[d.id] || 0) + 1;
-    const player = { id: me, name, team: d.id, nation: d.nation, no, tag: `${d.short || d.id}-${no}`, joinedAt: Date.now() };
-    counts[d.id] = (counts[d.id] || 0) + 1; nos[d.id] = no;
+    const no = (nos[d.id] || 0) + 1, nn = (nat[d.nation] || 0) + 1;   // 별명은 나라 전체 순번(고려 3상단이 겹치지 않게)
+    const player = { id: me, name: nickname(d.nation, nn), real: '', team: d.id, nation: d.nation, no, tag: `${d.short || d.id}-${no}`, joinedAt: Date.now() };
+    counts[d.id] = (counts[d.id] || 0) + 1; nos[d.id] = no; nat[d.nation] = nn;
     t.set('players', me, player);
-    t.set('meta', 'roster', { counts, nos });
+    t.set('meta', 'roster', { counts, nos, nat });
     return player;
   });
 }
+/* 진짜 이름(선택): 선생님이 누군지 알아보는 용도. 화면에는 작게만 */
+async function setRealName(T, me, real) { real = String(real || '').trim().slice(0, 8); await T.update('players', me, { real }); return real; }
 
 /* ── 거래 ── */
 /* 제안: 고려↔외국 확인 → 시간 → 재고 → 스팸 규칙(보낸 제안 1개, 상대 대기 3개, 거절 후 30초) → 제안 생성 */
@@ -438,22 +471,55 @@ async function closeOffer(T, offerId, byId, status) {
     return true;
   });
 }
-/* 납품: 내 창고에서 우리나라 주문서에 아직 필요한 만큼만 나라 창고로 옮김 */
+/* 납품: 우리나라 주문서에 모자란 만큼 + (100% 뒤) 특별 주문 */
 async function deliver(T, me) {
   return T.tx(async t => {
     const p = await t.get('players', me), st = await t.get('state', 'main');
     if (!p?.team) throw new Error('나라 정보가 없어요');
     const inv = await t.get('inv', me), tm = await t.get('teams', p.team);
     if (!deliverOpen(st)) throw new Error('지금은 납품할 수 없어요');
-    const items = { ...(inv?.items || {}) }, got = { ...(tm?.got || {}) }, moved = {};
-    for (const [g, q] of Object.entries(items)) { const n = Math.min(q, need(tm, g)); if (n > 0) { moved[g] = n; items[g] = q - n; got[g] = (got[g] || 0) + n; } }
-    if (!Object.keys(moved).length) throw new Error('지금 납품할 물건이 없어요. 우리나라 주문서에 필요한 물건을 구해 와요');
-    const now = Date.now(), done = teamStatus({ ...tm, got }).done;
-    t.update('inv', me, { items, delivered: (inv?.delivered || 0) + sum(moved) });
-    t.update('teams', p.team, { got, ...(done && !tm.doneAt ? { doneAt: now } : {}) });
-    const logId = newId('D');
-    t.set('log', logId, { id: logId, kind: 'deliver', from: me, fromTag: p.tag, fromName: p.name, team: p.team, give: moved, ts: now, round: st.phase === 'r2' ? 2 : 1 });
-    return { moved, done };
+    const plan = deliverPlan(inv?.items, tm);
+    if (!plan.count) throw new Error(plan.done ? `지금 특별 주문은 ${plan.special?.item || '?'}이에요. 그 물건을 구해 와요` : '지금 납품할 물건이 없어요. 우리나라 주문서에 필요한 물건을 구해 와요');
+    const now = Date.now();
+    t.update('inv', me, { items: plan.items, delivered: (inv?.delivered || 0) + plan.count });
+    t.update('teams', p.team, { got: plan.got, bonus: plan.bonus, special: plan.special, ...(plan.done && !tm.doneAt ? { doneAt: now } : {}) });
+    const logId = newId('D'), give = { ...plan.moved }; Object.entries(plan.extra).forEach(([g, n]) => give[g] = (give[g] || 0) + n);
+    t.set('log', logId, { id: logId, kind: 'deliver', from: me, fromTag: p.tag, fromName: p.name, team: p.team, give, extra: plan.extra, ts: now, round: st.phase === 'r2' ? 2 : 1 });
+    return { moved: plan.moved, extra: plan.extra, done: plan.done, special: plan.special };
+  });
+}
+/* 관청 고발 (같은 나라 친구만, 한 사람 한 번, 2라운드). 고발한 사람은 비공개.
+   적발 = 최소 납품을 못 채웠는데 우리나라에 필요한 물건을 쥐고 있음 → 그 물건 몰수(나라 창고로), 고발한 사람 납품 +1
+   무고 = 고발한 사람이 벌금으로 자기 물건 1개를 상대에게 줌 */
+async function reportPlayer(T, me, targetId) {
+  return T.tx(async t => {
+    const st = await t.get('state', 'main'), a = await t.get('players', me), b = await t.get('players', targetId);
+    if (!a || !b) throw new Error('상인 정보를 찾을 수 없어요');
+    if (a.id === b.id) throw new Error('나 자신은 고발할 수 없어요');
+    if (a.team !== b.team) throw new Error('고발은 같은 나라 친구만 할 수 있어요');
+    if (st?.phase !== 'r2' || !tradeOpen(st)) throw new Error('관청 고발은 2라운드 거래 시간에만 할 수 있어요');
+    const ia = await t.get('inv', me), ib = await t.get('inv', targetId), tm = await t.get('teams', a.team);
+    if (ia?.reported) throw new Error('고발권은 한 번뿐이에요. 이미 썼어요');
+    const R = st.rules || {}, now = Date.now(), min = R.minDeliver ?? 3;
+    if ((ib?.immuneUntil || 0) > now) throw new Error('그 친구는 방금 관청 조사를 받았어요. 조금 뒤에 해요');
+    const plan = deliverPlan(ib?.items, tm), caught = (ib?.delivered || 0) < min && plan.count > 0;
+    const immune = now + (R.reportImmuneSec ?? 60) * 1000, logId = newId('R');
+    if (caught) {
+      const took = { ...plan.moved }; Object.entries(plan.extra).forEach(([g, n]) => took[g] = (took[g] || 0) + n);
+      t.update('inv', targetId, { items: plan.items, immuneUntil: immune, alert: { kind: 'caught', goods: took, ts: now } });
+      t.update('inv', me, { reported: true, delivered: (ia?.delivered || 0) + 1, alert: null });
+      t.update('teams', a.team, { got: plan.got, bonus: plan.bonus, special: plan.special, ...(plan.done && !tm.doneAt ? { doneAt: now } : {}) });
+      t.set('log', logId, { id: logId, kind: 'report', result: 'caught', team: a.team, goods: took, target: targetId, targetTag: b.tag, by: me, ts: now });
+      return { caught: true, goods: took, tag: b.tag };
+    }
+    const A = { ...(ia?.items || {}) }, B = { ...(ib?.items || {}) };
+    const pick = Object.entries(A).filter(([, q]) => q > 0).sort((x, y) => (need(tm, x[0]) > 0) - (need(tm, y[0]) > 0) || y[1] - x[1])[0];   // 벌금: 나라에 안 필요한 물건 중 가장 많은 것
+    const fine = pick ? { [pick[0]]: 1 } : {};
+    if (pick) { A[pick[0]]--; B[pick[0]] = (B[pick[0]] || 0) + 1; }
+    t.update('inv', me, { items: A, reported: true });
+    t.update('inv', targetId, { items: B, immuneUntil: immune, alert: { kind: 'cleared', goods: fine, ts: now } });
+    t.set('log', logId, { id: logId, kind: 'report', result: 'false', team: a.team, goods: fine, target: targetId, targetTag: b.tag, by: me, ts: now });
+    return { caught: false, fine, tag: b.tag };
   });
 }
 /* 아라비아 상선: 고려 상인만, 2라운드, 정해진 값으로 1개씩 선착순 */
@@ -486,6 +552,7 @@ const sget = k => { try { return store?.getItem(k) || ''; } catch { return ''; }
 let me = params.get('dev') || sget('byeokrando-solo-device');
 if (!me) { me = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); sset('byeokrando-solo-device', me); }
 const C = { state: null, teams: {}, players: {}, inv: null, to: {}, from: {}, npc: {} };
+let lastAlert = null, lastRestock = null;
 let T, cmp = null, busy = false, prevFrom = null, prevItems = {}, prevDone = null, evSeen = '', lastPhase = '', joining = false, wasJoined = false;
 const now = () => Date.now();
 const S = () => C.state, P = () => C.players[me] || null, TM = () => C.teams[P()?.team] || null;
@@ -504,16 +571,14 @@ function resizeFx() { fx.width = innerWidth; fx.height = innerHeight; } resizeFx
 function confetti(x, y, n = 40, colors = ['#C9962B', '#5E9C8F', '#B5432D', '#2F7FB5', '#FFE08A']) { const start = !parts.length; for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * 12, vy: -Math.random() * 11 - 3, r: 5 + Math.random() * 6, c: colors[i % colors.length], a: Math.random() * 6, s: (Math.random() - .5) * .3, life: 80 + Math.random() * 40 }); if (start) requestAnimationFrame(fxLoop); }
 function fxLoop() { fxc.clearRect(0, 0, fx.width, fx.height); parts = parts.filter(p => p.life > 0); parts.forEach(p => { p.x += p.vx; p.vy += .35; p.y += p.vy; p.a += p.s; p.life--; fxc.save(); fxc.translate(p.x, p.y); fxc.rotate(p.a); fxc.fillStyle = p.c; fxc.globalAlpha = Math.min(1, p.life / 30); fxc.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * .6); fxc.restore(); }); if (parts.length) requestAnimationFrame(fxLoop); }
 
-/* ── 입장 ── */
-$('nameIn').value = sget('byeokrando-solo-name');
+/* ── 입장: 링크로 들어오면 바로 나라 자동 배정 + 나라 풍 별명 ── */
 async function doJoin() {
-  if (joining) return; const name = $('nameIn').value.trim(); if (!name) { $('nameIn').focus(); return toast('이름을 적어 주세요', 'err'); }
-  joining = true; $('joinBtn').disabled = true;
-  try { const p = await joinGame(T, me, name); sset('byeokrando-solo-name', name); toast(`${teamLabel(p.team)}이(가) 됐어요!`, 'win'); beep('win'); }
-  catch (e) { toast(e.message, 'err'); } finally { joining = false; $('joinBtn').disabled = false; }
+  if (joining || !S()) return; joining = true;
+  try { const p = await joinGame(T, me); toast(`${teamLabel(p.team)} ${p.name}(으)로 입장했어요!`, 'win'); beep('win'); }
+  catch (e) { $('joinMsg').textContent = e.message; } finally { joining = false; }
 }
-$('joinBtn').addEventListener('click', doJoin);
-$('nameIn').addEventListener('keydown', e => { if (e.key === 'Enter') doJoin(); });
+$('rejoinBtn').addEventListener('click', () => { wasJoined = false; doJoin(); });
+$('realBtn').addEventListener('click', async () => { try { const r = await setRealName(T, me, $('realIn').value); toast(r ? `"${r}" 저장했어요` : '진짜 이름을 지웠어요', 'win'); } catch (e) { toast(e.message, 'err'); } });
 async function heartbeat() { if (T && P()) try { await T.batch([{ op: 'set', col: 'seen', id: me, data: { t: now() } }]); } catch { } }
 setInterval(heartbeat, 60000);
 
@@ -522,35 +587,38 @@ let raf = 0; function render() { clearTimeout(raf); raf = setTimeout(paint, 20);
 function paint() {
   const st = S(), p = P(), tm = TM();
   document.documentElement.style.setProperty('--tc', p ? teamColor(p.team) : '#888');
-  $('tn').innerHTML = p ? `${teamEmoji(p.team)} ${esc(p.tag)} <small>${esc(p.name)}</small>` : '⚓ 벽란도 무역항';
+  $('tn').innerHTML = p ? `${teamEmoji(p.team)} ${esc(p.name)} <small>${esc(p.tag)}</small>` : '⚓ 벽란도 무역항';
   $('pill').textContent = st ? PHASE_LABEL[st.phase] || st.phase : '연결 중'; $('pill').className = `pill ${st?.phase || ''}`;
   if (p) wasJoined = true;
   const view = !p ? 'Join' : !st?.started || st.phase === 'lobby' ? 'Lobby' : st.phase === 'end' ? 'End' : 'Game';
   ['Join', 'Lobby', 'Game', 'End'].forEach(v => $('v' + v).classList.toggle('on', v === view));
-  if (view === 'Join') { $('joinMsg').textContent = !st ? '선생님이 칠판에서 무역항을 열면 들어올 수 있어요' : wasJoined ? '선생님이 명단을 새로 만들었어요. 다시 입장해요' : ''; closeAll(); }
+  if (view === 'Join') { $('joinMsg').textContent = !st ? '선생님이 칠판에서 무역항을 열면 자동으로 들어가요' : wasJoined ? '선생님이 명단을 정리했어요' : '어느 나라 상인이 될지 정하는 중…'; $('rejoinBtn').hidden = !(st && wasJoined); if (st && !wasJoined) doJoin(); closeAll(); }
   if (view === 'Lobby') paintLobby(p);
   if (view === 'Game') { if (!C.inv) { $('closedMsg').hidden = false; } paintGame(st, p, tm); paintIncoming(st); paintEvent(st, p, tm); if (cmp) paintCompose(); }
-  if (view === 'End') { paintEnd(st, p); closeAll(); }
+  if (view === 'End') { paintEnd(st, p); closeAll(); $('ovReport').classList.remove('on'); }
   detect(st, p, tm); tick();
 }
 function closeAll() { cmp = null; ['ovCompose', 'ovIncoming', 'ovEvent'].forEach(id => $(id).classList.remove('on')); }
 function paintLobby(p) {
-  $('idEmoji').textContent = teamEmoji(p.team); $('idName').textContent = teamLabel(p.team); $('idTag').textContent = `${p.tag} · ${p.name}`;
+  $('idEmoji').textContent = teamEmoji(p.team); $('idName').textContent = teamLabel(p.team); $('idNick').textContent = p.name; $('idTag').textContent = p.tag;
+  if (document.activeElement !== $('realIn')) $('realIn').value = p.real || '';
   $('idLead').innerHTML = p.nation === '고려' ? '너는 <b>벽란도의 고려 상인</b>이에요. 외국 상인들이 찾아와요!<br>외국 물건을 모아 우리 상단 창고에 납품해요.' : `너는 <b>${esc(p.nation)}에서 온 상인</b>이에요.<br>벽란도의 <b>고려 상인</b>하고만 거래할 수 있어요.`;
-  $('mates').innerHTML = Object.values(C.players).filter(x => x.team === p.team).sort((a, b) => a.no - b.no).map(x => `<span>${esc(x.tag)} ${esc(x.name)}${x.id === me ? ' (나)' : ''}</span>`).join('');
+  $('mates').innerHTML = Object.values(C.players).filter(x => x.team === p.team).sort((a, b) => a.no - b.no).map(x => `<span>${esc(x.name)} <small>${esc(x.tag)}</small>${x.id === me ? ' (나)' : ''}</span>`).join('');
 }
-const deliverable = (items, tm) => Object.entries(items || {}).reduce((s, [g, q]) => s + Math.min(q, need(tm, g)), 0);
+const deliverable = (items, tm) => tm ? deliverPlan(items, tm).count : 0;
+const MIN = () => S()?.rules?.minDeliver ?? 3;
 function paintGame(st, p, tm) {
   const items = C.inv?.items || {}, s = teamStatus(tm), fresh = new Set(tm?.newItems || []);
   $('teamSub').textContent = tm ? `${teamLabel(p.team)} · ${tm.members || ''}명` : '';
-  $('teamPct').textContent = `${s.pct}%`; $('teamBar').style.width = `${s.pct}%`;
+  $('teamPct').textContent = `${s.pct}%`; $('teamBar').style.width = `${Math.min(100, s.pct)}%`;
+  $('special').innerHTML = s.done && tm?.special ? `⭐ 주문서 완성! 특별 주문: <b>${em(tm.special.item)} ${esc(tm.special.item)} 1개</b> 납품하면 한 칸 더 (끝없이 이어져요 · 지금 +${s.bonus}칸)` : '⭐ 100%를 채우면 특별 주문이 끝없이 열려요. 더 많이 채운 나라가 이겨요!';
   $('order').innerHTML = Object.entries(tm?.order || {}).map(([g, q]) => { const h = Math.min(q, tm.got?.[g] || 0); return `<div class="item${h >= q ? ' ok' : fresh.has(g) ? ' new' : ''}"><span class="e">${em(g)}</span><span class="n">${esc(g)}</span><span class="q">${h}/${q}</span></div>`; }).join('') || '<div class="empty">주문서를 받는 중…</div>';
   const list = Object.entries(items).filter(([, q]) => q > 0);
   $('inv').innerHTML = list.map(([g, q]) => { const n = need(tm, g); return `<div class="item${n ? ' need' : ''}${prevItems[g] != null && prevItems[g] !== q ? ' bump' : ''}">${n ? '<span class="tag">필요!</span>' : ''}<span class="e">${em(g)}</span><span class="n">${esc(g)}</span><span class="q">${q}개</span></div>`; }).join('') || `<div class="empty">${C.inv ? '물건이 없어요' : '선생님 칠판이 물건을 나눠 주는 중…'}</div>`;
   prevItems = { ...items };
   const dn = deliverable(items, tm), dOpen = deliverOpen(st);
   $('deliverBtn').disabled = !dn || !dOpen || busy;
-  $('deliverBtn').innerHTML = dn ? `📦 우리나라에 납품하기 (${dn}개)<small>필요한 만큼만 들어가요</small>` : `📦 납품할 물건이 없어요<small>우리나라 주문서에 필요한 물건을 구해 와요</small>`;
+  $('deliverBtn').innerHTML = dn ? `📦 우리나라에 납품하기 (${dn}개)<small>${s.done ? '특별 주문도 함께 들어가요' : '필요한 만큼만 들어가요'}</small>` : `📦 납품할 물건이 없어요<small>${s.done && tm?.special ? `특별 주문 ${tm.special.item}을(를) 구해 와요` : '우리나라 주문서에 필요한 물건을 구해 와요'}</small>`;
   const open = tradeOpen(st);
   $('proposeBtn').disabled = !open || !C.inv; $('closedMsg').hidden = open; $('closedMsg').textContent = closedReason(st);
   const out = C.inv?.out ? C.from[C.inv.out] : null;
@@ -563,7 +631,10 @@ function paintGame(st, p, tm) {
     $('arabSub').textContent = can ? '선착순 · 수량 한정 · 산 물건은 납품해요' : '2라운드가 시작되면 열려요';
     $('abuy').innerHTML = Object.entries(npc.stock || {}).map(([g, q]) => `<span class="g">${em(g)} ${esc(g)} <small>남은 ${q}개${need(tm, g) ? ' · 우리나라에 필요!' : ''}</small></span><span class="bs">${Object.entries(npc.price || {}).map(([pay, n]) => `<button data-item="${esc(g)}" data-pay="${esc(pay)}" ${!can || q <= 0 || (items[pay] || 0) < n ? 'disabled' : ''}>${em(pay)}${esc(pay)} ${n}개로 사기</button>`).join('')}</span>`).join('');
   }
-  $('stats').innerHTML = `<span>📦 납품 ${C.inv?.delivered || 0}개</span><span>🤝 거래 ${C.inv?.trades || 0}번</span>`;
+  const dv = C.inv?.delivered || 0, mn = MIN();
+  $('stats').innerHTML = `<span class="quota ${dv >= mn ? 'ok' : 'low'}">📦 납품 ${dv}개 · ${dv >= mn ? `최소 ${mn}개 달성 ✓` : `최소 ${mn}개까지 ${mn - dv}개 더!`}</span><span>🤝 거래 ${C.inv?.trades || 0}번</span><span>🎒 가진 물건 ${sum(items)}개</span>`;
+  $('reportBox').hidden = st.phase !== 'r2'; $('minN').textContent = mn;
+  $('reportBtn').disabled = !!C.inv?.reported || !open; $('reportBtn').textContent = C.inv?.reported ? '고발권을 이미 썼어요' : '🚨 고발할 친구 고르기';
   $('mylog').innerHTML = (C.inv?.hist || []).map(h => `<div><b>${esc(h.with)}</b> · 줌 ${Object.entries(h.gave || {}).map(([g, n]) => `${em(g)}${n}`).join(' ')} → 받음 ${Object.entries(h.got || {}).map(([g, n]) => `${em(g)}${n}`).join(' ')}</div>`).join('') || '<div style="background:none;color:var(--muted)">아직 거래가 없어요</div>';
 }
 $('deliverBtn').addEventListener('click', async () => {
@@ -639,6 +710,21 @@ $('inModal').addEventListener('click', async e => {
   finally { busy = false; $('inModal').dataset.html = ''; render(); }
 });
 
+/* ── 관청 고발 ── */
+$('reportBtn').addEventListener('click', () => {
+  const p = P(); if (!p || C.inv?.reported) return;
+  $('rlist').innerHTML = Object.values(C.players).filter(x => x.team === p.team && x.id !== me).sort((a, b) => a.no - b.no).map(x => `<button data-r="${esc(x.id)}">${esc(x.name)}<small>${esc(x.tag)}</small></button>`).join('') || '<div class="empty">같은 나라 친구가 없어요</div>';
+  $('ovReport').classList.add('on');
+});
+$('reportClose').addEventListener('click', () => $('ovReport').classList.remove('on'));
+$('rlist').addEventListener('click', async e => {
+  const b = e.target.closest('[data-r]'); if (!b || busy) return; const x = C.players[b.dataset.r];
+  if (!confirm(`${x.name}을(를) 관청에 고발할까요? 고발권은 한 번뿐이고, 틀리면 벌금으로 내 물건 1개를 줘요.`)) return;
+  busy = true; $('ovReport').classList.remove('on');
+  try { const r = await reportPlayer(T, me, x.id); if (r.caught) { toast(`🚨 적발! ${Object.entries(r.goods).map(([g, n]) => `${g} ${n}개`).join(', ')}을(를) 몰수해 나라 창고로! 납품 +1 인정`, 'win'); beep('win'); } else { toast(`떳떳한 친구였어요… 벌금으로 ${Object.keys(r.fine).join('') || '물건'} 1개를 줬어요`, 'err'); beep('lost'); } }
+  catch (err) { toast(err.message, 'err'); } finally { busy = false; render(); }
+});
+
 /* ── 입항 ── */
 function paintEvent(st, p, tm) {
   const key = st?.phase === 'event' ? `ev${st.arrivedAt || ''}` : '';
@@ -650,12 +736,17 @@ function paintEvent(st, p, tm) {
 }
 $('evBox').addEventListener('click', e => { if (e.target.id === 'evOk') { evSeen = S()?.phase === 'event' ? `ev${S().arrivedAt || ''}` : ''; $('ovEvent').classList.remove('on'); } });
 
-/* ── 끝 ── */
+/* ── 시상식: 칠판이 공개하는 순서 그대로 따라감 ── */
 function paintEnd(st, p) {
-  const { list, allDone } = ranking(st, C.teams), mine = list.find(x => x.id === p.team);
-  $('endMine').innerHTML = mine ? `<div class="score">${mine.tie ? '공동 ' : ''}${mine.rank}위</div><div style="font:clamp(20px,2.6vw,28px) Jua">${esc(teamLabel(p.team))} · 주문서 ${mine.pct}%</div><div style="font:clamp(18px,2.3vw,24px)/1.6 Jua;margin-top:6px">나는 📦 ${C.inv?.delivered || 0}개 납품 · 🤝 ${C.inv?.trades || 0}번 거래</div>${allDone ? '<div style="font:24px Jua;background:#FFE08A;border-radius:14px;padding:6px 14px;margin-top:8px">🎉 모든 나라가 주문서 완성!</div>' : ''}` : '';
-  const medal = { 1: '🥇', 2: '🥈', 3: '🥉' };
-  $('endRank').innerHTML = list.map(x => `<div class="${x.id === p.team ? 'me' : ''}" style="--pc:${x.team.color}">${medal[x.rank] || ''} ${x.tie ? '공동 ' : ''}${x.rank}위 ${x.team.emoji} ${esc(x.team.label.replace('고려 · ', ''))}<b>${x.pct}%</b></div>`).join('');
+  const F = st.final, box = $('endBox');
+  if (!F) { box.innerHTML = '<div class="wait">무역 끝! 결과를 정리하는 중…</div>'; return; }
+  const N = F.teams.length, k = Math.min(st.reveal || 0, N), mineIdx = F.teams.findIndex(x => x.id === p.team), mine = F.teams[mineIdx];
+  const me2 = mine?.members.find(m => m.id === me), shown = F.teams.filter((x, i) => i >= N - k);
+  const list = shown.length ? `<div class="list">${shown.map(x => `<div class="${x.id === p.team ? 'mine' : ''}" style="--pc:${x.color}">${x.tie ? '공동 ' : ''}${x.rank}위 ${x.emoji} ${esc(x.label.replace('고려 · ', ''))}<b>${x.pct}%</b></div>`).join('')}</div>` : '';
+  if (st.richShown) { const r = F.rich; box.innerHTML = `<div class="big2">🎁 원 모어 띵!</div><div class="big2">재산을 가장 많이 축적한 사람</div>${r ? `<div class="big1" style="--tc:${r.color}">${r.emoji} ${esc(r.name)}</div><div class="big2">${esc(r.label)} · 남은 물건 ${r.left}개</div>${r.id === me ? '<div class="mvp">🎉 바로 나예요!</div>' : ''}` : '<div class="big2">자격을 갖춘 사람이 없어요</div>'}${list}`; return; }
+  if (!mine || mineIdx < N - k) { box.innerHTML = `<div class="big1" style="--tc:var(--gold)">🥁</div><div class="wait">시상식 중! 칠판을 보세요</div><div class="big2">우리나라는 아직 공개 전…</div>${me2 ? `<div class="me" style="--tc:${teamColor(p.team)}">나는 📦 ${me2.delivered}개 납품 · 🎒 ${me2.left}개 남김</div>` : ''}${list}`; return; }
+  const isMvp = mine.rank === 1 && mine.mvps.some(m => m.id === me);
+  box.innerHTML = `<div class="big1" style="--tc:${mine.color}">${mine.rank === 1 ? '🏆 우승!' : `${mine.tie ? '공동 ' : ''}${mine.rank}위`}</div><div class="big2">${mine.emoji} ${esc(mine.label)} · 무역 달성 ${mine.pct}%</div>${me2 ? `<div class="me" style="--tc:${mine.color}">우리나라에서 나는 <b>${me2.rank}등</b><br>📦 ${me2.delivered}개 납품${me2.delivered < F.min ? ` (최소 ${F.min}개 못 채움)` : ''}</div>` : ''}${isMvp ? '<div class="mvp">👑 우승국 MVP!</div>' : ''}${list}`;
 }
 
 /* ── 알림: 보낸 제안 결과, 주문서 완성 ── */
@@ -668,6 +759,8 @@ function detect(st, p, tm) {
     if (o.status === 'canceled' && o.reason) toast(o.reason);
   });
   prevFrom = clone(C.from);
+  const al = C.inv?.alert; if (al?.ts && al.ts !== lastAlert) { if (lastAlert !== null) { if (al.kind === 'caught') { toast(`🚨 관청 조사! 우리나라에 필요한 ${Object.entries(al.goods || {}).map(([g, n]) => `${g} ${n}개`).join(', ')}을(를) 숨겨서 몰수됐어요. 납품을 채워요!`, 'err'); beep('lost'); } else { toast(`🚨 관청 조사를 받았지만 떳떳했어요! 벌금으로 ${Object.keys(al.goods || {}).join('') || '물건'} 1개를 받았어요`, 'win'); beep('win'); } } lastAlert = al.ts; } else if (lastAlert === null && C.inv) lastAlert = al?.ts || 0;
+  const rs = C.inv?.restocked; if (rs?.no && rs.no !== lastRestock) { if (lastRestock !== null) { toast(`⛵ 무역선 입고! ${rs.item} 1개가 들어왔어요`, 'win'); beep('ding'); } lastRestock = rs.no; } else if (lastRestock === null && C.inv) lastRestock = rs?.no || 0;
   const s = teamStatus(tm), key = `${s.done}-${s.total}`;
   if (prevDone && prevDone !== key && s.done) { toast('📜 우리나라 주문서 완성! 다른 나라를 도와줘요', 'win'); beep('win'); confetti(innerWidth / 2, innerHeight * .3, 90, [teamColor(p.team), '#FFE08A', '#fff']); }
   prevDone = tm ? key : prevDone;
@@ -689,7 +782,7 @@ setInterval(() => { if (incomingList().length || C.inv?.out || cmp) render(); },
 /* ── 연결: 내 것만 구독(읽기 절약) ── */
 window.addEventListener('db-error', () => { $('badge').textContent = '연결 오류'; $('badge').className = 'badge err on'; });
 try {
-  T = await createTransport(); if (T.demo) { $('badge').classList.add('on'); window.__game = { T, C, me, proposeTrade, acceptOffer, closeOffer, deliver, buyArabia }; }
+  T = await createTransport(); if (T.demo) { $('badge').classList.add('on'); window.__game = { T, C, me, proposeTrade, acceptOffer, closeOffer, deliver, buyArabia, reportPlayer }; }
   T.watchDoc('state', 'main', d => { C.state = d; render(); });
   T.watch('teams', m => { C.teams = m; render(); });
   T.watch('players', m => { C.players = m; render(); });
