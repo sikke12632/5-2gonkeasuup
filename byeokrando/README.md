@@ -5,19 +5,19 @@
 
 ## ① Firestore 보안 규칙 (Firebase 콘솔 › Firestore › 규칙 에 전체를 붙여넣고 [게시])
 
-기존 낱말 경매장(`auction`) 블록은 그대로 두고 `trade` 블록만 더했습니다.
+낱말·요리 경매장(`auction`)과 벽란도 무역항(`trade`) 두 경로만 열어 둡니다. 날짜 제한은 없습니다.
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 낱말·요리 경매장 (기존 그대로). 경매장도 계속 쓰려면 날짜를 (2026, 11, 1) 로 바꾸세요
+    // 낱말·요리 경매장
     match /auction/s0916/{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 9, 17);
+      allow read, write: if true;
     }
     // 벽란도 무역항
     match /trade/byeokrando/{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 11, 1);
+      allow read, write: if true;
     }
   }
 }
