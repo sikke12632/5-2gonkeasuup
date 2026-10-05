@@ -236,6 +236,51 @@ table.ed select{width:auto}
 .formrow .sm{height:42px}
 .note{font-size:15px;color:var(--muted);line-height:1.5;margin-top:10px}
 .close-x{width:44px;height:44px;border-radius:12px;background:#EDF2F6;font-size:22px}
+/* 말 경매: 긴 카드 글자 · 꼬리표 */
+.csub{display:block;font:15px/1.2 "Gowun Dodum",sans-serif;color:var(--muted);margin-top:4px}
+.compact .acard .word{font-size:clamp(19px,1.45vw,29px);padding-top:30px}
+.compact .word-chip{font-size:clamp(24px,2vw,38px)}
+.compact .word-chip .csub{font-size:17px}
+.obj-banner.notimer .t{display:none}
+/* 판정기 (규칙표 대조) */
+.pres-left.jm-on #sents,.pres-left.jm-on #unused,.pres-left.jm-on #hands{display:none}
+.jm{display:none;flex:1;min-height:0;overflow:auto;flex-direction:column;gap:12px;background:var(--panel);border-radius:26px;padding:16px 22px;box-shadow:0 4px 0 var(--line);border-top:10px solid var(--ink)}
+.jm.on{display:flex}
+.jm-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font:26px "Jua",sans-serif}
+.jm-head .ttl{background:var(--ink);color:#fff;border-radius:999px;padding:4px 16px}
+.jm-combo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:24px "Jua",sans-serif;color:var(--muted)}
+.jm-combo .word-chip{font-size:clamp(22px,1.8vw,32px);padding:6px 14px}
+.jm-steps{display:grid;gap:8px}
+.jstep{display:grid;grid-template-columns:150px minmax(0,1fr) 72px;align-items:center;gap:14px;padding:10px 16px;border-radius:16px;background:#F3F6F9;opacity:.18;transition:opacity .3s,background .3s}
+.jstep .k{font:28px "Jua",sans-serif}
+.jstep .d{display:flex;align-items:center;gap:12px;font-size:24px;min-width:0}
+.jstep .d::after{content:"";flex:1;border-bottom:3px dotted #C5D0DA}
+.jstep .m{font:46px/1 "Jua",sans-serif;text-align:center;visibility:hidden}
+.jstep.show{opacity:1}.jstep.show .m{visibility:visible;animation:popin .4s cubic-bezier(.2,.9,.3,1.3)}
+.jstep.show.m-ok{background:#EAF7F0}.jstep.m-ok .m{color:var(--ok)}
+.jstep.show.m-x{background:#FFE9E3}.jstep.m-x .m{color:#D6452A}
+.jstep.show.m-mid{background:#FFF6D6}.jstep.m-mid .m{color:#C99700}
+.jstep.m-skip .m{color:#A5B0BA}
+.jstep.gray{opacity:.35;filter:grayscale(1)}.jstep.gray .m{visibility:hidden}
+.jm-res{align-self:flex-end;font:44px "Jua",sans-serif;padding:8px 26px;border-radius:20px;color:#fff;background:var(--ink);visibility:hidden}
+.jm-res.show{visibility:visible;animation:stampin .55s cubic-bezier(.2,.9,.3,1.35)}
+.jm-res.r-X{background:#D6452A}.jm-res.r-O{background:var(--ok)}.jm-res.r-mid{background:#D9A800}
+.jm-deb{display:grid;gap:10px;border-top:3px dashed var(--line);padding-top:12px}
+.drow{display:grid;grid-template-columns:170px 110px 1fr 1fr;align-items:center;gap:12px;padding:8px 12px;border-radius:18px;background:#F3F6F9;border:4px solid transparent}
+.drow.now{border-color:var(--dc);background:#fff}
+.drow .who{font:28px "Jua",sans-serif;color:var(--dc)}
+.drow .who small{display:block;font-size:17px;color:var(--muted)}
+.drow .dt{font:40px/1 "Jua",sans-serif;font-variant-numeric:tabular-nums;text-align:center;border-radius:14px;padding:6px 0;background:#fff}
+.drow.now .dt{background:var(--dc);color:#fff}
+.chk{height:64px;border-radius:16px;background:#fff;border:3px solid var(--line);font:22px "Jua",sans-serif;color:var(--muted)}
+.chk.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.jm-final{font:36px "Jua",sans-serif;text-align:center;padding:10px;border-radius:18px;background:var(--ink);color:#fff}
+.jm.done .jstep.show .m,.jm.done .jm-res.show{animation:none}
+.jm.deb{gap:8px;padding:12px 18px}
+.jm.deb .jm-combo .word-chip{font-size:22px;padding:4px 10px}.jm.deb .jm-combo .csub{display:none}
+.jm.deb .jm-steps{gap:4px}.jm.deb .jstep{padding:3px 14px}.jm.deb .jstep .k{font-size:21px}.jm.deb .jstep .d{font-size:18px}.jm.deb .jstep .m{font-size:28px}
+.jm.deb .jm-res{font-size:26px;padding:4px 18px}
+.jm.deb .chk{height:56px}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -283,6 +328,7 @@ table.ed select{width:auto}
         <div class="pres-head"><h2 id="presTeam">1모둠</h2><span class="sub" id="presSub">발표 · 이상하면 태블릿의 [이의!] = 손 들기</span><div class="total" id="presTotal">합계 <b>0</b>점</div></div>
         <div id="hands" class="hands"></div>
         <div id="objBanner" class="obj-banner"><div class="who"><i>✋</i><span id="objWho"></span></div><div class="hush" id="objHush"></div><div class="t" id="objT">20</div></div>
+        <div id="jm" class="jm"></div>
         <div id="sents" class="sents"></div>
         <div id="unused" class="unused"><h3>쓰지 못한 카드</h3></div>
         <div id="objStamp" class="obj-stamp"><div>✋ 이의 있음!<small id="objStampBy"></small></div></div>
@@ -320,6 +366,7 @@ table.ed select{width:auto}
         <button id="edApply" class="sm">적용</button></div>
       <div class="formrow">타이머 <button class="sm ghost" data-dt="30000">+30초</button><button class="sm ghost" data-dt="-30000">−30초</button><button class="sm ghost" id="edTimerNow">지금 마감</button>
         <span style="color:var(--muted);font-size:15px">지금 단계의 타이머(경매 카드 전체 / 조립 / 발표 모둠)에 적용돼요</span></div>
+      <div class="formrow" id="edRegionRow" hidden>지역이 안 맞을 때 판정기 결과 <select id="edRegion"><option value="X">X (이의 인정 · 0점)</option><option value="△">△ (애매 · 공방)</option></select><span style="color:var(--muted);font-size:15px">말 경매 판정기 1단계(지역 대조)에만 적용 · 이 컴퓨터에 저장돼요</span></div>
       <div class="formrow"><button id="edReseat" class="sm warn">태블릿 자리 모두 비우기(다시 접속)</button><span style="color:var(--muted);font-size:15px">게임 진행은 그대로 두고 모둠 번호 배정만 다시 해요. 태블릿이 자동으로 새 번호를 받아요</span></div>
       <div class="formrow"><button id="edOpenRound" class="sm warn">선택한 라운드 카드 다시 열기(재경매)</button><span style="color:var(--muted);font-size:15px">그 라운드의 미확정 카드를 다시 입찰 상태로 · 이미 낙찰된 카드는 그대로</span></div>
       <p class="note">단계를 "경매"로 바꾸고 라운드 상태를 "값 부르는 중"으로 두면 카드가 열려 있어야 값을 부를 수 있어요. 보통은 아래쪽 큰 버튼으로 진행하고, 이 패널은 사고가 났을 때만 써요.</p>
@@ -333,6 +380,7 @@ table.ed select{width:auto}
   </div>
 </dialog>
 
+<script src="sets/mal.js"></script>
 <script type="module">
 /*
   ══════════════════════════════════════════════════════════════
@@ -362,9 +410,11 @@ table.ed select{width:auto}
     점검 모드는 한 컴퓨터 안의 여러 탭끼리만 통신합니다(태블릿과는 연결되지 않음).
     주소 뒤에 ?demo=1 을 붙여도 점검 모드로 강제됩니다.
 
-  ── 카드 묶음(deck) 두 가지 ──
+  ── 카드 묶음(deck) 세 가지 ──
   · korean  본수업 「낱말 경매장」 (주어·목적어·서술어·보너스 말)   board.html
   · cook    리허설용 「요리 경매장」 (재료·도구·조리법·비밀 양념)   board.html?deck=cook
+  · mal     「어디서 무슨 말? 말 경매」 (자리·말·듣는 사람·말투)    board.html?deck=mal   ← 데이터는 sets/mal.js
+            criteria·꼬리표가 있는 세트라 발표 때 판정기(규칙표 대조)가 켜진다
   교사가 board 를 여는 순간 그 deck 이 "현재 판"으로 기록되고, 태블릿(team.html)은 자동으로 따라갑니다.
   두 판의 데이터는 Firestore 안에서 컬렉션 이름(접두어)으로 나뉘어 서로 섞이지 않습니다.
 */
@@ -451,8 +501,30 @@ const DECKS = Object.freeze({
     ],
     lobbyHint: '조리법을 먼저 사고, 그 조리법에 <b>어울리는</b> 재료·도구를 노려요!',
     rulesPage: 'rules-cook.html'
-  }
+  },
+  ...(typeof SET_MAL !== 'undefined' ? { mal: setToDeck('mal', SET_MAL) } : {})   // sets/mal.js 를 못 읽어도 나머지 두 판은 그대로
 });
+/* 세트 파일(sets/*.js)의 SET_* → deck. 종류 4개(types 순서 = 라운드 순서)를 S/O/V/B 칸에 대응:
+   필수 두 칸(S·V) = 말·듣는 사람 (지역·높임 판정에 둘 다 있어야 함), 선택(O) = 자리, 보너스(B) = 말투 */
+function setToDeck(id, set) {
+  const [place, word, listener, tone] = set.types, byType = { O: set.place, S: set.word, V: set.listener, B: set.tone };
+  const tags = {}; for (const [t, list] of Object.entries(byType)) { tags[t] = {}; list.forEach(x => { tags[t][x.text] = x; }); }
+  const h = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return {
+    id, prefix: `${id}_`, title: set.name, icon: '🗣️', unit: '조합', unitOf: '조합을', champ: '말 부자',
+    activity: { lobby: '말 경매', auction: '말 경매', build: '조합 만들기', present: '조합 발표', end: '결과 발표' },
+    types: { O: { label: place, who: '어디서' }, S: { label: word, who: '무슨 말' }, V: { label: listener, who: '누구에게' }, B: { label: tone, who: '어떻게' } },
+    order: ['O', 'S', 'V', 'B'],
+    rounds: [null, { type: 'O', sec: 120 }, { type: 'S', sec: 150 }, { type: 'V', sec: 120 }, { type: 'B', sec: 60 }],
+    buildSec: 180, presentSec: 90,
+    auction: Object.fromEntries(Object.entries(byType).map(([t, list]) => [t, list.map(x => x.text)])),
+    basic: [], tags, criteria: set.criteria, compact: true,
+    judgeTitle: '판정 기준',
+    judge: set.criteria.map((c, i) => [String(i + 1), h(c)]),
+    lobbyHint: `${h(place)} · ${h(word)} · ${h(listener)}, 셋이 <b>어울리는</b> 조합을 노려요!`,
+    rulesPage: null
+  };
+}
 /* 현재 deck 을 전역 상수에 적용 (파일 안의 코드는 TYPE/ORDER/AUCTION_CARDS/... 를 그대로 씀) */
 const TYPE = { S: {}, O: {}, V: {}, B: {} };
 let DECK = null, ORDER = [], AUCTION_CARDS = {}, BASIC_CARDS = [], JUDGE = [];
@@ -474,6 +546,16 @@ const clone = v => JSON.parse(JSON.stringify(v ?? null));
 const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const sortCards = list => [...list].sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type));
+const josa = (w, pair) => { const [a, b] = pair.split('/'), c = w.charCodeAt(w.length - 1); return w + (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? a : b); };   // josa('말투','은/는') → 말투는
+/* 꼬리표(세트 파일의 region·meaning 등). 꼬리표 없는 판이면 null / '' */
+const cardTag = c => DECK?.tags?.[c.type]?.[c.text] || null;
+function cardSub(c) {
+  const g = cardTag(c); if (!g) return '';
+  if (c.type === 'S') return g.region + (g.meaning ? ` · 뜻: ${g.meaning}` : '');
+  if (c.type === 'V') return g.relation;
+  if (c.type === 'O') return g.mood;
+  return '';
+}
 
 /* ── 초기 문서 ── */
 function initialCards() {
@@ -501,10 +583,10 @@ function initialState() {
   return { phase: 'lobby', round: 0, roundStatus: 'idle', roundEndsAt: 0, buildEndsAt: 0, epoch: Date.now(),   // epoch: 초기화마다 바뀜 → 태블릿의 옛 배정 무효
     present: { order: [], idx: 0, teamEndsAt: 0, focus: null, focusEndsAt: 0, speaker: null, defend: false, raised: {} }, seededAt: Date.now() };
 }
-/* 점수: 3조각 2점 / 2조각 1점 / 보너스 +1 / 기각(이의 인정)이면 0 */
+/* 점수: 3조각 2점 / 2조각 1점 / 보너스 +1 / 기각(이의 인정)이면 0 / 공방 무승부(half)면 기본 점수만 반(보너스는 그대로) → 0.5 가능 */
 function sentencePoints(s) {
   if (!s || s.status === 'rejected') return 0;
-  return (s.base || 0) + (s.hasBonus ? 1 : 0);
+  return (s.half ? (s.base || 0) / 2 : (s.base || 0)) + (s.hasBonus ? 1 : 0);
 }
 function teamScore(teamId, sentences, team) {
   let sum = 0;
@@ -643,7 +725,7 @@ async function submitSentence(T, teamId, cardIds) {
     }
     const types = cards.map(c => c.type);
     if (types.filter(x => x === 'S').length !== 1 || types.filter(x => x === 'V').length !== 1) throw new Error(`${TYPE.S.label} 1장과 ${TYPE.V.label} 1장이 꼭 필요해요`);
-    if (types.filter(x => x === 'O').length > 1 || types.filter(x => x === 'B').length > 1) throw new Error(`${TYPE.O.label}와 ${TYPE.B.label}은 한 장씩만 넣을 수 있어요`);
+    if (types.filter(x => x === 'O').length > 1 || types.filter(x => x === 'B').length > 1) throw new Error(`${josa(TYPE.O.label, '과/와')} ${josa(TYPE.B.label, '은/는')} 한 장씩만 넣을 수 있어요`);
     const hasO = types.includes('O'), hasB = types.includes('B');
     const texts = {}, typeMap = {};
     cards.forEach(c => { texts[c.id] = c.text; typeMap[c.id] = c.type; });
@@ -705,16 +787,22 @@ async function raiseObjection(T, teamId) {
 const $ = id => document.getElementById(id);
 const deck = applyDeck(new URLSearchParams(location.search).get('deck') || 'korean');
 document.title = `${deck.title} · 전자칠판`;
-$('brandTitle').innerHTML = `<i>${deck.icon}</i>${deck.title}`; $('rulesLink').href = deck.rulesPage;
+$('brandTitle').innerHTML = `<i>${deck.icon}</i>${deck.title}`; if (deck.rulesPage) $('rulesLink').href = deck.rulesPage; else $('rulesLink').hidden = true;
+const JM = !!(deck.criteria && deck.tags);   // 판정기: criteria·꼬리표가 있는 세트에서만
+document.body.classList.toggle('compact', !!deck.compact);
+if (JM) {
+  $('edRegionRow').hidden = false;
+  [...$('edRound').options, ...$('edCardFilter').options].forEach(o => { const r = RULE.rounds[o.value]; if (r && o.value !== '0') o.textContent = `${o.value}${o.parentElement.id === 'edRound' ? '' : 'R'} ${TYPE[r.type].label}`; });
+}
 $('lobbyTitle').innerHTML = deck.title.replace(/(\S+)$/, '<span>$1</span>');
 $('buildTitle').innerHTML = `${deck.unitOf} <span>조립</span>해요!`;
-$('scoreRule').innerHTML = `<span>${TYPE.S.label}+${TYPE.O.label}+${TYPE.V.label} <b>2점</b></span><span>${TYPE.S.label}+${TYPE.V.label} <b>1점</b></span><span>${TYPE.B.label} 어울리면 <b>+1점</b></span><span>안 어울리면 <b>0점</b></span>`;
+$('scoreRule').innerHTML = `<span>${ORDER.filter(t => t !== 'B').map(t => TYPE[t].label).join('+')} <b>2점</b></span><span>${ORDER.filter(t => t === 'S' || t === 'V').map(t => TYPE[t].label).join('+')} <b>1점</b></span><span>${TYPE.B.label} 어울리면 <b>+1점</b></span><span>안 어울리면 <b>0점</b></span>`;
 $('buildNote').innerHTML = `한 카드는 한 ${deck.unit}에만 쓸 수 있어요 &nbsp;·&nbsp; <b style="color:#B64329">남을 괴롭히는 ${deck.unit}·나쁜 말은 재미로도 안 돼요 → 모둠 전체 0점</b>`;
 $('endTitle').innerHTML = `오늘의 <span>${deck.champ}</span>는?`;
 $('ruleChips').innerHTML = `<span>처음 값 <b>${fmt(RULE.start)}원</b></span><span>한 번에 <b>+${RULE.step}원</b></span><span>바로 사기 <b>${fmt(RULE.buyout)}원</b></span><span>마지막 10초에 값을 부르면 <b>10초가 늘어나요</b></span>`;
 $('judge').innerHTML = `<h3>${deck.judgeTitle.replace(' ', '<br>')}</h3>` + JUDGE.map(([k, t]) => `<div><b>${k}</b><span>${t}</span></div>`).join('');
 $('judge').classList.toggle('two', JUDGE.length <= 2);
-$('judgeBig').innerHTML = `<h3>⚖️ ${deck.judgeTitle}</h3>` + JUDGE.map(([k, t]) => `<div><b>${k}</b><br>${t}</div>`).join('') + `<div class="pass">이유를 못 대면 통과!</div><div class="pass" style="background:#B64329;margin-top:8px">괴롭히는 ${deck.unit}·나쁜 말 → 모둠 전체 0점</div>`;
+$('judgeBig').innerHTML = `<h3>⚖️ ${deck.judgeTitle}</h3>` + JUDGE.map(([k, t]) => `<div><b>${k}</b><br>${t}</div>`).join('') + `<div class="pass">${JM ? '이의가 들어오면 ⚖ 규칙표 대조로 판정' : '이유를 못 대면 통과!'}</div><div class="pass" style="background:#B64329;margin-top:8px">괴롭히는 ${deck.unit}·나쁜 말 → 모둠 전체 0점</div>`;
 const C = { state: null, cards: {}, teams: {}, sentences: {}, waiting: {} };
 let armed = null, armedTimer = 0;   // 실수 방지: 넘기기·종료 버튼은 3초 안에 두 번 눌러야 동작
 let T, soundOn = true, audio, toastId = 0, prevCards = {}, prevSentCount = {}, closing = new Set(), lastPhaseKey = '', roundDoneShown = '', lastRaisedKey = '', stampTimer = 0;
@@ -782,7 +870,7 @@ function paintAuction() {
   if (grid.dataset.round !== String(r)) { grid.innerHTML = ''; grid.dataset.round = r; }
   cards.forEach(c => {
     let el = grid.querySelector(`[data-id="${c.id}"]`);
-    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${esc(c.text)}</div><div class="foot"><span class="price"></span><span class="bidder"></span></div><div class="stamp"><div></div></div>`; grid.append(el); }
+    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${cardSub(c) ? `<div>${esc(c.text)}<span class="csub">${esc(cardSub(c))}</span></div>` : esc(c.text)}</div><div class="foot"><span class="price"></span><span class="bidder"></span></div><div class="stamp"><div></div></div>`; grid.append(el); }
     const p = prevCards[c.id] || {};
     el.classList.toggle('sold', c.status === 'sold'); el.classList.toggle('unsold', c.status === 'unsold');
     const priceEl = el.querySelector('.price'); priceEl.textContent = fmt(c.bidder ? c.price : RULE.start); priceEl.classList.toggle('start', !c.bidder);
@@ -801,13 +889,15 @@ function paintAuction() {
 function paintBuild() {
   $('buildGrid').innerHTML = TEAM_IDS.map(id => { const n = teamSentences(id).length, own = Object.values(C.cards).filter(c => c.team === id), left = own.filter(c => !c.usedIn).length; const pop = (prevSentCount[id] ?? n) !== n; prevSentCount[id] = n; return `<div class="btile" style="${teamVars(id)}"><div class="tn">${teamName(id)}</div><div class="cnt${pop ? ' pop' : ''}">${n}<small> 문장</small></div><div class="rest">남은 카드 ${left}장</div></div>`; }).join('');
 }
+const wordChip = c => `<span class="word-chip" style="${typeVars(c.type)}">${esc(c.text)}${cardSub(c) ? `<span class="csub">${esc(cardSub(c))}</span>` : ''}</span>`;
 function sentenceRow(s, i, clickable = true) {
   const items = sentenceItems(s, C.cards), pend = false, focus = S().present?.focus === s.id;
-  const tag = s.status === 'rejected' ? `<span class="tag accepted">${teamName(s.objection?.by)} 이의 인정 · 0점</span>` : s.objection?.result === 'dismissed' ? `<span class="tag dismissed">이의 기각 · 통과</span>` : '';
-  return `<div class="sent${pend ? ' pending' : ''}${focus ? ' focus' : ''}${s.status === 'rejected' ? ' rejected' : ''}" data-id="${s.id}">${tag}<div class="no">${i + 1}</div><div class="words">${items.map(c => `<span class="word-chip" style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div><div class="pts">${sentencePoints(s)}<small>점</small></div></div>`;
+  const tag = s.status === 'rejected' ? `<span class="tag accepted">${teamName(s.objection?.by)} 이의 인정 · 0점</span>` : s.objection?.result === 'dismissed' ? `<span class="tag dismissed">이의 기각 · 통과</span>` : s.objection?.result === 'half' ? `<span class="tag dismissed">공방 무승부 · 반점</span>` : '';
+  return `<div class="sent${pend ? ' pending' : ''}${focus ? ' focus' : ''}${s.status === 'rejected' ? ' rejected' : ''}" data-id="${s.id}">${tag}<div class="no">${i + 1}</div><div class="words">${items.map(c => wordChip(c)).join('')}</div><div class="pts">${sentencePoints(s)}<small>점</small></div></div>`;
 }
 function paintPresent() {
   const st = S(), pr = st.present || {}, tid = currentTeam();
+  if (JM) paintJudge(tid ? pr.judge : null);
   $('orderStrip').innerHTML = (pr.order || []).map((id, i) => `<span style="${teamVars(id)}" class="${i < pr.idx ? 'done' : i === pr.idx ? 'now' : ''}">${teamName(id)}</span>`).join('') || '<span>순서 없음</span>';
   if (!tid) { $('presTeam').textContent = '발표 끝'; $('sents').innerHTML = ''; $('hands').innerHTML = ''; $('unused').innerHTML = '<h3>모든 모둠이 발표했어요</h3>'; return; }
   $('presTeam').textContent = `${teamName(tid)} 발표`; $('presTeam').style.cssText = teamVars(tid);
@@ -828,6 +918,95 @@ function paintPresent() {
   const key = `${pr.idx}:${raised.join(',')}`;
   if (raised.length && key !== lastRaisedKey) { const fresh = raised.filter(id => !lastRaisedKey.split(':')[1]?.split(',').includes(id)); if (lastRaisedKey.startsWith(`${pr.idx}:`) && fresh.length) { $('objStampBy').textContent = fresh.map(teamName).join(' · '); $('objStamp').classList.add('on'); clearTimeout(stampTimer); stampTimer = setTimeout(() => $('objStamp').classList.remove('on'), 1600); beep('obj'); } }
   lastRaisedKey = key;
+  if (JM && speaker) { const j = pr.judge; banner.classList.toggle('on', !j); banner.classList.toggle('notimer', true); if (!j) $('objHush').textContent = `어느 ${deck.unit}인지 말해요 → 칠판에서 ${deck.unit}을 누르고 ⚖ 판정`; }   // 판정이 시작되면 배너 대신 판정기 화면(공방 타이머는 판정기 줄과 위 시계에)
+}
+
+/* ── 판정기: 규칙표 대조 (criteria·꼬리표가 있는 세트만. 이의가 들어온 조합에만 돌린다) ──
+   입력: 조합의 자리(없을 수 있음)·말·듣는 사람·말투(없을 수 있음) 꼬리표, 지역 불일치 값('X'|'△')
+   출력: steps[4] = {k, d, m: ✓|✗|△|—}, result: 'X'(이의 인정) | 'O'(기각) | '△'(공방)
+   첫 ✗ 에서 끝(뒤 단계는 회색). △ 는 ✗ 가 하나도 없을 때만. 자리↔듣는 사람 궁합은 보지 않는다(지시서) */
+const NO_BANMAL = ['웃어른', '모르는 사람', '전국'], HONOR_LABEL = { 반말: '반말', 해요: '해요체', 격식: '격식 말' }, MOOD_LABEL = { 격식: '격식 있는 자리', 편함: '편한 자리' };
+function judgeCombo({ place, word, listener, tone }, mismatch) {
+  const steps = [];
+  steps.push(word.region === '표준' || word.region === listener.region
+    ? { k: '지역 대조', d: word.region === '표준' ? '표준어' : `${word.region} 말 → ${listener.region} 듣는 사람`, m: '✓' }
+    : { k: '지역 대조', d: `${word.region} 말 → ${listener.region} 듣는 사람`, m: mismatch === '△' ? '△' : '✗' });
+  if (word.honor === '무관') steps.push({ k: '높임 확인', d: '높임과 상관없는 말 · 건너뜀', m: '—' });
+  else steps.push({ k: '높임 확인', d: `${HONOR_LABEL[word.honor] || word.honor} → ${listener.relation}`, m: word.honor === '반말' && NO_BANMAL.includes(listener.relation) ? '✗' : '✓' });
+  if (word.honor === '무관') steps.push({ k: '분위기', d: '높임과 상관없는 말 · 건너뜀', m: '—' });
+  else if (!place) steps.push({ k: '분위기', d: '자리 카드 없음 · 건너뜀', m: '—' });
+  else steps.push({ k: '분위기', d: `${MOOD_LABEL[place.mood] || place.mood} ↔ ${HONOR_LABEL[word.honor] || word.honor}`, m: (place.mood === '격식' && word.honor === '반말') || (place.mood === '편함' && word.honor === '격식') ? '△' : '✓' });
+  if (!tone) steps.push({ k: '말투', d: '말투 카드 없음', m: '—' });
+  else {
+    const ok = tone.ok || {}, pass = (!ok.moods || (!!place && ok.moods.includes(place.mood))) && (!ok.relations || ok.relations.includes(listener.relation));
+    const cond = [ok.moods && `${ok.moods.join('·')} 자리`, ok.relations && `${ok.relations.join('·')}에게`].filter(Boolean).join(' + ') || '언제나';
+    steps.push({ k: '말투', d: `${tone.text} (${cond})`, m: pass ? '✓' : '✗' });
+  }
+  const marks = steps.map(x => x.m);
+  return { steps, result: marks.includes('✗') ? 'X' : marks.includes('△') ? '△' : 'O' };
+}
+function regionMismatch() {
+  try { const v = localStorage.getItem('mal-region-mismatch'); if (v === 'X' || v === '△') return v; } catch { }
+  return typeof REGION_MISMATCH !== 'undefined' && REGION_MISMATCH === '△' ? '△' : 'X';
+}
+function judgeSentence(s) {
+  const items = sentenceItems(s, C.cards), pick = t => { const c = items.find(x => x.type === t); return c ? { ...cardTag(c), text: c.text } : null; };
+  return judgeCombo({ place: pick('O'), word: pick('S'), listener: pick('V'), tone: pick('B') }, regionMismatch());
+}
+const J_STEP = 800;
+const judgeShown = j => { const x = j.steps.findIndex(st => st.m === '✗'); return x < 0 ? j.steps.length : x + 1; };   // 대조하는 단계 수
+const judgeRevealed = j => now() - j.at > judgeShown(j) * J_STEP + J_STEP;
+const FINAL_TEXT = { accepted: '이의 인정 → 0점', dismissed: '이의 기각 → 점수 그대로', half: '같음 → 반점' };
+function paintJudge(j) {
+  const box = $('jm'), s = j && C.sentences[j.sid], on = !!s;
+  box.classList.toggle('on', on); box.parentElement.classList.toggle('jm-on', on);
+  if (!on) { box.dataset.key = ''; return; }
+  const pr = S().present || {}, key = JSON.stringify([j, pr.defend, s.status]);
+  if (box.dataset.key === key) return; box.dataset.key = key;
+  const cls = { '✓': 'm-ok', '✗': 'm-x', '△': 'm-mid', '—': 'm-skip' }, res = { X: '결과: 이의 인정 → 0점', O: '결과: 이의 기각 → 점수 그대로', '△': '결과: 애매 → 공방' };
+  let html = `<div class="jm-head"><span class="ttl">⚖ 규칙표 대조</span><span style="color:${teamColor(j.by)}">✋ ${teamName(j.by)} 이의</span></div>`
+    + `<div class="jm-combo"><span style="color:${teamColor(s.team)}">[${teamName(s.team)} ${deck.unit}]</span>${sentenceItems(s, C.cards).map(wordChip).join('<span>+</span>')}</div>`
+    + `<div class="jm-steps">${j.steps.map(st => `<div class="jstep ${cls[st.m] || ''}"><span class="k">${esc(st.k)}</span><span class="d">${esc(st.d)}</span><span class="m">${st.m}</span></div>`).join('')}</div>`
+    + `<div class="jm-res r-${j.result === '△' ? 'mid' : j.result}">${res[j.result]}</div>`;
+  if (j.debate) {
+    const stage = pr.defend ? 'pres' : 'obj';
+    const chk = (side, k, label) => { const v = !!j.checks?.[side]?.[k]; return `<button class="chk${v ? ' on' : ''}" data-side="${side}" data-k="${k}">${label}${v ? ' ✓' : ''}</button>`; };
+    const row = (side, id, label, why) => `<div class="drow${!j.final && stage === side ? ' now' : ''}" style="--dc:${teamColor(id)}"><div class="who">${label} ${teamName(id)}<small>${why}</small></div><div class="dt" data-side="${side}">${RULE.sentenceSec}</div>${chk(side, 'c', '기준 번호 말함')}${chk(side, 'q', '카드 낱말 인용함')}</div>`;
+    html += `<div class="jm-deb">${row('obj', j.by, '이의', '왜 안 어울리는지')}${row('pres', s.team, '발표', '왜 어울리는지')}</div>`;
+    if (j.final) html += `<div class="jm-final">이의 ${j.score?.obj ?? 0} : 발표 ${j.score?.pres ?? 0} → ${FINAL_TEXT[j.final]}</div>`;
+  }
+  box.innerHTML = html; box.classList.toggle('done', judgeRevealed(j)); box.classList.toggle('deb', !!j.debate); tickJudge();
+}
+let jmBeep = '';
+function tickJudge() {
+  const st = S(), pr = st.present || {}, j = JM && st.phase === 'present' ? pr.judge : null, box = $('jm');
+  if (!j || !box.classList.contains('on')) return;
+  const n = judgeShown(j), k = Math.floor((now() - j.at) / J_STEP);   // k번째 단계까지 보임(0.8초마다 하나)
+  box.querySelectorAll('.jstep').forEach((el, i) => { el.classList.toggle('show', i < n && i < k); el.classList.toggle('gray', i >= n && k > n); });
+  box.querySelector('.jm-res').classList.toggle('show', k > n);
+  const bk = `${j.at}:${Math.min(k, n + 1)}`;
+  if (bk !== jmBeep) { const first = !jmBeep.startsWith(`${j.at}:`); jmBeep = bk; if (!first || k <= 1) { if (k >= 1 && k <= n) beep(j.steps[k - 1].m === '✗' ? 'obj' : 'bid'); if (k === n + 1) beep(j.result === 'X' ? 'obj' : j.result === 'O' ? 'sold' : 'ext'); } }
+  if (j.debate) { const left = Math.max(0, Math.ceil(((pr.focusEndsAt || 0) - now()) / 1000)); box.querySelectorAll('.dt').forEach(el => { el.textContent = j.final ? '-' : el.dataset.side === 'obj' ? (pr.defend ? 0 : left) : (pr.defend ? left : RULE.sentenceSec); }); }
+}
+$('jm').addEventListener('click', async e => {
+  const b = e.target.closest('.chk'); if (!b) return; const j = S().present?.judge; if (!j || j.final) return;
+  try { await T.update('state', 'main', { present: { judge: { checks: { [b.dataset.side]: { [b.dataset.k]: !j.checks?.[b.dataset.side]?.[b.dataset.k] } } } } }); } catch (err) { toast(err.message, true); }
+});
+function judgeButtons(st) {
+  const pr = st.present || {}, j = pr.judge, cur = currentTeam(), b = [];
+  if (!j) {
+    const fs = pr.focus && C.sentences[pr.focus], ok = fs && fs.team === cur && fs.status !== 'rejected';
+    b.push(['jWithdraw', 'ghost', '✋ 이의 취소']);
+    b.push(['judge', ok ? 'primary' : 'primary dis', ok ? '⚖ 판정' : `${deck.unit}을 누르고 ⚖ 판정`]);
+    return b;
+  }
+  if (!judgeRevealed(j)) return [['jCancel', 'ghost', '↩ 판정 취소']];
+  if (j.result !== '△') return [['jCancel', 'ghost', '↩ 판정 취소'], ['jApply', j.result === 'X' ? 'primary' : 'ok', j.result === 'X' ? '0점 반영 ✓' : '통과 반영 ✓']];
+  if (j.final) return [['jApply', 'primary', '결과 반영 ✓']];
+  if (!j.debate) return [['jCancel', 'ghost', '↩ 판정 취소'], ['jDebate', 'primary', `⚔ 공방 시작 · ${teamName(j.by)} 먼저`]];
+  if (!pr.defend) return [['defend', 'soft', `🎤 발표 ${teamName(cur)} 차례`]];
+  const over = now() >= (pr.focusEndsAt || 0);
+  return over ? [['jResult', 'primary', '결과 ⚖']] : [['jStop', 'ghost', '⏱ 지금 끝'], ['jResult', 'primary dis', '결과 ⚖']];
 }
 function paintEnd() {
   const ranked = TEAM_IDS.map(id => ({ id, score: teamScore(id, C.sentences, C.teams[id]) })).sort((a, b) => b.score - a.score);
@@ -851,7 +1030,7 @@ function paintControls() {
   if (p === 'auction' && st.roundStatus === 'closed') b.push(r < 4 ? ['startRound', 'primary', `${r + 1}라운드 시작 🔨`] : ['startBuild', 'ok', '조립 시작 ✏️']);
   if (p === 'auction' && st.roundStatus === 'idle') b.push(['startRound', 'primary', `${r || 1}라운드 시작 🔨`]);
   if (p === 'build') { b.push(['addTime', 'soft', '+30초']); b.push(['startPresent', 'primary', '발표 시작 🎤']); }
-  if (p === 'present') { if (speaker) { if (!pr.defend) b.push(['defend', 'soft', `🎤 ${teamName(currentTeam())} 해명`]); b.push(['accept', canAccept ? 'primary' : 'primary dis', `인정 → ${deck.unit} 0점`]); b.push(['dismiss', 'ok', '기각 → 통과']); } else { if (pr.lastJudge && pr.lastJudge.idx === (pr.idx || 0)) b.push(['undoJudge', 'ghost', `↩ ${teamName(pr.lastJudge.team)} 판정 되돌리기`]); if ((pr.idx || 0) > 0) b.push(['prevTeam', 'ghost', '◀ 이전 모둠']); b.push(['addTime', 'soft', '+30초']); b.push(currentTeam() && pr.idx < (pr.order || []).length - 1 ? ['nextTeam', 'primary', '다음 모둠 ▶'] : ['finish', 'ok', '결과 보기 🏆']); } }
+  if (p === 'present') { if (speaker && JM) b.push(...judgeButtons(st)); else if (speaker) { if (!pr.defend) b.push(['defend', 'soft', `🎤 ${teamName(currentTeam())} 해명`]); b.push(['accept', canAccept ? 'primary' : 'primary dis', `인정 → ${deck.unit} 0점`]); b.push(['dismiss', 'ok', '기각 → 통과']); } else { if (pr.lastJudge && pr.lastJudge.idx === (pr.idx || 0)) b.push(['undoJudge', 'ghost', `↩ ${teamName(pr.lastJudge.team)} 판정 되돌리기`]); if ((pr.idx || 0) > 0) b.push(['prevTeam', 'ghost', '◀ 이전 모둠']); b.push(['addTime', 'soft', '+30초']); b.push(currentTeam() && pr.idx < (pr.order || []).length - 1 ? ['nextTeam', 'primary', '다음 모둠 ▶'] : ['finish', 'ok', '결과 보기 🏆']); } }
   if (p === 'end') b.push(['toLobby', 'soft', '처음 화면']);
   b.push(['edit', 'ghost', '⚙ 수정']); b.push(['reset', 'ghost', '초기화<div class="hold-fill"></div>']);
   const html = b.map(([a, c, l]) => { const arm = armed && armed.act === a && now() < armed.until; return `<button class="ctl ${c.replace(' dis', '')}${arm ? ' armed' : ''}" data-act="${a}" ${c.endsWith(' dis') ? 'disabled' : ''} ${a === 'reset' ? 'id="resetBtn"' : ''}>${arm ? `${armed.hint || ''}한 번 더 누르면 ${l.replace(/<[^>]+>/g, '')}` : l}</button>`; }).join('');
@@ -866,8 +1045,9 @@ function tick() {
   if (p === 'auction' && st.roundStatus === 'bidding') { const dl = roundDeadline(); ms = dl - now(); label = dl > st.roundEndsAt ? '10초 늘어났어요! 마지막 카드까지' : `${st.round}라운드 마감까지`; clock.classList.toggle('ext', dl > st.roundEndsAt && ms > 0); }
   else clock.classList.remove('ext');
   if (p === 'build') { ms = st.buildEndsAt - now(); label = '조립 시간'; }
-  if (p === 'present' && currentTeam()) { const sp = st.present.speaker && raisedTeams(st).includes(st.present.speaker) ? st.present.speaker : null; if (sp) { ms = (st.present.focusEndsAt || 0) - now(); label = st.present.defend ? `${teamName(currentTeam())} 해명 · ${RULE.sentenceSec}초` : `${teamName(sp)} 이의 설명 · ${RULE.sentenceSec}초`; const el = $('objT'); el.textContent = Math.max(0, Math.ceil(ms / 1000)); el.classList.toggle('hot', ms <= 5000); } else { ms = (st.present.teamEndsAt || 0) - now(); label = `${teamName(currentTeam())} 발표 시간`; } }
+  if (p === 'present' && currentTeam()) { const sp = st.present.speaker && raisedTeams(st).includes(st.present.speaker) ? st.present.speaker : null; if (sp && JM && !st.present.judge?.debate) { ms = (st.present.teamEndsAt || 0) - now(); label = `${teamName(sp)} 이의 · ⚖ 규칙표 대조`; } else if (sp) { ms = (st.present.focusEndsAt || 0) - now(); label = st.present.defend ? `${teamName(currentTeam())} 해명 · ${RULE.sentenceSec}초` : `${teamName(sp)} 이의 설명 · ${RULE.sentenceSec}초`; const el = $('objT'); el.textContent = Math.max(0, Math.ceil(ms / 1000)); el.classList.toggle('hot', ms <= 5000); } else { ms = (st.present.teamEndsAt || 0) - now(); label = `${teamName(currentTeam())} 발표 시간`; } }
   clock.textContent = ms === null ? '--:--' : mmss(ms); clock.classList.toggle('hot', ms !== null && ms <= 10000 && ms > -1000); lbl.textContent = label;
+  if (JM && p === 'present') { tickJudge(); paintControls(); }   // 판정 단계 공개·공방 타이머 종료에 맞춰 버튼 갱신(같으면 다시 그리지 않음)
   if (p === 'auction') {
     const cards = roundCards(st.round);
     cards.forEach(c => { const el = $('agrid').querySelector(`[data-id="${c.id}"] .tmr`); if (!el) return; const left = (c.endsAt || 0) - now(); const show = c.status === 'open' && st.roundStatus === 'bidding' && left <= 15000; el.classList.toggle('on', show); el.classList.toggle('ext', (c.extended || 0) > 0); el.textContent = show ? `⏱ ${Math.max(0, Math.ceil(left / 1000))}` : ''; });
@@ -903,10 +1083,10 @@ async function act(a) {
     if (a === 'endRound') { const open = roundCards(st.round).filter(c => c.status === 'open'); for (const c of open) await T.tx(async t => { const cc = await t.get('cards', c.id); if (!cc || cc.status !== 'open') return; t.update('cards', c.id, cc.bidder ? { status: 'sold', team: cc.bidder, closedAt: now() } : { status: 'unsold', closedAt: now() }); }); await T.update('state', 'main', { roundStatus: 'closed' }); }
     if (a === 'addTime') await shiftTime(30000);
     if (a === 'startBuild') await T.update('state', 'main', { phase: 'build', buildEndsAt: now() + RULE.buildSec * 1000 });
-    if (a === 'startPresent') { const order = shuffle([...TEAM_IDS]); await T.update('state', 'main', { phase: 'present', present: { order, idx: 0, teamEndsAt: now() + RULE.presentSec * 1000, focus: null, focusEndsAt: 0, speaker: null } }); toast(`발표 순서: ${order.map(teamName).join(' → ')}`); }
-    if (a === 'nextTeam') await T.update('state', 'main', { present: { idx: (st.present.idx || 0) + 1, teamEndsAt: now() + RULE.presentSec * 1000, focus: null, focusEndsAt: 0, speaker: null, defend: false } });
-    if (a === 'prevTeam') { await T.update('state', 'main', { present: { idx: Math.max(0, (st.present.idx || 0) - 1), teamEndsAt: now() + RULE.presentSec * 1000, focus: null, focusEndsAt: 0, speaker: null, defend: false } }); toast('이전 모둠으로 돌아갔어요'); }
-    if (a === 'undoJudge') { const lj = st.present?.lastJudge; if (!lj) return; const ops = [{ op: 'update', col: 'state', id: 'main', data: { present: { raised: { [`${lj.idx}:${lj.team}`]: now() }, speaker: lj.team, defend: false, focus: lj.sentenceId || null, focusEndsAt: now() + RULE.sentenceSec * 1000, lastJudge: null } } }]; if (lj.sentenceId) ops.push({ op: 'update', col: 'sentences', id: lj.sentenceId, data: { status: lj.prevStatus || 'ok', objection: lj.prevObjection || null } }); await T.batch(ops); toast(`${teamName(lj.team)} 이의 판정을 되돌렸어요 · 다시 판정하세요`); }
+    if (a === 'startPresent') { const order = shuffle([...TEAM_IDS]); await T.update('state', 'main', { phase: 'present', present: { order, idx: 0, teamEndsAt: now() + RULE.presentSec * 1000, focus: null, focusEndsAt: 0, speaker: null, ...(JM ? { judge: null, defend: false } : {}) } }); toast(`발표 순서: ${order.map(teamName).join(' → ')}`); }
+    if (a === 'nextTeam') await T.update('state', 'main', { present: { idx: (st.present.idx || 0) + 1, teamEndsAt: now() + RULE.presentSec * 1000, focus: null, focusEndsAt: 0, speaker: null, defend: false, ...(JM ? { judge: null } : {}) } });
+    if (a === 'prevTeam') { await T.update('state', 'main', { present: { idx: Math.max(0, (st.present.idx || 0) - 1), teamEndsAt: now() + RULE.presentSec * 1000, focus: null, focusEndsAt: 0, speaker: null, defend: false, ...(JM ? { judge: null } : {}) } }); toast('이전 모둠으로 돌아갔어요'); }
+    if (a === 'undoJudge') { const lj = st.present?.lastJudge; if (!lj) return; const ops = [{ op: 'update', col: 'state', id: 'main', data: { present: { raised: { [`${lj.idx}:${lj.team}`]: now() }, speaker: lj.team, defend: false, focus: lj.sentenceId || null, focusEndsAt: now() + RULE.sentenceSec * 1000, lastJudge: null, ...(lj.judge ? { focusEndsAt: 0, judge: null } : {}) } } }]; if (lj.sentenceId) ops.push({ op: 'update', col: 'sentences', id: lj.sentenceId, data: { status: lj.prevStatus || 'ok', objection: lj.prevObjection || null, ...(lj.judge ? { half: !!lj.prevHalf } : {}) } }); await T.batch(ops); toast(`${teamName(lj.team)} 이의 판정을 되돌렸어요 · 다시 판정하세요`); }
     if (a === 'finish') await T.update('state', 'main', { phase: 'end' });
     if (a === 'toLobby') await T.update('state', 'main', { phase: 'lobby' });
     if (a === 'accept' || a === 'dismiss') {
@@ -919,6 +1099,31 @@ async function act(a) {
       await T.batch(ops); toast(a === 'accept' ? `이의 인정 · 그 ${deck.unit}은 0점` : '이의 기각 · 통과'); if (a === 'accept') beep('obj'); else beep('sold');
     }
     if (a === 'defend') await T.update('state', 'main', { present: { defend: true, focusEndsAt: now() + RULE.sentenceSec * 1000 } });
+    /* 판정기 (JM 세트만) — 교사가 "어울리나"를 직접 정하는 동작은 없다. 규칙표 결과 또는 공방 체크 수로만 정해진다 */
+    if (a === 'judge') {
+      const pr = st.present || {}, s = pr.focus ? C.sentences[pr.focus] : null;
+      if (!pr.speaker || !s || s.team !== currentTeam() || s.status === 'rejected') return toast(`먼저 이의가 들어온 ${deck.unit}을 눌러 주세요`, true);
+      const r = judgeSentence(s);
+      await T.update('state', 'main', { present: { judge: { sid: s.id, by: pr.speaker, at: now(), steps: r.steps, result: r.result, debate: false, final: null, score: null, checks: { obj: { c: false, q: false }, pres: { c: false, q: false } } }, defend: false, focusEndsAt: 0 } });
+    }
+    if (a === 'jCancel') await T.update('state', 'main', { present: { judge: null, defend: false, focusEndsAt: 0 } });
+    if (a === 'jWithdraw') { const pr = st.present || {}; if (!pr.speaker) return; await T.update('state', 'main', { present: { raised: { [`${pr.idx || 0}:${pr.speaker}`]: 0 }, speaker: null, defend: false, focus: null, focusEndsAt: 0, judge: null } }); toast('이의를 거둬들였어요 · 통과'); }
+    if (a === 'jDebate') { const j = st.present?.judge; if (!j) return; await T.update('state', 'main', { present: { judge: { debate: true }, speaker: j.by, defend: false, focusEndsAt: now() + RULE.sentenceSec * 1000 } }); toast(`공방! ${teamName(j.by)}부터 ${RULE.sentenceSec}초`); }
+    if (a === 'jStop') await T.update('state', 'main', { present: { focusEndsAt: now() } });
+    if (a === 'jResult') {
+      const j = st.present?.judge; if (!j?.debate) return;
+      const cnt = side => ['c', 'q'].filter(k => j.checks?.[side]?.[k]).length, o = cnt('obj'), p = cnt('pres');
+      await T.update('state', 'main', { present: { judge: { final: o > p ? 'accepted' : o < p ? 'dismissed' : 'half', score: { obj: o, pres: p } }, focusEndsAt: 0 } });
+    }
+    if (a === 'jApply') {
+      const pr = st.present || {}, j = pr.judge; if (!j) return;
+      const final = j.final || { X: 'accepted', O: 'dismissed' }[j.result]; if (!final) return;
+      const s = C.sentences[j.sid] || null;
+      const lastJudge = { idx: pr.idx || 0, team: j.by, sentenceId: s ? s.id : null, prevStatus: s ? (s.status || 'ok') : null, prevObjection: s ? (s.objection || null) : null, prevHalf: !!s?.half, result: final, at: now(), judge: true };
+      const ops = [{ op: 'update', col: 'state', id: 'main', data: { present: { raised: { [`${pr.idx || 0}:${j.by}`]: 0 }, speaker: null, defend: false, focus: null, focusEndsAt: 0, judge: null, lastJudge } } }];
+      if (s) ops.push({ op: 'update', col: 'sentences', id: s.id, data: { objection: { by: j.by, result: final, judge: j.result, judgedAt: now() }, ...(final === 'accepted' ? { status: 'rejected' } : {}), ...(final === 'half' ? { half: true } : {}) } });
+      await T.batch(ops); toast({ accepted: `이의 인정 · 그 ${deck.unit}은 0점`, dismissed: '이의 기각 · 점수 그대로', half: '공방 무승부 · 반점' }[final]); beep(final === 'accepted' ? 'obj' : 'sold');
+    }
     if (a === 'edit') openEdit();
   } catch (e) { console.error(e); toast(e.message || '실패했어요', true); }
 }
@@ -929,7 +1134,7 @@ async function shiftTime(dt) {
   if (st.phase === 'present') await T.update('state', 'main', { present: { teamEndsAt: Math.max(now() + 1000, (st.present.teamEndsAt || now()) + dt) } });
 }
 $('sents').addEventListener('click', async e => { const row = e.target.closest('.sent[data-id]'); if (!row) return; const pr = S().present || {}; await T.update('state', 'main', { present: { focus: pr.focus === row.dataset.id ? null : row.dataset.id } }); });
-$('hands').addEventListener('click', async e => { const h = e.target.closest('.hand[data-id]'); if (!h) return; const pr = S().present || {}; if (pr.speaker === h.dataset.id) return; await T.update('state', 'main', { present: { speaker: h.dataset.id, defend: false, focus: null, focusEndsAt: now() + RULE.sentenceSec * 1000 } }); toast(`${teamName(h.dataset.id)}, 이의 말씀하세요 (${RULE.sentenceSec}초)`); });
+$('hands').addEventListener('click', async e => { const h = e.target.closest('.hand[data-id]'); if (!h) return; const pr = S().present || {}; if (pr.speaker === h.dataset.id) return; if (JM) { if (pr.judge) return toast('판정 중이에요 · 결과를 반영하거나 판정을 취소한 뒤 골라요', true); await T.update('state', 'main', { present: { speaker: h.dataset.id, defend: false, focus: null, focusEndsAt: 0 } }); return toast(`${teamName(h.dataset.id)} 이의 · 어느 ${deck.unit}인지 누르고 ⚖ 판정`); } await T.update('state', 'main', { present: { speaker: h.dataset.id, defend: false, focus: null, focusEndsAt: now() + RULE.sentenceSec * 1000 } }); toast(`${teamName(h.dataset.id)}, 이의 말씀하세요 (${RULE.sentenceSec}초)`); });
 $('soundBtn').addEventListener('click', () => { soundOn = !soundOn; $('soundBtn').classList.toggle('off', !soundOn); $('soundBtn').textContent = soundOn ? '🔔' : '🔕'; if (soundOn) beep('bid'); });
 
 /* ── 초기화(1.5초 길게) ── */
@@ -953,7 +1158,7 @@ async function resetAll() {
 const dlg = $('editDlg');
 dlg.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => { dlg.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); dlg.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === b.dataset.pane)); }));
 $('dlgClose').addEventListener('click', () => dlg.close());
-function openEdit() { const st = S(); $('edPhase').value = st.phase; $('edRound').value = st.round; $('edRS').value = st.roundStatus; $('edIdx').value = st.present?.idx || 0; fillEdit(); dlg.showModal(); }
+function openEdit() { const st = S(); $('edRegion').value = regionMismatch(); $('edPhase').value = st.phase; $('edRound').value = st.round; $('edRS').value = st.roundStatus; $('edIdx').value = st.present?.idx || 0; fillEdit(); dlg.showModal(); }
 function fillEdit() {
   $('edTeams').innerHTML = TEAM_IDS.map(id => { const t = C.teams[id] || {}; return `<tr data-id="${id}"><td style="color:${teamColor(id)};font-family:Jua">${teamName(id)}</td><td><input type="number" step="100" class="f-budget" value="${t.budget ?? RULE.budget}"></td><td><input type="number" class="f-adj" value="${t.scoreAdj ?? 0}"></td><td><input type="number" min="0" max="9" class="f-obj" value="${t.objLeft ?? 2}"></td><td>${teamScore(id, C.sentences, { scoreAdj: 0 })} + 보정 = <b>${teamScore(id, C.sentences, t)}</b></td><td><button class="sm f-save">저장</button></td></tr>`; }).join('');
   const filt = $('edCardFilter').value, cards = Object.values(C.cards).filter(c => filt === 'all' || String(c.round) === filt).sort((a, b) => a.round - b.round || a.id.localeCompare(b.id, 'en', { numeric: true }));
@@ -963,6 +1168,7 @@ function fillEdit() {
   $('edSents').innerHTML = sents.length ? sents.map(s => `<tr data-id="${s.id}"><td style="color:${teamColor(s.team)};font-family:Jua">${teamName(s.team)}</td><td style="font-family:Jua;font-size:20px">${esc(sentenceText(s, C.cards))}</td><td>${sentencePoints(s)}점 ${s.status === 'rejected' ? '(0점 처리)' : ''}</td><td>${s.objection ? `${teamName(s.objection.by)} · ${{ accepted: '인정', dismissed: '기각' }[s.objection.result] || '-'}` : '-'}</td><td style="white-space:nowrap"><button class="sm ghost f-toggle">${s.status === 'rejected' ? '점수 되살리기' : '0점 처리'}</button> <button class="sm warn f-del">지우기(카드 되돌림)</button></td></tr>`).join('') : '<tr><td colspan="5" style="color:var(--muted)">아직 문장이 없어요</td></tr>';
 }
 $('edCardFilter').addEventListener('change', fillEdit);
+$('edRegion').addEventListener('change', e => { try { localStorage.setItem('mal-region-mismatch', e.target.value); } catch { } toast(`지역이 안 맞으면 ${e.target.value} 로 판정해요`); });
 $('edApply').addEventListener('click', async () => { try { await T.update('state', 'main', { phase: $('edPhase').value, round: Number($('edRound').value), roundStatus: $('edRS').value, present: { idx: Number($('edIdx').value) || 0 } }); toast('진행 상태를 바꿨어요'); } catch (e) { toast(e.message, true); } });
 dlg.querySelectorAll('[data-dt]').forEach(b => b.addEventListener('click', () => shiftTime(Number(b.dataset.dt)).then(() => toast('타이머를 조정했어요')).catch(e => toast(e.message, true))));
 $('edTimerNow').addEventListener('click', async () => { const st = S(); if (st.phase === 'auction') await act('endRound'); if (st.phase === 'build') await T.update('state', 'main', { buildEndsAt: now() }); if (st.phase === 'present') await T.update('state', 'main', { present: { teamEndsAt: now() } }); toast('지금 마감했어요'); });

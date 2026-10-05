@@ -149,6 +149,11 @@ p.sub{font-size:clamp(17px,2vw,23px);color:var(--muted);line-height:1.5}
 .toast{position:fixed;left:50%;top:12px;transform:translate(-50%,-30px);background:var(--ink);color:#fff;border-radius:999px;padding:.6em 1.3em;font-size:clamp(16px,2vw,21px);opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:92vw;text-align:center}.toast.on{opacity:1;transform:translate(-50%,0)}
 .toast.err{background:#B64329}.toast.win{background:var(--ok)}
 canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
+/* 말 경매: 긴 카드 글자 · 꼬리표 */
+.csub{display:block;font:clamp(12px,1.3vw,15px)/1.2 "Gowun Dodum",sans-serif;color:var(--muted);margin-top:3px}
+.compact .acard .word{font-size:clamp(15px,1.7vw,22px)}
+.compact .hcard{font-size:clamp(16px,1.9vw,23px)}
+.compact .psent .txt span{font-size:clamp(17px,2vw,24px)}
 @media(max-width:760px){.agrid{grid-template-columns:repeat(2,1fr)}.agrid.bonus{grid-template-columns:repeat(2,1fr)}.pick-grid{grid-template-columns:repeat(2,1fr)}.slots{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:1000px) and (min-width:761px){.agrid{grid-template-columns:repeat(4,1fr)}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
@@ -211,6 +216,7 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
 <div id="toast" class="toast"></div>
 <div id="confirmObj" class="confirm"><div class="box"><h3>정말로 이의를 제기할까요?</h3><p id="confirmMsg"></p><div class="btns"><button class="no" id="confirmNo">아니요</button><button class="yes" id="confirmYes">네, 손 들기! ✋</button></div></div></div>
 
+<script src="sets/mal.js"></script>
 <script type="module">
 /*
   ══════════════════════════════════════════════════════════════
@@ -240,9 +246,11 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
     점검 모드는 한 컴퓨터 안의 여러 탭끼리만 통신합니다(태블릿과는 연결되지 않음).
     주소 뒤에 ?demo=1 을 붙여도 점검 모드로 강제됩니다.
 
-  ── 카드 묶음(deck) 두 가지 ──
+  ── 카드 묶음(deck) 세 가지 ──
   · korean  본수업 「낱말 경매장」 (주어·목적어·서술어·보너스 말)   board.html
   · cook    리허설용 「요리 경매장」 (재료·도구·조리법·비밀 양념)   board.html?deck=cook
+  · mal     「어디서 무슨 말? 말 경매」 (자리·말·듣는 사람·말투)    board.html?deck=mal   ← 데이터는 sets/mal.js
+            criteria·꼬리표가 있는 세트라 발표 때 판정기(규칙표 대조)가 켜진다
   교사가 board 를 여는 순간 그 deck 이 "현재 판"으로 기록되고, 태블릿(team.html)은 자동으로 따라갑니다.
   두 판의 데이터는 Firestore 안에서 컬렉션 이름(접두어)으로 나뉘어 서로 섞이지 않습니다.
 */
@@ -329,8 +337,30 @@ const DECKS = Object.freeze({
     ],
     lobbyHint: '조리법을 먼저 사고, 그 조리법에 <b>어울리는</b> 재료·도구를 노려요!',
     rulesPage: 'rules-cook.html'
-  }
+  },
+  ...(typeof SET_MAL !== 'undefined' ? { mal: setToDeck('mal', SET_MAL) } : {})   // sets/mal.js 를 못 읽어도 나머지 두 판은 그대로
 });
+/* 세트 파일(sets/*.js)의 SET_* → deck. 종류 4개(types 순서 = 라운드 순서)를 S/O/V/B 칸에 대응:
+   필수 두 칸(S·V) = 말·듣는 사람 (지역·높임 판정에 둘 다 있어야 함), 선택(O) = 자리, 보너스(B) = 말투 */
+function setToDeck(id, set) {
+  const [place, word, listener, tone] = set.types, byType = { O: set.place, S: set.word, V: set.listener, B: set.tone };
+  const tags = {}; for (const [t, list] of Object.entries(byType)) { tags[t] = {}; list.forEach(x => { tags[t][x.text] = x; }); }
+  const h = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return {
+    id, prefix: `${id}_`, title: set.name, icon: '🗣️', unit: '조합', unitOf: '조합을', champ: '말 부자',
+    activity: { lobby: '말 경매', auction: '말 경매', build: '조합 만들기', present: '조합 발표', end: '결과 발표' },
+    types: { O: { label: place, who: '어디서' }, S: { label: word, who: '무슨 말' }, V: { label: listener, who: '누구에게' }, B: { label: tone, who: '어떻게' } },
+    order: ['O', 'S', 'V', 'B'],
+    rounds: [null, { type: 'O', sec: 120 }, { type: 'S', sec: 150 }, { type: 'V', sec: 120 }, { type: 'B', sec: 60 }],
+    buildSec: 180, presentSec: 90,
+    auction: Object.fromEntries(Object.entries(byType).map(([t, list]) => [t, list.map(x => x.text)])),
+    basic: [], tags, criteria: set.criteria, compact: true,
+    judgeTitle: '판정 기준',
+    judge: set.criteria.map((c, i) => [String(i + 1), h(c)]),
+    lobbyHint: `${h(place)} · ${h(word)} · ${h(listener)}, 셋이 <b>어울리는</b> 조합을 노려요!`,
+    rulesPage: null
+  };
+}
 /* 현재 deck 을 전역 상수에 적용 (파일 안의 코드는 TYPE/ORDER/AUCTION_CARDS/... 를 그대로 씀) */
 const TYPE = { S: {}, O: {}, V: {}, B: {} };
 let DECK = null, ORDER = [], AUCTION_CARDS = {}, BASIC_CARDS = [], JUDGE = [];
@@ -352,6 +382,16 @@ const clone = v => JSON.parse(JSON.stringify(v ?? null));
 const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const sortCards = list => [...list].sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type));
+const josa = (w, pair) => { const [a, b] = pair.split('/'), c = w.charCodeAt(w.length - 1); return w + (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? a : b); };   // josa('말투','은/는') → 말투는
+/* 꼬리표(세트 파일의 region·meaning 등). 꼬리표 없는 판이면 null / '' */
+const cardTag = c => DECK?.tags?.[c.type]?.[c.text] || null;
+function cardSub(c) {
+  const g = cardTag(c); if (!g) return '';
+  if (c.type === 'S') return g.region + (g.meaning ? ` · 뜻: ${g.meaning}` : '');
+  if (c.type === 'V') return g.relation;
+  if (c.type === 'O') return g.mood;
+  return '';
+}
 
 /* ── 초기 문서 ── */
 function initialCards() {
@@ -379,10 +419,10 @@ function initialState() {
   return { phase: 'lobby', round: 0, roundStatus: 'idle', roundEndsAt: 0, buildEndsAt: 0, epoch: Date.now(),   // epoch: 초기화마다 바뀜 → 태블릿의 옛 배정 무효
     present: { order: [], idx: 0, teamEndsAt: 0, focus: null, focusEndsAt: 0, speaker: null, defend: false, raised: {} }, seededAt: Date.now() };
 }
-/* 점수: 3조각 2점 / 2조각 1점 / 보너스 +1 / 기각(이의 인정)이면 0 */
+/* 점수: 3조각 2점 / 2조각 1점 / 보너스 +1 / 기각(이의 인정)이면 0 / 공방 무승부(half)면 기본 점수만 반(보너스는 그대로) → 0.5 가능 */
 function sentencePoints(s) {
   if (!s || s.status === 'rejected') return 0;
-  return (s.base || 0) + (s.hasBonus ? 1 : 0);
+  return (s.half ? (s.base || 0) / 2 : (s.base || 0)) + (s.hasBonus ? 1 : 0);
 }
 function teamScore(teamId, sentences, team) {
   let sum = 0;
@@ -521,7 +561,7 @@ async function submitSentence(T, teamId, cardIds) {
     }
     const types = cards.map(c => c.type);
     if (types.filter(x => x === 'S').length !== 1 || types.filter(x => x === 'V').length !== 1) throw new Error(`${TYPE.S.label} 1장과 ${TYPE.V.label} 1장이 꼭 필요해요`);
-    if (types.filter(x => x === 'O').length > 1 || types.filter(x => x === 'B').length > 1) throw new Error(`${TYPE.O.label}와 ${TYPE.B.label}은 한 장씩만 넣을 수 있어요`);
+    if (types.filter(x => x === 'O').length > 1 || types.filter(x => x === 'B').length > 1) throw new Error(`${josa(TYPE.O.label, '과/와')} ${josa(TYPE.B.label, '은/는')} 한 장씩만 넣을 수 있어요`);
     const hasO = types.includes('O'), hasB = types.includes('B');
     const texts = {}, typeMap = {};
     cards.forEach(c => { texts[c.id] = c.text; typeMap[c.id] = c.type; });
@@ -585,7 +625,8 @@ const C = { state: null, cards: {}, teams: {}, sentences: {} };
 let deck = applyDeck(new URLSearchParams(location.search).get('deck') || 'korean'), unsubs = [];
 function applyDeckText() {
   document.title = `${deck.title} · 모둠`;
-  $('lobbySub').textContent = `기본 카드 3장으로 이미 ${deck.unit} 하나가 만들어져 있어요`;
+  $('lobbySub').textContent = BASIC_CARDS.length ? `기본 카드 3장으로 이미 ${deck.unit} 하나가 만들어져 있어요` : `기본 카드 없이 시작해요 · 경매로 카드를 모아 ${deck.unitOf} 만들어요`;
+  document.body.classList.toggle('compact', !!deck.compact);
   $('lobbyHint').innerHTML = `예산 <b>${fmt(RULE.budget)}원</b> · 처음 값 ${fmt(RULE.start)}원 · 한 번에 +${RULE.step}원 · 바로 사기 ${fmt(RULE.buyout)}원<br>${deck.lobbyHint}`;
   $('submitLabel').textContent = `${deck.unit} 완성!`;
   $('buildWarn').textContent = `⚠️ 남을 괴롭히는 ${deck.unit}·나쁜 말은 재미로도 안 돼요 → 모둠 전체 0점`;
@@ -678,7 +719,7 @@ function paintAuction(st) {
   if (lastRound !== String(r)) { grid.innerHTML = ''; lastRound = String(r); }
   cards.forEach(c => {
     let el = grid.querySelector(`[data-id="${c.id}"]`);
-    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${esc(c.text)}</div><div class="info"><span class="price"></span><span class="who"></span></div><div class="btns"><button class="bid up" data-id="${c.id}"></button><button class="bid buy" data-id="${c.id}">바로 사기<small>${fmt(RULE.buyout)}원</small></button></div><div class="stamp"><div></div></div>`; grid.append(el); }
+    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${cardSub(c) ? `<div>${esc(c.text)}<span class="csub">${esc(cardSub(c))}</span></div>` : esc(c.text)}</div><div class="info"><span class="price"></span><span class="who"></span></div><div class="btns"><button class="bid up" data-id="${c.id}"></button><button class="bid buy" data-id="${c.id}">바로 사기<small>${fmt(RULE.buyout)}원</small></button></div><div class="stamp"><div></div></div>`; grid.append(el); }
     const p = prevCards[c.id] || {}, mine = c.bidder === me && c.status === 'open';
     el.classList.toggle('mine', mine); el.classList.toggle('sold', c.status === 'sold'); el.classList.toggle('unsold', c.status === 'unsold');
     el.style.setProperty('--bc', c.bidder ? teamColor(c.bidder) : '#8A98A6');
@@ -711,8 +752,8 @@ function paintBuild() {
   const picked = ORDER.map(t => tray[t]).filter(Boolean).map(id => C.cards[id]);
   $('preview').innerHTML = picked.length ? picked.map(c => `<span style="color:${TYPE[c.type].dark}">${esc(c.text)}</span>`).join(' ') : `<span class="ph">카드를 눌러 ${deck.unitOf} 만들어요</span>`;
   const ok = tray.S && tray.V; const pts = ok ? (tray.O ? 2 : 1) + (tray.B ? 1 : 0) : 0;
-  $('submitBtn').disabled = !ok; $('ptsHint').textContent = ok ? `${pts}점${tray.B ? ` (${TYPE.B.label}이 어울리면)` : ''}` : '';
-  const groups = ORDER.map(t => `<div class="hand-row" style="${typeVars(t)}"><h3>${TYPE[t].label}</h3>${free.filter(c => c.type === t).map(c => `<button class="hcard${tray[t] === c.id ? ' intray' : ''}" data-id="${c.id}" style="${typeVars(t)}">${esc(c.text)}</button>`).join('') || '<span class="none">없음</span>'}</div>`).join('');
+  $('submitBtn').disabled = !ok; $('ptsHint').textContent = ok ? `${pts}점${tray.B ? ` (${josa(TYPE.B.label, '이/가')} 어울리면)` : ''}` : '';
+  const groups = ORDER.map(t => `<div class="hand-row" style="${typeVars(t)}"><h3>${TYPE[t].label}</h3>${free.filter(c => c.type === t).map(c => `<button class="hcard${tray[t] === c.id ? ' intray' : ''}" data-id="${c.id}" style="${typeVars(t)}">${esc(c.text)}${cardSub(c) ? `<span class="csub">${esc(cardSub(c))}</span>` : ''}</button>`).join('') || '<span class="none">없음</span>'}</div>`).join('');
   const mine = Object.values(C.sentences).filter(s => s.team === me).sort((a, b) => a.createdAt - b.createdAt);
   $('hand').innerHTML = groups + `<div class="done-list">${mine.map(s => `<div class="dsent${s.status === 'rejected' ? ' rejected' : ''}"><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div><span class="pts">${sentencePoints(s)}점</span><button class="del" data-id="${s.id}">지우기</button></div>`).join('')}</div>`;
 }
@@ -742,9 +783,14 @@ function paintPresent(st) {
   $('objbar').className = `objbar${speaking && !defending ? ' speak' : mine ? ' raised' : ''}`;
   $('objBtn').hidden = mine; $('objTimer').hidden = !speaking;
   $('objBtn').disabled = left <= 0;
+  if (deck.criteria && pr.speaker && raised.includes(pr.speaker) && !pr.judge?.debate) {   // 판정기 세트: 공방 전에는 타이머 없이 규칙표 대조
+    $('objTimer').hidden = true; $('objbar').className = `objbar${mine ? ' raised' : ''}`; $('pSub').textContent = pr.judge ? '⚖ 규칙표 대조 중' : speaking ? `어느 ${deck.unit}인지 말해요` : mine ? '손 들었어요' : `이상한 ${deck.unit}이 있나요?`;
+    $('objMsg').textContent = pr.judge ? '⚖ 칠판에서 규칙표로 대조하고 있어요' : speaking ? `어느 ${deck.unit}인지 선생님께 말해요 → 칠판에서 규칙표로 판정해요` : `${teamName(pr.speaker)}이(가) 이의를 걸었어요 · 칠판을 봐요`;
+    return;
+  }
   $('objMsg').textContent = speaking && defending ? `${teamName(tid)}이(가) 해명하고 있어요 · 조용히 들어요` : speaking ? '어느 것이 왜 이상한지 이유를 말해요!' : (pr.speaker && raised.includes(pr.speaker)) ? `${teamName(defending ? tid : pr.speaker)}이(가) ${defending ? '해명' : '이의를'} 말하고 있어요 · 조용히 경청해요 🤫` : mine ? '✋ 손 들었어요! 선생님이 우리 모둠을 부르면 이유를 말해요' : left <= 0 ? '이의 기회를 모두 썼어요' : `이상한 ${deck.unit}이 보이면 [이의!] — 손 드는 것과 같아요. 이유를 말할 준비도 해요!`;
 }
-function psent(s, i) { const st = s.status === 'rejected' ? '<span class="st acc">이의 인정 · 0점</span>' : s.objection?.result === 'dismissed' ? '<span class="st dis">통과</span>' : ''; const focus = S()?.present?.focus === s.id; return `<div class="psent${focus ? ' sel' : ''}${s.status === 'rejected' ? ' rejected' : ''}"><span class="no">${i + 1}</span><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div>${st}</div>`; }
+function psent(s, i) { const st = s.status === 'rejected' ? '<span class="st acc">이의 인정 · 0점</span>' : s.objection?.result === 'dismissed' ? '<span class="st dis">통과</span>' : s.objection?.result === 'half' ? '<span class="st dis">반점</span>' : ''; const focus = S()?.present?.focus === s.id; return `<div class="psent${focus ? ' sel' : ''}${s.status === 'rejected' ? ' rejected' : ''}"><span class="no">${i + 1}</span><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}${cardSub(c) ? `<small class="csub">${esc(cardSub(c))}</small>` : ''}</span>`).join('')}</div>${st}</div>`; }
 $('objBtn').addEventListener('click', () => { const left = myTeam()?.objLeft ?? 0; if (left <= 0) return; $('confirmMsg').innerHTML = `이의는 모둠당 ${RULE.objections}번 · 지금 남은 횟수 <b style="color:var(--warn)">${left}</b><br>손을 들면 횟수가 바로 줄어요. 이유를 말할 수 있을 때만!`; $('confirmObj').classList.add('on'); beep('tap'); });
 $('confirmNo').addEventListener('click', () => $('confirmObj').classList.remove('on'));
 $('confirmYes').addEventListener('click', async () => { $('confirmObj').classList.remove('on'); $('objBtn').disabled = true; try { await raiseObjection(T, me); toast('✋ 손 들었어요! 선생님이 부르면 이유를 말해요', 'win'); beep('ext'); } catch (err) { toast(err.message, 'err'); render(); } });
@@ -771,7 +817,7 @@ function tick() {
   const st = S(), clock = $('clock'); let ms = null, ext = false;
   if (st?.phase === 'auction' && st.roundStatus === 'bidding') { const open = roundCards(st.round).filter(c => c.status === 'open'); const dl = open.length ? Math.max(...open.map(c => c.endsAt || 0)) : st.roundEndsAt; ms = dl - now(); ext = dl > st.roundEndsAt; roundCards(st.round).forEach(c => { const el = $('agrid').querySelector(`[data-id="${c.id}"] .tmr`); if (!el) return; const left = (c.endsAt || 0) - now(); const show = c.status === 'open' && left <= 15000; el.classList.toggle('on', show); el.textContent = show ? `⏱ ${Math.max(0, Math.ceil(left / 1000))}` : ''; }); }
   if (st?.phase === 'build') ms = st.buildEndsAt - now();
-  if (st?.phase === 'present' && currentTeam()) { const sp = st.present.speaker && raisedTeams(st).includes(st.present.speaker); ms = (sp ? st.present.focusEndsAt || 0 : st.present.teamEndsAt || 0) - now(); if (sp && st.present.speaker === me) $('objTimer').textContent = Math.max(0, Math.ceil(ms / 1000)); const dt = document.getElementById('defT'); if (dt) dt.textContent = `⏱ ${Math.max(0, Math.ceil(ms / 1000))}`; }
+  if (st?.phase === 'present' && currentTeam()) { const sp = st.present.speaker && raisedTeams(st).includes(st.present.speaker) && !(deck.criteria && !st.present.judge?.debate); /* 판정기 세트는 공방 때만 20초 타이머 */ ms = (sp ? st.present.focusEndsAt || 0 : st.present.teamEndsAt || 0) - now(); if (sp && st.present.speaker === me) $('objTimer').textContent = Math.max(0, Math.ceil(ms / 1000)); const dt = document.getElementById('defT'); if (dt) dt.textContent = `⏱ ${Math.max(0, Math.ceil(ms / 1000))}`; }
   clock.textContent = ms === null ? '--:--' : mmss(ms); clock.classList.toggle('hot', ms !== null && ms <= 10000 && ms > -1000); clock.classList.toggle('ext', ext && ms > 0);
 }
 setInterval(tick, 250);
