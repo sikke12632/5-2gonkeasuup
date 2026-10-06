@@ -456,7 +456,7 @@ function deepMerge(target, patch) {
   return target;
 }
 function mockTransport() {
-  const key = `auction-demo-${ROOM}`, channel = new BroadcastChannel(key), listeners = {}; let prefix = '';
+  const key = `auction-demo-${ROOM}`, channel = new BroadcastChannel(key), listeners = {}; let prefix = '', queue = Promise.resolve();
   const load = () => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } };
   const emit = () => { const d = load(); Object.entries(listeners).forEach(([col, fns]) => fns.forEach(fn => fn(clone(d[col] || {})))); };
   const save = d => { localStorage.setItem(key, JSON.stringify(d)); channel.postMessage('change'); emit(); };
@@ -471,7 +471,8 @@ function mockTransport() {
   return {
     demo: true, setPrefix(p) { prefix = p; },
     watch(col, cb) { const c = colName(prefix, col); (listeners[c] ??= []).push(cb); cb(clone(load()[c] || {})); return () => { listeners[c] = (listeners[c] || []).filter(f => f !== cb); }; },
-    async tx(fn) { const d = load(); const r = await fn(ops(d)); save(d); return r; },
+    watchDoc(col, id, cb) { return this.watch(col, map => cb(map[id] ?? null)); },
+    tx(fn) { const run = queue.then(async () => { const d = load(); const r = await fn(ops(d)); save(d); return r; }); queue = run.catch(() => { }); return run; },   // 한 줄로 세워서 하나씩(동시에 돌면 서로 덮어씀)
     async batch(list) { const d = load(); const o = ops(d); list.forEach(x => o[x.op](x.col, x.id, x.data)); save(d); }
   };
 }
@@ -491,26 +492,42 @@ async function firestoreTransport() {
   return {
     demo: false, setPrefix(p) { prefix = p; },
     watch(col, cb) {
-      const map = {};
-      return fs.onSnapshot(fs.collection(db, 'auction', ROOM, colName(prefix, col)), snap => {
+      return relisten(onErr => { const map = {}; return fs.onSnapshot(fs.collection(db, 'auction', ROOM, colName(prefix, col)), snap => {
         snap.docChanges().forEach(ch => { if (ch.type === 'removed') delete map[ch.doc.id]; else map[ch.doc.id] = ch.doc.data(); });
-        cb({ ...map });
-      }, err => { console.error(err); window.dispatchEvent(new CustomEvent('db-error', { detail: err })); });
+        dbOk(); cb({ ...map });
+      }, onErr); });
+    },
+    watchDoc(col, id, cb) {                                // 문서 하나만 구독(태블릿이 자기 모둠만 볼 때: 읽기 횟수 절약)
+      return relisten(onErr => fs.onSnapshot(ref(col, id), s => { dbOk(); cb(s.exists() ? s.data() : null); }, onErr));
     },
     async tx(fn) {
       return fs.runTransaction(db, async tx => fn({
         get: async (col, id) => { const s = await tx.get(ref(col, id)); return s.exists() ? s.data() : null; },
         ...writer(tx)
-      }));
+      })).catch(dbFail);
     },
     async batch(list) {
       for (let i = 0; i < list.length; i += 450) {          // Firestore 일괄 쓰기 한도 500
         const b = fs.writeBatch(db), w = writer(b);
         list.slice(i, i + 450).forEach(x => w[x.op](x.col, x.id, x.data));
-        await b.commit();
+        await b.commit().catch(dbFail);
       }
     }
   };
+}
+/* 연결 오류 처리. Firestore 구독은 오류가 한 번 나면 그대로 죽는다 → 15초마다 다시 구독해서 저절로 살아나게.
+   무료 요금제 하루 읽기 한도(5만)를 넘으면 'resource-exhausted' — 미국 서부 자정(한국 오후 4시, 겨울엔 5시)까지 모든 읽기·쓰기가 막힌다.
+   이 프로젝트(open-cbd39)는 벽란도 게임과 한도를 같이 쓴다 */
+const QUOTA_MSG = 'Firebase 하루 사용량 초과 · 한국 시간 오후 4시쯤 풀려요';
+function relisten(start) {
+  let unsub = null, timer = 0, stopped = false;
+  const go = () => { unsub = start(err => { console.error(err); window.dispatchEvent(new CustomEvent('db-error', { detail: err })); if (!stopped) timer = setTimeout(go, 15000); }); };
+  go(); return () => { stopped = true; clearTimeout(timer); unsub?.(); };
+}
+const dbOk = () => window.dispatchEvent(new CustomEvent('db-ok'));
+function dbFail(e) {
+  if (e?.code === 'resource-exhausted') { window.dispatchEvent(new CustomEvent('db-error', { detail: e })); throw new Error(QUOTA_MSG); }
+  throw e;
 }
 async function createTransport() {
   const forceDemo = new URLSearchParams(location.search).get('demo') === '1';
@@ -636,11 +653,22 @@ function bindDeck(id) {
   unsubs.forEach(u => u()); unsubs = [];
   deck = applyDeck(id); T.setPrefix(deck.prefix); applyDeckText();
   C.state = null; C.cards = {}; C.teams = {}; C.sentences = {}; prevCards = {}; tray = { S: null, B: null, O: null, V: null }; lastRound = ''; me = ''; waitingFull = false;
-  unsubs.push(T.watch('state', map => { C.state = map.main || null; render(); ensureSeat(); }));
+  unsubs.push(T.watch('state', map => { C.state = map.main || null; render(); ensureSeat(); syncTeamsWatch(); }));
   unsubs.push(T.watch('cards', map => { C.cards = map; render(); }));
-  unsubs.push(T.watch('teams', map => { C.teams = map; render(); clearTimeout(claimTimer); claimTimer = setTimeout(ensureSeat, me ? 0 : 300 + Math.random() * 1200); }));   // 자리 확인(대기 중이면 무작위 지연 후 재시도)
+  teamsUnsub?.(); teamsUnsub = null; teamsMode = ''; syncTeamsWatch();
   unsubs.push(T.watch('sentences', map => { C.sentences = map; render(); }));
   heartbeat();
+}
+/* 모둠 문서 구독: 자리를 받은 태블릿은 "우리 모둠 문서 하나"만 본다.
+   (값을 부를 때마다 두 모둠의 예산 문서가 바뀌는데, 8대가 모두 8모둠을 보면 그만큼 읽기 횟수가 늘어 무료 한도가 금방 찬다)
+   자리가 없을 때(빈 자리 찾기·대기)와 결과 화면(순위에 점수 보정 필요)만 전체를 본다 */
+let teamsUnsub = null, teamsMode = '';
+function syncTeamsWatch() {
+  if (!T) return;
+  const mode = me && S()?.phase !== 'end' ? `one:${me}` : 'all';
+  if (mode === teamsMode) return; teamsMode = mode; teamsUnsub?.();
+  const onTeams = map => { C.teams = map; render(); clearTimeout(claimTimer); claimTimer = setTimeout(ensureSeat, me ? 0 : 300 + Math.random() * 1200); };   // 자리 확인(대기 중이면 무작위 지연 후 재시도)
+  const id = me; teamsUnsub = mode === 'all' ? T.watch('teams', onTeams) : T.watchDoc('teams', id, d => onTeams(d ? { [id]: d } : {}));
 }
 /* 기기 ID: 이 브라우저(태블릿)마다 하나. 같은 태블릿에서 탭을 여러 개 열어도 같은 모둠을 받는다.
    ?team=3 은 교사 수동 배정(그 자리를 강제로 차지). 평소에는 안 씀 */
@@ -653,6 +681,9 @@ const now = () => Date.now();
 const S = () => C.state || null;
 const typeVars = t => `--cc:${TYPE[t].color};--cbg:${TYPE[t].bg};--cdark:${TYPE[t].dark}`;
 const myTeam = () => C.teams[me] || null;
+/* 바뀐 게 있을 때만 다시 그린다. 다른 모둠이 값을 부를 때마다 버튼·카드를 새로 만들면, 그 순간 누르던 터치가 사라진다(눌러도 반응 없음) */
+const setHTML = (el, html) => { if (el.__html !== html) { el.__html = html; el.innerHTML = html; } };
+const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
 const myCards = () => sortCards(Object.values(C.cards).filter(c => c.team === me));
 const roundCards = r => Object.values(C.cards).filter(c => c.round === r).sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)));
 const currentTeam = () => S()?.present?.order?.[S()?.present?.idx] || null;
@@ -674,13 +705,17 @@ async function ensureSeat() {
   if (!T || !S() || !Object.keys(C.teams).length || claiming) return;
   if (me && C.teams[me]?.device === deviceId) { waitingFull = false; return; }
   if (me) { me = ''; render(); }                                   // 선생님이 자리를 비웠거나 초기화됨
+  /* 자리가 다 찼으면(내 화면 기준) 서버에 묻지 않고 기다린다. 예전엔 대기 태블릿이 누가 값을 부를 때마다(모둠 예산이 바뀔 때마다)
+     8모둠을 다시 읽어서, 대기 태블릿 몇 대만 있어도 하루 무료 읽기 한도를 크게 깎았다. 빈 자리가 생기면 이 화면에 바로 보이므로 그때 시도 */
+  const force = forceTeam && !forced ? forceTeam : null;
+  if (!force && waitingFull && TEAM_IDS.every(id => C.teams[id]?.device && C.teams[id].device !== deviceId)) return;
   claiming = true;
   try {
-    const got = await claimTeam(T, deviceId, forceTeam && !forced ? forceTeam : null); forced = true;
+    const got = await claimTeam(T, deviceId, force); forced = true;
     if (got) { me = got; waitingFull = false; try { await T.batch([{ op: 'del', col: 'waiting', id: deviceId }]); } catch { } toast(`${teamName(me)} 자리를 받았어요!`, 'win'); beep('win'); heartbeat(); }
     else { waitingFull = true; try { await T.batch([{ op: 'update', col: 'waiting', id: deviceId, data: { lastSeen: now() } }]); } catch { } }
   } catch (e) { console.error(e); clearTimeout(claimTimer); claimTimer = setTimeout(ensureSeat, 1500 + Math.random() * 1500); }
-  finally { claiming = false; render(); }
+  finally { claiming = false; render(); syncTeamsWatch(); }
 }
 $('chg').addEventListener('click', async () => { if (!confirm('이 태블릿의 자리를 비우고 다시 받을까요? (선생님 확인 후에만!)')) return; try { if (me) await releaseTeam(T, me, deviceId); } catch { } me = ''; forced = true; render(); ensureSeat(); });
 async function heartbeat() { if (!T) return; try { if (me) await T.batch([{ op: 'update', col: 'teams', id: me, data: { lastSeen: now() } }]); else if (waitingFull) await T.batch([{ op: 'update', col: 'waiting', id: deviceId, data: { lastSeen: now() } }]); } catch { } }
@@ -719,15 +754,15 @@ function paintAuction(st) {
   if (lastRound !== String(r)) { grid.innerHTML = ''; lastRound = String(r); }
   cards.forEach(c => {
     let el = grid.querySelector(`[data-id="${c.id}"]`);
-    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${cardSub(c) ? `<div>${esc(c.text)}<span class="csub">${esc(cardSub(c))}</span></div>` : esc(c.text)}</div><div class="info"><span class="price"></span><span class="who"></span></div><div class="btns"><button class="bid up" data-id="${c.id}"></button><button class="bid buy" data-id="${c.id}">바로 사기<small>${fmt(RULE.buyout)}원</small></button></div><div class="stamp"><div></div></div>`; grid.append(el); }
+    if (!el) { el = document.createElement('div'); el.className = 'acard'; el.dataset.id = c.id; el.style.cssText = typeVars(c.type); el.innerHTML = `<span class="type">${TYPE[c.type].label}</span><span class="tmr"></span><div class="word">${cardSub(c) ? `<div>${esc(c.text)}<span class="csub">${esc(cardSub(c))}</span></div>` : esc(c.text)}</div><div class="info"><span class="price"></span><span class="who"></span></div><div class="btns"><button class="bid up" data-id="${c.id}"><span></span><small></small></button><button class="bid buy" data-id="${c.id}">바로 사기<small>${fmt(RULE.buyout)}원</small></button></div><div class="stamp"><div></div></div>`; grid.append(el); }
     const p = prevCards[c.id] || {}, mine = c.bidder === me && c.status === 'open';
     el.classList.toggle('mine', mine); el.classList.toggle('sold', c.status === 'sold'); el.classList.toggle('unsold', c.status === 'unsold');
     el.style.setProperty('--bc', c.bidder ? teamColor(c.bidder) : '#8A98A6');
     const priceEl = el.querySelector('.price'); priceEl.textContent = fmt(c.bidder ? c.price : RULE.start);
     const who = el.querySelector('.who'); who.textContent = c.bidder ? (c.bidder === me ? '우리 최고!' : teamName(c.bidder)) : '아직 없음'; who.classList.toggle('none', !c.bidder);
     const next = c.bidder ? Number(c.price) + RULE.step : RULE.start;
-    const up = el.querySelector('.up'); up.innerHTML = `+100원<small>${fmt(next)}원 부르기</small>`; up.disabled = c.status !== 'open' || mine || budget < next;
-    if (mine) up.innerHTML = `우리가 최고!<small>${fmt(c.price)}원</small>`;
+    const up = el.querySelector('.up'); up.disabled = c.status !== 'open' || mine || budget < next;
+    setText(up.firstChild, mine ? '우리가 최고!' : '+100원'); setText(up.lastChild, mine ? `${fmt(c.price)}원` : `${fmt(next)}원 부르기`);   // 버튼 속 요소는 그대로 두고 글자만 → 누르는 도중 다시 그려져도 터치가 안 사라짐
     el.querySelector('.buy').disabled = c.status !== 'open' || (budget + (mine ? Number(c.price) : 0)) < RULE.buyout;
     if (c.status === 'sold') el.querySelector('.stamp div').innerHTML = `${c.team === me ? '우리 것!' : teamName(c.team) + ' 것'}<small>${fmt(c.price)}원</small>`;
     if (c.status === 'unsold') el.querySelector('.stamp div').innerHTML = `아무도 안 삼`;
@@ -735,7 +770,7 @@ function paintAuction(st) {
     if (p.id && (c.extended || 0) > (p.extended || 0)) { const f = document.createElement('div'); f.className = 'ext-flash'; f.textContent = '+10초!'; el.append(f); setTimeout(() => f.remove(), 1400); }
     if (p.id && p.bidder === me && c.bidder !== me && c.status === 'open') { el.classList.remove('lost'); void el.offsetWidth; el.classList.add('lost'); }
   });
-  $('myCardsA').innerHTML = `<h3>우리 카드</h3>${myCards().map(c => chip(c)).join('')}`;
+  setHTML($('myCardsA'), `<h3>우리 카드</h3>${myCards().map(c => chip(c)).join('')}`);
 }
 function paintClosed(st) {
   const r = st.round, got = roundCards(r).filter(c => c.team === me && c.status === 'sold');
@@ -748,14 +783,14 @@ function paintClosed(st) {
 function paintBuild() {
   const cards = myCards(), free = cards.filter(c => !c.usedIn);
   ORDER.forEach(t => { if (tray[t] && !free.find(c => c.id === tray[t])) tray[t] = null; });
-  $('slots').innerHTML = ORDER.map(t => { const c = tray[t] ? C.cards[tray[t]] : null; return `<div class="slot${c ? ' filled' : ''}${t === 'O' || t === 'B' ? ' opt' : ''}" data-t="${t}" style="${typeVars(t)}"><span class="lab">${TYPE[t].label}<small>${TYPE[t].who}</small></span>${c ? chip(c) : ''}</div>`; }).join('');
+  setHTML($('slots'), ORDER.map(t => { const c = tray[t] ? C.cards[tray[t]] : null; return `<div class="slot${c ? ' filled' : ''}${t === 'O' || t === 'B' ? ' opt' : ''}" data-t="${t}" style="${typeVars(t)}"><span class="lab">${TYPE[t].label}<small>${TYPE[t].who}</small></span>${c ? chip(c) : ''}</div>`; }).join(''));
   const picked = ORDER.map(t => tray[t]).filter(Boolean).map(id => C.cards[id]);
-  $('preview').innerHTML = picked.length ? picked.map(c => `<span style="color:${TYPE[c.type].dark}">${esc(c.text)}</span>`).join(' ') : `<span class="ph">카드를 눌러 ${deck.unitOf} 만들어요</span>`;
+  setHTML($('preview'), picked.length ? picked.map(c => `<span style="color:${TYPE[c.type].dark}">${esc(c.text)}</span>`).join(' ') : `<span class="ph">카드를 눌러 ${deck.unitOf} 만들어요</span>`);
   const ok = tray.S && tray.V; const pts = ok ? (tray.O ? 2 : 1) + (tray.B ? 1 : 0) : 0;
   $('submitBtn').disabled = !ok; $('ptsHint').textContent = ok ? `${pts}점${tray.B ? ` (${josa(TYPE.B.label, '이/가')} 어울리면)` : ''}` : '';
   const groups = ORDER.map(t => `<div class="hand-row" style="${typeVars(t)}"><h3>${TYPE[t].label}</h3>${free.filter(c => c.type === t).map(c => `<button class="hcard${tray[t] === c.id ? ' intray' : ''}" data-id="${c.id}" style="${typeVars(t)}">${esc(c.text)}${cardSub(c) ? `<span class="csub">${esc(cardSub(c))}</span>` : ''}</button>`).join('') || '<span class="none">없음</span>'}</div>`).join('');
   const mine = Object.values(C.sentences).filter(s => s.team === me).sort((a, b) => a.createdAt - b.createdAt);
-  $('hand').innerHTML = groups + `<div class="done-list">${mine.map(s => `<div class="dsent${s.status === 'rejected' ? ' rejected' : ''}"><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div><span class="pts">${sentencePoints(s)}점</span><button class="del" data-id="${s.id}">지우기</button></div>`).join('')}</div>`;
+  setHTML($('hand'), groups + `<div class="done-list">${mine.map(s => `<div class="dsent${s.status === 'rejected' ? ' rejected' : ''}"><div class="txt">${sentenceItems(s, C.cards).map(c => `<span style="${typeVars(c.type)}">${esc(c.text)}</span>`).join('')}</div><span class="pts">${sentencePoints(s)}점</span><button class="del" data-id="${s.id}">지우기</button></div>`).join('')}</div>`);
 }
 $('hand').addEventListener('click', async e => {
   const h = e.target.closest('.hcard'); if (h) { const c = C.cards[h.dataset.id]; tray[c.type] = tray[c.type] === c.id ? null : c.id; beep('tap'); paintBuild(); return; }
@@ -823,7 +858,8 @@ function tick() {
 setInterval(tick, 250);
 
 /* ── 연결 ── */
-window.addEventListener('db-error', () => { $('badge').textContent = '연결 오류'; $('badge').className = 'badge err on'; });
+window.addEventListener('db-error', e => { $('badge').textContent = e.detail?.code === 'resource-exhausted' ? '서버 사용량 초과 · 선생님께 알려요' : '연결 오류 · 다시 연결 중'; $('badge').className = 'badge err on'; });
+window.addEventListener('db-ok', () => { if (!$('badge').classList.contains('err')) return; $('badge').textContent = '점검 모드'; $('badge').className = `badge${T?.demo ? ' on' : ''}`; });
 try {
   T = await createTransport(); if (T.demo) $('badge').classList.add('on');
   applyDeckText(); bindDeck(deck.id);
