@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>속뜻 카드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EAF1F6;--ink:#1E2A38;--muted:#5B6B7C;--panel:#FFF;--warn:#FF6A45;--ok:#2E9E6B;--line:#D6DFE7;--grape:#6B4FD3;--grape2:#EFEAFF;--paper:#FFFDF6;--gold:#E2A400;--gold2:#FFF4CC}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{min-height:100vh;background:radial-gradient(circle at 100% 0%,#E4DCFF 0,transparent 40%),var(--bg);color:var(--ink);font-family:"Gowun Dodum","Malgun Gothic",sans-serif;font-size:17px;line-height:1.55;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+button:disabled{cursor:default}
+input,textarea{font:inherit;color:inherit}
+h1,h2,h3,.jua{font-family:"Jua",sans-serif;font-weight:400;line-height:1.25}
+.wrap{width:min(680px,100%);margin:0 auto;padding:0 16px 40px}
+
+/* 위쪽 띠 */
+#bar{position:sticky;top:0;z-index:5;background:rgba(234,241,246,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+#bar .in{width:min(680px,100%);margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#bar .grp{font:22px "Jua";color:var(--grape)}
+#bar .meta{color:var(--muted);font-size:15px}
+#bar .me{margin-left:auto;font-size:15px;background:var(--panel);border-radius:999px;padding:3px 12px;box-shadow:0 2px 0 var(--line)}
+#bar .me b{font-family:"Jua";font-weight:400;color:var(--grape)}
+#wait{width:min(680px,100%);margin:10px auto 0;padding:0 16px}
+#wait .pill{border-radius:14px;padding:8px 14px;font-size:16px;background:var(--gold2);border:2px solid #F3D77A}
+#wait .pill b{font-family:"Jua";font-weight:400}
+#wait .pill.all{background:#E3F5EC;border-color:#A9DCC1;color:#1F6B49}
+
+/* 입장 */
+.entry{padding-top:clamp(24px,7vh,70px);display:grid;gap:18px}
+.title{text-align:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.title h1{font-size:clamp(46px,12vw,68px);color:var(--grape);letter-spacing:-1px}
+.title h1 span{display:inline-block;background:var(--paper);border-radius:14px;padding:0 12px;margin-left:6px;box-shadow:0 3px 0 var(--line);transform:rotate(-3deg);color:var(--ink)}
+.title p{color:var(--muted);margin-top:6px}
+.panel{background:var(--panel);border-radius:22px;padding:18px;box-shadow:0 2px 0 var(--line);display:grid;gap:12px}
+.lbl{font:19px "Jua";color:var(--ink)}
+.lbl small{font-family:"Gowun Dodum";font-size:14px;color:var(--muted)}
+.groups{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.groups button{height:58px;border-radius:16px;background:var(--bg);font:26px "Jua";box-shadow:0 2px 0 var(--line)}
+.groups button.on{background:var(--grape);color:#fff;box-shadow:0 2px 0 #4A32A8}
+.field{width:100%;height:54px;border:2px solid var(--line);border-radius:14px;padding:0 14px;font-size:20px;background:#fff;outline:none}
+.field:focus{border-color:var(--grape)}
+.field.bad{border-color:var(--warn);background:#FFF3EF}
+.big{height:58px;border-radius:16px;background:var(--grape);color:#fff;font:24px "Jua";box-shadow:0 3px 0 #4A32A8;width:100%}
+.big:disabled{background:#C9C2E4;box-shadow:0 3px 0 #B1A8D6}
+.big:not(:disabled):active{transform:translateY(2px);box-shadow:0 1px 0 #4A32A8}
+.ghost{height:44px;border-radius:14px;color:var(--muted);font-size:16px;width:100%}
+.note{font-size:14px;color:var(--muted)}
+.muted{color:var(--muted)}
+.center{text-align:center}
+details.how{background:rgba(255,255,255,.6);border-radius:18px;padding:12px 16px}
+details.how summary{font:18px "Jua";cursor:pointer}
+details.how ol{margin:10px 0 0 20px;display:grid;gap:6px;font-size:15.5px}
+
+/* 대기실 */
+.members{list-style:none;display:grid;gap:8px}
+.members li{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:14px;padding:10px 12px}
+.members .n{width:30px;height:30px;border-radius:50%;background:#fff;display:grid;place-items:center;font:17px "Jua";color:var(--grape)}
+.members b{font:20px "Jua";font-weight:400}
+.tag{font-size:13px;border-radius:999px;padding:1px 9px;background:var(--gold2);color:#7A5A00}
+.tag.me{background:var(--grape2);color:var(--grape)}
+.members .x{margin-left:auto;width:34px;height:34px;border-radius:50%;background:#fff;color:var(--muted);font-size:20px}
+
+/* 카드 */
+.cards{display:grid;gap:10px}
+.card{position:relative;display:block;width:100%;text-align:left;background:var(--paper);border:2px solid #EFE6CF;border-radius:18px;padding:14px 16px 14px 46px;box-shadow:0 2px 0 var(--line);font-size:17.5px;line-height:1.6}
+.card::before{content:"“";position:absolute;left:14px;top:2px;font:44px/1 Georgia,serif;color:#D9C9A0}
+.card.num{padding-left:62px}
+.card.num::before{content:attr(data-n);left:12px;top:12px;width:38px;height:38px;border-radius:50%;background:var(--grape2);color:var(--grape);font:22px/38px "Jua";text-align:center}
+button.card:not(:disabled):active{transform:translateY(1px)}
+.card.sel{border-color:var(--grape);background:#FBF9FF;box-shadow:0 0 0 3px rgba(107,79,211,.25)}
+.card.sel::after{content:"✔ 골랐어요";position:absolute;right:10px;top:-11px;background:var(--grape);color:#fff;font:14px "Jua";border-radius:999px;padding:2px 10px}
+.card.mine{opacity:.55;background:#F3F3F3;border-color:#E2E2E2}
+.card.mine::after{content:"내 카드";position:absolute;right:10px;top:-11px;background:#8A96A3;color:#fff;font:14px "Jua";border-radius:999px;padding:2px 10px}
+
+.hintshow{background:var(--grape);color:#fff;border-radius:22px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 3px 0 #4A32A8}
+.hintshow small{font-size:14px;opacity:.85}
+.hintshow b{font:clamp(26px,7vw,34px) "Jua";font-weight:400;word-break:keep-all}
+.hintshow span{margin-left:auto;font-size:15px;background:rgba(255,255,255,.18);border-radius:999px;padding:2px 12px}
+.role{font-size:26px;color:var(--grape)}
+.hintrow{position:relative}
+.hintrow .cnt{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--muted)}
+.hintrow .field{padding-right:64px}
+.msg{min-height:1.4em;font-size:16px;color:var(--warn);font-weight:700}
+.msg.okmsg{color:var(--ok);font-weight:400}
+textarea.field{height:auto;min-height:96px;padding:12px 14px;resize:vertical;font-size:18px;line-height:1.5}
+.cntline{display:flex;justify-content:space-between;font-size:15px;color:var(--muted)}
+.cntline b.okc{color:var(--ok)}
+.waitbox{text-align:center;padding:26px 16px;display:grid;gap:8px;justify-items:center}
+.waitbox .em{font-size:44px}
+.waitbox h2{font-size:24px}
+
+/* 공개 */
+.rows{display:grid;gap:10px}
+.row{background:var(--paper);border:2px solid #EFE6CF;border-radius:18px;padding:12px 14px;display:grid;grid-template-columns:38px 1fr;gap:4px 10px;box-shadow:0 2px 0 var(--line)}
+.row .no{grid-row:span 2;width:38px;height:38px;border-radius:50%;background:var(--grape2);color:var(--grape);font:22px/38px "Jua";text-align:center}
+.row .txt{font-size:16.5px;line-height:1.55}
+.row .who{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:15px}
+.row .who b{font:17px "Jua";font-weight:400}
+.row .vote{color:var(--muted)}
+.row .vote i{font-style:normal;background:#fff;border:1px solid var(--line);border-radius:999px;padding:0 8px;margin-left:3px;color:var(--ink)}
+.row.ans{border-color:var(--gold);background:#FFFBEA;box-shadow:0 0 0 3px rgba(226,164,0,.25)}
+.row.ans .no{background:var(--gold);color:#fff}
+.star{background:var(--gold);color:#fff;border-radius:999px;padding:0 10px;font:15px "Jua"}
+.reasons{list-style:none;display:grid;gap:8px}
+.reasons li{background:#E3F5EC;border-radius:14px;padding:10px 14px;font-size:17px}
+.reasons li b{font:18px "Jua";font-weight:400;color:#1F6B49;margin-right:6px}
+.nobody{display:grid;gap:12px}
+.nobody .pair{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:560px){.nobody .pair{grid-template-columns:3fr 2fr;align-items:stretch}}
+.nobody .card{font-size:20px;border-color:var(--gold)}
+.nobody .hb{background:var(--grape);color:#fff;border-radius:18px;display:grid;place-items:center;text-align:center;padding:16px;font:clamp(28px,8vw,38px) "Jua";word-break:keep-all}
+.nobody .hb small{display:block;font:14px "Gowun Dodum";opacity:.85}
+.nobody p{font:22px "Jua";text-align:center;color:var(--grape);word-break:keep-all}
+.scores{display:flex;flex-wrap:wrap;gap:8px}
+.scores span{background:var(--bg);border-radius:12px;padding:6px 12px;font-size:16px}
+.scores span b{font:18px "Jua";font-weight:400}
+.scores span em{font-style:normal;font-family:"Jua";color:var(--ok);margin-left:4px}
+.scores span em.z{color:var(--muted)}
+.scores span small{color:var(--muted);margin-left:4px}
+.rule{font-size:15px;color:var(--muted);background:var(--bg);border-radius:12px;padding:8px 12px}
+
+/* 끝 */
+.rank{list-style:none;display:grid;gap:8px}
+.rank li{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:16px;padding:12px 16px}
+.rank .r{font:22px "Jua";min-width:74px;white-space:nowrap;color:var(--muted)}
+.rank li.top{background:var(--gold2)}
+.rank li.top .r{color:#B07F00}
+.rank b{font:22px "Jua";font-weight:400}
+.rank .s{margin-left:auto;font:24px "Jua";color:var(--grape)}
+
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;transition:.2s;background:var(--ink);color:#fff;border-radius:14px;padding:10px 18px;font-size:16px;max-width:calc(100% - 32px);z-index:20;pointer-events:none}
+#toast.on{opacity:1;transform:translateX(-50%)}
+#toast.err{background:#C2412A}
+.stack{display:grid;gap:14px;margin-top:14px}
+</style>
+</head>
+<body>
+<div id="bar" hidden></div>
+<div id="wait" hidden></div>
+<main class="wrap" id="view"></main>
+<div id="toast"></div>
+
+<script type="module">
+import * as G from './game.js';
+import { firestoreStore, localStore } from './store.js';
+
+const QS = new URLSearchParams(location.search);
+const DEMO = QS.has('demo');
+const $ = id => document.getElementById(id);
+const view = $('view');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const NUM = ['①', '②', '③', '④', '⑤'];
+const SESSION = 'sokttus-me', LAST = 'sokttus-last';
+const ss = { get(k) { try { return JSON.parse(sessionStorage.getItem(k)); } catch { return null; } }, set(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+const ls = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+
+let toastT;
+function toast(msg, err) { const t = $('toast'); t.textContent = msg; t.className = 'on' + (err ? ' err' : ''); clearTimeout(toastT); toastT = setTimeout(() => t.className = err ? 'err' : '', 2600); }
+
+/* ── 상태 ── */
+let store = null;
+let me = null;          // { g, pid, epoch, name }
+let room = null, mine = null, unsubs = [];
+let lastKey = '';
+let ui = {};            // 화면 안에서만 쓰는 임시 값(고른 카드, 쓰던 힌트·근거)
+let busy = false;
+
+const nameOf = p => room?.names?.[p] ?? '?';
+const isTeller = () => room?.teller === me?.pid;
+const mineOk = () => mine && mine.game === room.game && mine.round === room.round;
+const cardText = id => G.CARD[id]?.text ?? '';
+
+/* ── 입장 ── */
+function paintEntry(prefill = ls.get(LAST) || {}) {
+  $('bar').hidden = $('wait').hidden = true;
+  lastKey = 'entry';
+  ui = { g: prefill.g || null };
+  view.innerHTML = `
+  <section class="entry">
+    <div class="title" id="title"><h1>속뜻<span>카드</span></h1><p>말하지 않고 돌려 말하기 · 근거로 맞히기${DEMO ? ' · <b>점검 모드</b>' : ''}</p></div>
+    <div class="panel">
+      <div class="lbl">모둠 번호</div>
+      <div class="groups">${Array.from({ length: G.ROOMS }, (_, i) => `<button data-act="group" data-g="${i + 1}" class="${ui.g === i + 1 ? 'on' : ''}">${i + 1}</button>`).join('')}</div>
+      <label class="lbl" for="name">이름</label>
+      <input id="name" class="field" maxlength="8" autocomplete="off" placeholder="내 이름" value="${esc(prefill.name || '')}">
+      <button class="big" data-act="enter" id="enter">들어가기</button>
+      <p class="note">새로고침하거나 디벗이 꺼져도, 같은 모둠 번호와 이름으로 다시 들어오면 이어서 할 수 있어요.</p>
+    </div>
+    ${howTo()}
+  </section>`;
+  $('name').addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
+  teacherPress($('title'));
+}
+
+function howTo() {
+  return `<details class="how"><summary>놀이 방법</summary><ol>
+    <li>이야기꾼은 손패에서 카드 1장을 고르고, 카드 문장을 그대로 말하지 않고 <b>속뜻을 돌려 말하는 힌트</b>(12자 이내)를 써요. 카드에 있는 낱말은 쓸 수 없어요.</li>
+    <li>나머지 친구는 그 힌트에 어울릴 만한 카드를 손패에서 1장씩 내요.</li>
+    <li>섞인 카드 가운데 이야기꾼의 카드를 골라, <b>근거</b>를 쓰고 투표해요. 내가 낸 카드에는 투표할 수 없어요.</li>
+    <li>몇 명만 맞히면 이야기꾼과 맞힌 친구 +3점. 모두 맞히거나 아무도 못 맞히면 이야기꾼 0점, 나머지 +2점. 내 카드에 표가 들어오면 표마다 +1점.</li>
+    <li>모두가 이야기꾼을 한 번씩 하면 한 판이 끝나요.</li></ol></details>`;
+}
+
+// 담임용 숨은 버튼: 제목을 3초 꾹 누르기 → 1~8모둠 방 모두 비우기
+function teacherPress(el) {
+  let t;
+  const stop = () => clearTimeout(t);
+  el.addEventListener('pointerdown', () => { stop(); t = setTimeout(async () => {
+    if (!confirm('선생님용: 1~8모둠 방을 모두 비울까요?\n게임 중인 방도 지워지고, 아이들은 처음 화면으로 돌아가요.')) return;
+    try { await G.resetAll(await getStore()); toast('1~8모둠 방을 모두 비웠어요'); } catch (e) { toast('비우지 못했어요: ' + e.message, true); }
+  }, 3000); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => el.addEventListener(ev, stop));
+  el.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+async function getStore() {
+  if (!store) store = DEMO ? localStore() : await firestoreStore();
+  return store;
+}
+
+async function enter() {
+  const name = G.normName($('name')?.value);
+  if (!ui.g) return toast('모둠 번호를 골라 주세요', true);
+  if (!name) return toast('이름을 써 주세요', true);
+  await act(async () => {
+    const res = await G.join(await getStore(), ui.g, name);
+    ls.set(LAST, { g: ui.g, name });
+    attach({ g: ui.g, ...res });
+  });
+}
+
+function attach(m) {
+  me = m; ss.set(SESSION, me);
+  room = mine = null; lastKey = '';
+  unsubs.forEach(u => u()); unsubs = [];
+  view.innerHTML = '<div class="waitbox"><h2>들어가는 중…</h2></div>';
+  const onErr = e => toast('연결이 끊겼어요. 새로고침해 주세요 (' + (e.code || e.message) + ')', true);
+  unsubs.push(store.watch(G.roomP(me.g), d => { room = d; onRoom(); }, onErr));
+  unsubs.push(store.watch(G.playerP(me.g, me.pid), d => { mine = d; if (room) render(); }, onErr));
+}
+
+function detach(msg) {
+  unsubs.forEach(u => u()); unsubs = [];
+  const last = me ? { g: me.g, name: me.name } : undefined;
+  me = room = mine = null; ss.set(SESSION, null);
+  paintEntry(last);
+  if (msg) toast(msg);
+}
+
+function onRoom() {
+  if (!me) return;
+  if (!room || room.epoch !== me.epoch) return detach('모둠 방이 새로 비워졌어요. 다시 들어와 주세요');
+  const inGame = !['lobby', 'end'].includes(room.phase);
+  if (!(inGame ? room.order.includes(me.pid) : room.members.includes(me.pid))) return detach('방에서 나왔어요');
+  render();
+}
+
+/* ── 그리기 ── */
+function screenKey() {
+  const r = room, p = me.pid, hand = mineOk() ? mine.hand.join() : '-';
+  switch (r.phase) {
+    case 'lobby': return `lobby|${r.members.join()}|${r.host}`;
+    case 'hint': return `hint|${r.game}|${r.round}|${isTeller()}|${hand}`;
+    case 'play': return `play|${r.game}|${r.round}|${isTeller()}|${r.done.includes(p)}|${hand}|${mineOk() && mine.play}`;
+    case 'vote': return `vote|${r.game}|${r.round}|${isTeller()}|${r.done.includes(p)}|${mineOk() && mine.play}`;
+    case 'reveal': return `reveal|${r.game}|${r.round}|${r.done.includes(p)}`;
+    case 'end': return `end|${r.game}|${r.members.join()}`;
+  }
+  return r.phase;
+}
+
+function render() {
+  if (!me || !room) return;
+  paintBar(); paintWait();
+  const key = screenKey();
+  if (key === lastKey) return;
+  const keepScroll = key.split('|').slice(0, 3).join() === lastKey.split('|').slice(0, 3).join();
+  lastKey = key; ui = {};
+  ({ lobby: drawLobby, hint: drawHint, play: drawPlay, vote: drawVote, reveal: drawReveal, end: drawEnd })[room.phase]?.();
+  if (!keepScroll) scrollTo(0, 0);
+}
+
+function paintBar() {
+  const r = room, bar = $('bar');
+  bar.hidden = false;
+  const inGame = !['lobby', 'end'].includes(r.phase);
+  bar.innerHTML = `<div class="in"><span class="grp">${me.g}모둠</span>
+    <span class="meta">${inGame ? `${r.round + 1} / ${r.order.length} 라운드 · 이야기꾼 <b>${esc(nameOf(r.teller))}</b>` : r.phase === 'end' ? '한 판 끝' : '대기실'}</span>
+    <span class="me">${esc(me.name)}${r.phase !== 'lobby' && r.scores?.[me.pid] != null ? ` · <b>${r.scores[me.pid]}점</b>` : ''}</span></div>`;
+}
+
+// 아직 안 낸 사람
+function paintWait() {
+  const r = room, w = $('wait');
+  let need = [], what = '';
+  if (r.phase === 'hint') { need = [r.teller]; what = '힌트를 쓰는 중'; }
+  else if (r.phase === 'play') { need = r.order.filter(p => p !== r.teller && !r.done.includes(p)); what = '아직 카드를 안 낸 사람'; }
+  else if (r.phase === 'vote') { need = r.order.filter(p => p !== r.teller && !r.done.includes(p)); what = '아직 투표 안 한 사람'; }
+  else if (r.phase === 'reveal') { need = r.order.filter(p => !r.done.includes(p)); what = '아직 [다음]을 안 누른 사람'; }
+  else { w.hidden = true; return; }
+  w.hidden = false;
+  w.innerHTML = need.length
+    ? `<div class="pill">⏳ ${what} · ${need.map(p => `<b>${esc(nameOf(p))}</b>`).join(' · ')}</div>`
+    : `<div class="pill all">✔ 모두 냈어요</div>`;
+}
+
+const cardBtn = (id, { n, sel, mine: own, act = 'pick', idx } = {}) =>
+  `<button class="card${n ? ' num' : ''}${sel ? ' sel' : ''}${own ? ' mine' : ''}" ${n ? `data-n="${n}"` : ''} data-act="${act}" data-id="${id}" ${idx != null ? `data-i="${idx}"` : ''} ${own ? 'disabled' : ''}>${esc(cardText(id))}</button>`;
+const cardDiv = (id, n) => `<div class="card${n ? ' num' : ''}" ${n ? `data-n="${n}"` : ''}>${esc(cardText(id))}</div>`;
+const hintShow = () => `<div class="hintshow"><small>힌트</small><b>“${esc(room.hint)}”</b><span>이야기꾼 ${esc(nameOf(room.teller))}</span></div>`;
+const loading = () => { view.innerHTML = '<div class="waitbox"><h2>손패를 불러오는 중…</h2></div>'; };
+
+function drawLobby() {
+  const r = room, host = r.host === me.pid, n = r.members.length, can = n >= G.MIN_P && n <= G.MAX_P;
+  view.innerHTML = `<div class="stack">
+    <section class="panel">
+      <h2 class="role">${me.g}모둠 대기실</h2>
+      <p class="muted">이야기꾼은 들어온 순서대로 한 번씩 맡아요.</p>
+      <ol class="members">${r.members.map((p, i) => `<li><span class="n">${i + 1}</span><b>${esc(nameOf(p))}</b>
+        ${p === r.host ? '<span class="tag">방장</span>' : ''}${p === me.pid ? '<span class="tag me">나</span>' : ''}
+        ${host && p !== me.pid ? `<button class="x" data-act="kick" data-pid="${p}" aria-label="내보내기">×</button>` : ''}</li>`).join('')}</ol>
+      <p class="center muted">${n}명 · ${G.MIN_P}~${G.MAX_P}명이 모이면 시작할 수 있어요</p>
+      ${host ? `<button class="big" data-act="start" ${can ? '' : 'disabled'}>시작</button>`
+             : `<p class="center">방장(<b>${esc(nameOf(r.host))}</b>)이 [시작]을 누르면 시작해요.</p>`}
+      <button class="ghost" data-act="leave">나가기</button>
+    </section>${howTo()}</div>`;
+}
+
+function drawHint() {
+  if (!mineOk()) return loading();
+  if (!isTeller()) {
+    view.innerHTML = `<div class="stack">
+      <section class="panel waitbox"><div class="em">🤫</div><h2>이야기꾼 ${esc(nameOf(room.teller))}</h2><p class="muted">카드를 고르고 힌트를 쓰고 있어요.</p></section>
+      <section class="panel"><h3>내 손패</h3><p class="muted">힌트가 나오면 여기서 1장을 내요. 미리 읽어 두세요.</p>
+      <div class="cards">${mine.hand.map(id => cardDiv(id)).join('')}</div></section></div>`;
+    return;
+  }
+  view.innerHTML = `<div class="stack">
+    <section class="panel">
+      <h2 class="role">나는 이야기꾼</h2>
+      <p>① 카드 1장을 골라요.<br>② 카드 문장을 그대로 말하지 말고, 인물의 <b>속마음</b>이나 <b>속뜻</b>을 돌려 말하는 힌트를 써요.</p>
+    </section>
+    <div class="cards">${mine.hand.map(id => cardBtn(id)).join('')}</div>
+    <section class="panel">
+      <label class="lbl" for="hint">힌트 <small>띄어쓰기 포함 ${G.HINT_MAX}자까지</small></label>
+      <div class="hintrow"><input id="hint" class="field" autocomplete="off" placeholder="카드의 속뜻을 돌려 말해요"><span class="cnt" id="hintCnt">0/${G.HINT_MAX}</span></div>
+      <p class="msg" id="hintMsg"></p>
+      <button class="big" data-act="sendHint" id="sendHint" disabled>힌트 내기</button>
+    </section></div>`;
+  $('hint').addEventListener('input', checkHintUI);
+}
+
+function checkHintUI() {
+  const box = $('hint'); if (!box) return;
+  const v = box.value, card = G.CARD[ui.pick];
+  const res = G.checkHint(v, card), len = G.charLen(v.trim());
+  $('hintCnt').textContent = `${len}/${G.HINT_MAX}`;
+  $('hintCnt').style.color = len > G.HINT_MAX ? 'var(--warn)' : '';
+  box.classList.toggle('bad', !!res.msg);
+  const msg = $('hintMsg');
+  msg.className = 'msg';
+  if (res.msg) msg.textContent = res.msg;
+  else if (!ui.pick && v.trim()) msg.textContent = '먼저 위에서 카드를 1장 골라 주세요';
+  else if (res.ok) { msg.textContent = '좋아요! 이 힌트를 낼 수 있어요'; msg.className = 'msg okmsg'; }
+  else msg.textContent = '';
+  $('sendHint').disabled = !(res.ok && ui.pick);
+}
+
+function drawPlay() {
+  if (!mineOk()) return loading();
+  if (isTeller()) {
+    view.innerHTML = `<div class="stack">${hintShow()}
+      <section class="panel waitbox"><div class="em">😶</div><h2>친구들이 카드를 고르고 있어요</h2><p class="muted">힌트에 어울릴 만한 카드를 내는 중이에요. 표정 관리!</p></section></div>`;
+    return;
+  }
+  if (room.done.includes(me.pid)) {
+    view.innerHTML = `<div class="stack">${hintShow()}
+      <section class="panel"><h3>내가 낸 카드</h3>${cardDiv(mine.play)}<p class="center muted">다른 친구를 기다려요.</p></section></div>`;
+    return;
+  }
+  view.innerHTML = `<div class="stack">${hintShow()}
+    <p>이 힌트에 <b>어울릴 만한 카드</b>를 1장 골라 내요. 친구들이 이야기꾼 카드로 헷갈리게!</p>
+    <div class="cards">${mine.hand.map(id => cardBtn(id)).join('')}</div>
+    <button class="big" data-act="sendPlay" id="sendPlay" disabled>이 카드 내기</button></div>`;
+}
+
+function drawVote() {
+  if (!mineOk()) return loading();
+  const t = room.table;
+  if (isTeller()) {
+    view.innerHTML = `<div class="stack">${hintShow()}
+      <section class="panel"><h3>섞인 카드</h3><p class="muted">친구들이 이야기꾼 카드를 찾고 있어요. 표정 관리!</p>
+      <div class="cards">${t.map((id, i) => cardDiv(id, NUM[i])).join('')}</div></section></div>`;
+    return;
+  }
+  if (room.done.includes(me.pid)) {
+    view.innerHTML = `<div class="stack">${hintShow()}
+      <section class="panel waitbox"><div class="em">🗳️</div><h2>투표했어요</h2><p class="muted">모두 투표하면 정답이 공개돼요.</p></section></div>`;
+    return;
+  }
+  view.innerHTML = `<div class="stack">${hintShow()}
+    <p>이야기꾼의 카드는 몇 번일까요? 1장을 골라요.</p>
+    <div class="cards">${t.map((id, i) => cardBtn(id, { n: NUM[i], mine: id === mine.play, idx: i })).join('')}</div>
+    <section class="panel">
+      <label class="lbl" for="reason">근거 <small>${G.REASON_MIN}자 이상 (띄어쓰기는 빼고 세요)</small></label>
+      <textarea id="reason" class="field" placeholder="힌트의 ○○ 때문에 □번이라고 생각해요"></textarea>
+      <div class="cntline"><span id="pickInfo">아직 카드를 고르지 않았어요</span><b id="rCnt">0/${G.REASON_MIN}자</b></div>
+      <button class="big" data-act="sendVote" id="sendVote" disabled>투표하기</button>
+    </section></div>`;
+  $('reason').addEventListener('input', checkVoteUI);
+}
+
+function checkVoteUI() {
+  const v = $('reason')?.value ?? '', n = G.reasonCount(v), ok = G.reasonOk(v);
+  $('rCnt').textContent = `${n}/${G.REASON_MIN}자`;
+  $('rCnt').className = ok ? 'okc' : '';
+  $('pickInfo').textContent = ui.pick ? `${NUM[ui.idx]}번을 골랐어요` : '아직 카드를 고르지 않았어요';
+  $('sendVote').disabled = !(ok && ui.pick);
+}
+
+function drawReveal() {
+  const r = room, v = r.reveal;
+  if (!v) return;
+  const voted = r.done.includes(me.pid);
+  const rows = v.rows.map((row, i) => {
+    const ans = row.card === v.answer;
+    return `<div class="row${ans ? ' ans' : ''}"><span class="no">${NUM[i]}</span>
+      <p class="txt">${esc(cardText(row.card))}</p>
+      <div class="who"><b>${esc(nameOf(row.owner))}</b>${ans ? '<span class="star">★ 정답</span>' : ''}
+        ${row.voters.length ? `<span class="vote">투표${row.voters.map(p => `<i>${esc(nameOf(p))}</i>`).join('')}</span>` : ''}</div></div>`;
+  }).join('');
+  const rule = { some: '몇 명만 맞혔어요 → 이야기꾼과 맞힌 친구 +3', all: '모두 맞혔어요 → 이야기꾼 0, 나머지 +2 (힌트가 너무 쉬웠어요)', none: '아무도 못 맞혔어요 → 이야기꾼 0, 나머지 +2 (힌트가 너무 어려웠어요)' }[v.kind];
+  const middle = v.kind === 'none'
+    ? `<section class="panel nobody"><div class="pair">${cardDiv(v.answer)}<div class="hb"><span><small>이야기꾼 ${esc(nameOf(r.teller))}의 힌트</small>“${esc(r.hint)}”</span></div></div>
+        <p>이 힌트는 왜 이 카드였을까? 모둠에서 이야기해 봐요</p></section>`
+    : `<section class="panel"><h3>맞힌 친구의 근거</h3><ul class="reasons">${v.reasons.map(x => `<li><b>${esc(nameOf(x.pid))}</b>${esc(x.text)}</li>`).join('')}</ul></section>`;
+  view.innerHTML = `<div class="stack">${hintShow()}
+    <div class="rows">${rows}</div>
+    ${middle}
+    <section class="panel"><h3>점수</h3><p class="rule">${rule} · 내 카드에 들어온 표마다 +1</p>
+      <div class="scores">${r.order.map(p => { const d = v.delta[p] || 0; return `<span><b>${esc(nameOf(p))}</b><em class="${d ? '' : 'z'}">${d ? '+' + d : '0'}</em><small>→ ${r.scores[p]}점</small></span>`; }).join('')}</div>
+    </section>
+    ${voted ? '<p class="center muted">다른 친구가 [다음]을 누르기를 기다려요.</p>' : `<button class="big" data-act="next">${r.round + 1 >= r.order.length ? '결과 보기' : '다음'}</button>`}
+  </div>`;
+}
+
+function drawEnd() {
+  const r = room, list = G.ranking(r.order, r.scores), n = r.members.length;
+  view.innerHTML = `<div class="stack">
+    <section class="panel"><h2 class="role center">🎉 한 판 끝!</h2>
+      <ol class="rank">${list.map(x => `<li class="${x.rank === 1 ? 'top' : ''}"><span class="r">${x.rank === 1 ? '🏆 ' : ''}${x.rank}위</span><b>${esc(nameOf(x.pid))}</b><span class="s">${x.score}점</span></li>`).join('')}</ol>
+    </section>
+    <button class="big" data-act="again" ${n >= G.MIN_P && n <= G.MAX_P ? '' : 'disabled'}>한 판 더</button>
+    ${n < G.MIN_P ? `<p class="center muted">한 판 더 하려면 ${G.MIN_P}명 이상 있어야 해요.</p>` : ''}
+    <button class="ghost" data-act="leave">나가기</button></div>`;
+}
+
+/* ── 누르기 ── */
+async function act(fn, btn) {
+  if (busy) return;
+  busy = true; if (btn) btn.disabled = true;
+  const u = ui;                              // 그사이 화면이 바뀌면 새 화면은 잠그지 않는다
+  try { await fn(); u.sent = true; }
+  catch (e) { toast(e.message === 'STALE' ? '방이 새로 비워졌어요' : e.message || '다시 눌러 주세요', true); if (btn) btn.disabled = false; }
+  finally { busy = false; }
+}
+
+function pick(el) {
+  if (ui.sent) return;                       // 냈으면 화면이 바뀔 때까지 잠금
+  view.querySelectorAll('.card.sel').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  ui.pick = el.dataset.id; ui.idx = el.dataset.i != null ? +el.dataset.i : null;
+  if ($('hint')) checkHintUI();
+  if ($('sendPlay')) $('sendPlay').disabled = false;
+  if ($('reason')) checkVoteUI();
+}
+
+view.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  const a = el.dataset.act, s = store, g = me?.g, p = me?.pid;
+  switch (a) {
+    case 'group': ui.g = +el.dataset.g; view.querySelectorAll('.groups button').forEach(b => b.classList.toggle('on', b === el)); $('name').focus(); break;
+    case 'enter': enter(); break;
+    case 'pick': pick(el); break;
+    case 'start': act(() => G.start(s, g, p), el); break;
+    case 'again': act(() => G.start(s, g, p), el); break;
+    case 'kick': if (confirm(`「${nameOf(el.dataset.pid)}」 친구를 대기실에서 내보낼까요?`)) act(() => G.kick(s, g, p, el.dataset.pid), el); break;
+    case 'leave': act(async () => { await G.leave(s, g, p); detach(); }, el); break;
+    case 'sendHint': act(() => G.giveHint(s, g, p, ui.pick, $('hint').value), el); break;
+    case 'sendPlay': act(() => G.playCard(s, g, p, ui.pick), el); break;
+    case 'sendVote': act(() => G.castVote(s, g, p, ui.pick, $('reason').value), el); break;
+    case 'next': act(() => G.next(s, g, p), el); break;
+  }
+});
+
+/* ── 시작: 새로고침이면 같은 자리로 바로 ── */
+(async () => {
+  const saved = ss.get(SESSION);
+  if (!saved) return paintEntry();
+  view.innerHTML = '<div class="waitbox"><h2>다시 들어가는 중…</h2></div>';
+  try {
+    const res = await G.join(await getStore(), saved.g, saved.name, saved.epoch);
+    attach({ g: saved.g, ...res });
+  } catch (e) {
+    ss.set(SESSION, null);
+    paintEntry({ g: saved.g, name: saved.name });
+    if (e.message !== 'STALE') toast(e.message, true);
+  }
+})();
+</script>
+</body>
+</html>
