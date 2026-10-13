@@ -7,7 +7,7 @@ function rng(s) { s >>>= 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0)
 function roster(N) { const counts = {}, r = {}, team = {}; for (let i = 0; i < N; i++) { const t = pickTeam(REGIONS.map(x => x.id), counts); counts[t] = (counts[t] || 0) + 1; (r[t] ??= []).push('p' + i); team['p' + i] = t; } return { r, team }; }
 function sim(N, seed) {
   const R = rng(seed), pick = a => a[Math.floor(R() * a.length)];
-  const { r, team } = roster(N), g = buildGame(r, pickDeck(Object.keys(r), {}, GAME, R)), H = JSON.parse(JSON.stringify(g.hand)), got = {}; let trades = 0;
+  const { r, team } = roster(N), g = buildGame(r, pickDeck(Object.keys(r), {}, GAME, R, Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v.length])))), H = JSON.parse(JSON.stringify(g.hand)), got = {}; let trades = 0;
   const own = p => Object.keys(H[p]).filter(c => H[p][c] > 0 && CAT[c].region === team[p]);
   const spare = p => Object.keys(H[p]).filter(c => H[p][c] > 0 && CAT[c].region !== team[p]);
   const deliverAll = () => Object.keys(H).forEach(p => own(p).forEach(c => { got[team[p]] = (got[team[p]] || 0) + H[p][c]; H[p][c] = 0; }));

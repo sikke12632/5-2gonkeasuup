@@ -106,7 +106,7 @@ dialog h3{font:28px "Jua",sans-serif;margin-bottom:10px}dialog input{width:100%;
 <dialog id="who"><h3 id="whoT"></h3><input id="whoNick" maxlength="10"><p style="margin-top:8px"><button class="sm" id="whoSave">닉네임 바꾸기</button></p><div class="hint" style="margin-top:10px" id="whoMoveH">다른 지역으로 옮기기 (준비 단계만)</div><div class="pick" id="whoMove"></div><p style="display:flex;gap:8px;justify-content:space-between"><button class="sm w" id="whoKick">내보내기</button><button class="sm" id="whoClose">닫기</button></p></dialog>
 <div id="toast" class="toast"></div>
 <script type="module">
-import { GAME, REGIONS, REG, CAT, AMBIG, PHASE_LABEL, esc, mmss, sum, isTradePhase, timeLeft, tradeOpen, teamStatus, ranking, stars, starText, createTransport, buildGame, pickDeck, restockPick, poolOf, defaultNick, setNick, cancelTrade, newId } from './core.js';
+import { GAME, REGIONS, REG, CAT, AMBIG, needOf, PHASE_LABEL, esc, mmss, sum, isTradePhase, timeLeft, tradeOpen, teamStatus, ranking, stars, starText, createTransport, buildGame, pickDeck, restockPick, poolOf, defaultNick, setNick, cancelTrade, newId } from './core.js';
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const C = { state: null, players: {}, inv: {}, teams: {}, win: {}, log: {}, meta: {}, seen: {} };
@@ -127,7 +127,7 @@ function fooled() {
 /* ── 판 ── */
 async function startGame() {
   const roster = {}; Object.values(C.players).forEach(p => (roster[p.team] ??= []).push(p.id));
-  const teamIds = REGIONS.map(r => r.id).filter(id => (roster[id] || []).length), deck = pickDeck(teamIds, C.meta.used?.ids || {});
+  const teamIds = REGIONS.map(r => r.id).filter(id => (roster[id] || []).length), deck = pickDeck(teamIds, C.meta.used?.ids || {}, GAME, Math.random, Object.fromEntries(teamIds.map(id => [id, roster[id].length])));
   const g = buildGame(roster, deck), ops = [];
   g.teamIds.forEach(id => ops.push({ op: 'set', col: 'teams', id, data: { id, label: REG[id].label, emoji: REG[id].emoji, color: REG[id].color, members: roster[id].length, target: g.target[id], got: 0, doneAt: 0 } }));
   Object.values(C.players).forEach(p => ops.push({ op: 'set', col: 'inv', id: p.id, data: { cards: g.hand[p.id] || {}, busy: null, cool: {}, delivered: 0, trades: 0 } }));
@@ -180,7 +180,7 @@ function paintLobby(st) {
   const u = new URL('team.html', location.href); if (params.get('demo') === '1') u.searchParams.set('demo', '1');
   $('url').textContent = u.href.replace(/^https?:\/\//, '');
   $('cnt').innerHTML = `${Object.keys(C.players).length}<small>명 들어왔어요</small>`;
-  $('poolInfo').innerHTML = `방언 풀 ${Object.keys(CAT).length}개 (${REGIONS.map(r => `${r.label.slice(0, 2)} ${poolOf(r.id).length}`).join(' · ')})<br>한 판에 지역마다 ${GAME.perRegion}개씩, 지난 판에 안 나온 것부터 써요${C.meta.used?.games ? ` · 지금까지 ${C.meta.used.games}판` : ''}${AMBIG.length ? `<br><small>두 지역에 겹쳐서 뺀 표현 ${AMBIG.length}개</small>` : ''}`; $('minVal').textContent = `${st.roundMin}분`;
+  $('poolInfo').innerHTML = `방언 풀 ${Object.keys(CAT).length}개 (${REGIONS.map(r => `${r.label.slice(0, 2)} ${poolOf(r.id).length}`).join(' · ')})<br>이 인원이면 한 판에 처음 ${REGIONS.reduce((s, r) => s + needOf(members(r.id).length), 0)}장 + 장날마다 ${Object.keys(C.players).length}장이 필요해요 · 지난 판에 안 나온 것부터 써요${C.meta.used?.games ? ` · 지금까지 ${C.meta.used.games}판` : ''}${AMBIG.length ? `<br><small>두 지역에 겹쳐서 뺀 표현 ${AMBIG.length}개</small>` : ''}`; $('minVal').textContent = `${st.roundMin}분`;
   $('roster').innerHTML = REGIONS.map(r => { const ms = members(r.id); return `<div class="tcol" style="--rc:${r.color}"><h3>${r.emoji} ${esc(r.label)}<small>${ms.length}명</small></h3>${ms.map(p => `<button class="m${(C.seen[p.id]?.t || 0) > now() - 150000 ? ' on' : ''}" data-p="${esc(p.id)}">${esc(p.name)}</button>`).join('') || '<span class="hint">아직 없어요</span>'}</div>`; }).join('');
 }
 function paintPlay(st) {

@@ -274,9 +274,11 @@ export async function deliver(T, me) {
 
 /* ── 카드 나눠 주기: 실제 명단 { 지역: [사람...] } → 팀 주문서 + 개인 카드 ──
    지역마다 (인원 × perPerson × copies)장을 찍어서, 그 지역이 아닌 사람들에게 고르게 나눠 줌(같은 표현이 한 사람에게 겹치지 않게) */
-/* 한 판에 쓸 방언 고르기: 지역마다 perRegion 개, 지난 판에 덜 나온 것부터(같으면 무작위) */
-export function pickDeck(teamIds, used = {}, G = GAME, rnd = Math.random) {
-  return teamIds.flatMap(r => poolOf(r).map(id => ({ id, k: (used[id] || 0) + rnd() * 0.9 })).sort((a, b) => a.k - b.k).slice(0, G.perRegion).map(x => x.id));
+/* 한 판에 쓸 방언 고르기: 지역마다 max(perRegion, 처음 나눠 줄 장수)개 → 풀이 넉넉하면 처음 카드는 한 장도 겹치지 않음
+   지난 판에 덜 나온 것부터(같으면 무작위) */
+export const needOf = (size, G = GAME) => Math.ceil(size * G.perPerson * G.copies);
+export function pickDeck(teamIds, used = {}, G = GAME, rnd = Math.random, sizes = {}) {
+  return teamIds.flatMap(r => poolOf(r).map(id => ({ id, k: (used[id] || 0) + rnd() * 0.9 })).sort((a, b) => a.k - b.k).slice(0, Math.max(G.perRegion, needOf(sizes[r] || 0, G))).map(x => x.id));
 }
 /* 장날 새 카드: 그 사람 지역이 아닌 지역 중에서, 아직 이번 판에 안 나온 방언 먼저 */
 export function restockPick(team, teamIds, deck, used = {}, rnd = Math.random) {
@@ -291,7 +293,7 @@ export function buildGame(roster, deck = null, G = GAME) {
   const everyone = teamIds.flatMap(id => roster[id].map(p => ({ p, team: id })));
   const hand = Object.fromEntries(everyone.map(x => [x.p, {}])), count = Object.fromEntries(everyone.map(x => [x.p, 0]));
   const target = {}, copies = {};
-  teamIds.forEach(id => { target[id] = roster[id].length * G.perPerson; copies[id] = Math.ceil(target[id] * G.copies); });
+  teamIds.forEach(id => { target[id] = roster[id].length * G.perPerson; copies[id] = needOf(roster[id].length, G); });
   let turn = 0;
   teamIds.forEach(id => {
     const ids = (deck || Object.keys(CAT)).filter(c => CAT[c]?.region === id), others = everyone.filter(x => x.team !== id);
