@@ -2,12 +2,12 @@
 // cards.js 와 core.js 의 카드 나눠 주기를 그대로 써서, 인원 수별로 무작위 거래(1:1 맞교환, 같은 지역끼리 금지)를
 // 200번 흉내 내어 모든 팀이 주문서를 동시에 채울 수 있는지 확인합니다.
 globalThis.window = { addEventListener() {}, dispatchEvent() {} }; globalThis.location = { search: '' };
-const { GAME, REGIONS, CAT, buildGame, pickTeam, sum } = await import('./core.js');
+const { GAME, REGIONS, CAT, buildGame, pickDeck, pickTeam, sum } = await import('./core.js');
 function rng(s) { s >>>= 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32); }
 function roster(N) { const counts = {}, r = {}, team = {}; for (let i = 0; i < N; i++) { const t = pickTeam(REGIONS.map(x => x.id), counts); counts[t] = (counts[t] || 0) + 1; (r[t] ??= []).push('p' + i); team['p' + i] = t; } return { r, team }; }
 function sim(N, seed) {
   const R = rng(seed), pick = a => a[Math.floor(R() * a.length)];
-  const { r, team } = roster(N), g = buildGame(r), H = JSON.parse(JSON.stringify(g.hand)), got = {}; let trades = 0;
+  const { r, team } = roster(N), g = buildGame(r, pickDeck(Object.keys(r), {}, GAME, R)), H = JSON.parse(JSON.stringify(g.hand)), got = {}; let trades = 0;
   const own = p => Object.keys(H[p]).filter(c => H[p][c] > 0 && CAT[c].region === team[p]);
   const spare = p => Object.keys(H[p]).filter(c => H[p][c] > 0 && CAT[c].region !== team[p]);
   const deliverAll = () => Object.keys(H).forEach(p => own(p).forEach(c => { got[team[p]] = (got[team[p]] || 0) + H[p][c]; H[p][c] = 0; }));

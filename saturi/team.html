@@ -145,6 +145,7 @@ const store = (() => { try { return DEMO ? sessionStorage : localStorage; } catc
 let me = params.get('dev') || (() => { try { return store?.getItem('saturi-device'); } catch { return ''; } })();
 if (!me) { me = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); try { store?.setItem('saturi-device', me); } catch { } }
 const C = { state: null, players: {}, teams: {}, inv: null, wa: {}, wb: {} };
+let lastGift = null;
 let T, joining = false, wasJoined = false, busy = false, tabSel = null, shownRes = new Set(), resWin = null, resStars = 0, midSeen = '', lastWinStatus = {}, lastPhase = '';
 const now = () => Date.now(), S = () => C.state, P = () => C.players[me] || null;
 const myTeam = () => P()?.team, TM = () => C.teams[myTeam()];
@@ -181,6 +182,7 @@ function paint() {
   else { ['ovReq', 'ovWin', 'ovMid'].forEach(id => $(id).classList.remove('on')); if (view !== 'Game' && view !== 'End') $('ovRes').classList.remove('on'); }
   if (view === 'End') { paintEnd(st, p); paintRes(); }
   if (st && st.phase !== lastPhase) { if (lastPhase === 'lobby' && st.phase === 'r1') { toast('장터가 열렸어요! 내 카드를 확인해요', 'win'); beep('win'); } if (lastPhase === 'mid' && st.phase === 'r2') toast('2라운드 시작! 이제 다른 팀 점수는 비밀이에요', 'win'); lastPhase = st.phase; }
+  const gf = C.inv?.gift; if (gf?.no && gf.no !== lastGift) { if (lastGift !== null && CAT[gf.id]) { toast(`🎁 장날! 새 카드 「${CAT[gf.id].front}」가 들어왔어요`, 'win'); beep('ding'); } lastGift = gf.no; } else if (lastGift === null && C.inv) lastGift = gf?.no || 0;
   tick();
 }
 function paintLobby(p) {

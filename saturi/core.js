@@ -9,7 +9,7 @@
     d_ 로 시작하는 컬렉션을 씀(벽란도 모둠판·개인판과 섞이지 않음). 학생 화면은 자기에게 필요한 문서만 구독.
   · 주소 뒤에 ?demo=1 → 점검 모드(한 컴퓨터의 여러 탭끼리만 통신).
 */
-import { GAME, REGIONS, CARDS } from './cards.js';
+import { GAME, REGIONS, CARDS, TSV } from './cards.js';
 export { GAME, REGIONS, CARDS };
 
 const firebaseConfig = Object.freeze({
@@ -29,10 +29,24 @@ export const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return 
 export const sum = o => Object.values(o || {}).reduce((s, n) => s + (Number(n) || 0), 0);
 export const newId = p => `${p}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 
-/* ── 카드 목록: id = "지역-번호" ── */
-export const CAT = {};
-for (const [region, list] of Object.entries(CARDS)) list.forEach(([front, mean, flag], i) => { CAT[`${region}-${i + 1}`] = { id: `${region}-${i + 1}`, front, mean, region, flag: flag || '' }; });
+/* ── 카드 풀: CARDS 묶음 + TSV 칸. id = 지역-앞면 해시(카드를 더하거나 빼도 다른 카드 id 가 안 바뀜) ──
+   같은 앞면이 두 지역 이상에 있으면 헷갈리므로 풀에서 뺌(AMBIG 에 기록) */
 export const REG = Object.fromEntries(REGIONS.map(r => [r.id, r]));
+const hash = t => { let x = 5381; for (const ch of t) x = ((x * 33) ^ ch.codePointAt(0)) >>> 0; return x.toString(36); };
+const norm = t => String(t || '').replace(/[\s.,!?~…·"'“”‘’()]/g, '');
+const regionOf = t => { const k = String(t || '').trim().replace(/(도|지역|방언)$/g, ''); return REG[k] ? k : REGIONS.find(r => r.label === String(t).trim())?.id || null; };
+const raw = [];
+for (const [region, list] of Object.entries(CARDS || {})) list.forEach(([front, mean, flag]) => raw.push({ region, front, mean, flag }));
+String(TSV || '').split(/\r?\n/).forEach(line => { const c = line.split('\t').map(x => x.trim()); const region = regionOf(c[0]); if (region && c[1] && c[2]) raw.push({ region, front: c[1], mean: c[2], flag: '' }); });
+const regionsByFront = {};
+raw.forEach(x => { (regionsByFront[norm(x.front)] ??= new Set()).add(x.region); });
+export const CAT = {}, AMBIG = [];
+raw.forEach(x => {
+  const key = norm(x.front); if (!key) return;
+  if (regionsByFront[key].size > 1) { if (!AMBIG.includes(x.front)) AMBIG.push(x.front); return; }
+  const id = `${x.region}-${hash(key)}`; if (!CAT[id]) CAT[id] = { id, front: x.front, mean: x.mean, region: x.region, flag: x.flag || '' };
+});
+export const poolOf = region => Object.keys(CAT).filter(id => CAT[id].region === region);
 export const cardsOf = (cards, region) => Object.entries(cards || {}).filter(([id, n]) => n > 0 && CAT[id]?.region === region).reduce((s, [, n]) => s + n, 0);
 
 /* ── 진행 ── */
@@ -260,7 +274,19 @@ export async function deliver(T, me) {
 
 /* ── 카드 나눠 주기: 실제 명단 { 지역: [사람...] } → 팀 주문서 + 개인 카드 ──
    지역마다 (인원 × perPerson × copies)장을 찍어서, 그 지역이 아닌 사람들에게 고르게 나눠 줌(같은 표현이 한 사람에게 겹치지 않게) */
-export function buildGame(roster, G = GAME) {
+/* 한 판에 쓸 방언 고르기: 지역마다 perRegion 개, 지난 판에 덜 나온 것부터(같으면 무작위) */
+export function pickDeck(teamIds, used = {}, G = GAME, rnd = Math.random) {
+  return teamIds.flatMap(r => poolOf(r).map(id => ({ id, k: (used[id] || 0) + rnd() * 0.9 })).sort((a, b) => a.k - b.k).slice(0, G.perRegion).map(x => x.id));
+}
+/* 장날 새 카드: 그 사람 지역이 아닌 지역 중에서, 아직 이번 판에 안 나온 방언 먼저 */
+export function restockPick(team, teamIds, deck, used = {}, rnd = Math.random) {
+  const regs = teamIds.filter(r => r !== team); if (!regs.length) return null;
+  const inDeck = new Set(deck), r = regs[Math.floor(rnd() * regs.length)];
+  const fresh = poolOf(r).filter(id => !inDeck.has(id)).sort((a, b) => (used[a] || 0) - (used[b] || 0) || rnd() - .5);
+  if (fresh.length) return fresh[0];
+  const old = deck.filter(id => CAT[id]?.region === r); return old.length ? old[Math.floor(rnd() * old.length)] : null;
+}
+export function buildGame(roster, deck = null, G = GAME) {
   const teamIds = REGIONS.map(r => r.id).filter(id => (roster[id] || []).length);
   const everyone = teamIds.flatMap(id => roster[id].map(p => ({ p, team: id })));
   const hand = Object.fromEntries(everyone.map(x => [x.p, {}])), count = Object.fromEntries(everyone.map(x => [x.p, 0]));
@@ -268,7 +294,7 @@ export function buildGame(roster, G = GAME) {
   teamIds.forEach(id => { target[id] = roster[id].length * G.perPerson; copies[id] = Math.ceil(target[id] * G.copies); });
   let turn = 0;
   teamIds.forEach(id => {
-    const ids = Object.keys(CAT).filter(c => CAT[c].region === id), others = everyone.filter(x => x.team !== id);
+    const ids = (deck || Object.keys(CAT)).filter(c => CAT[c]?.region === id), others = everyone.filter(x => x.team !== id);
     if (!ids.length || !others.length) return;
     for (let i = 0; i < copies[id]; i++) {
       const c = ids[i % ids.length];

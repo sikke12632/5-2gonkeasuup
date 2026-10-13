@@ -87,7 +87,7 @@ dialog h3{font:28px "Jua",sans-serif;margin-bottom:10px}dialog input{width:100%;
     <section id="vLobby" class="view">
       <div class="lside">
         <div class="card"><h2>디벗에서 이 주소로 들어와요</h2><div class="url" id="url"></div><p class="hint">들어오면 지역과 닉네임이 정해져요. 닉네임은 바꿀 수 있어요.</p></div>
-        <div class="card"><div class="big" id="cnt">0<small>명</small></div></div>
+        <div class="card"><div class="big" id="cnt">0<small>명</small></div><p class="hint" id="poolInfo" style="margin-top:8px"></p></div>
         <div class="card"><h2>라운드 시간</h2><div class="minrow"><button data-min="-1">−</button><b id="minVal">7분</b><button data-min="1">+</button></div></div>
         <p class="hint">이름을 누르면 닉네임을 고치거나, 다른 지역으로 옮기거나, 내보낼 수 있어요.</p>
       </div>
@@ -106,7 +106,7 @@ dialog h3{font:28px "Jua",sans-serif;margin-bottom:10px}dialog input{width:100%;
 <dialog id="who"><h3 id="whoT"></h3><input id="whoNick" maxlength="10"><p style="margin-top:8px"><button class="sm" id="whoSave">닉네임 바꾸기</button></p><div class="hint" style="margin-top:10px" id="whoMoveH">다른 지역으로 옮기기 (준비 단계만)</div><div class="pick" id="whoMove"></div><p style="display:flex;gap:8px;justify-content:space-between"><button class="sm w" id="whoKick">내보내기</button><button class="sm" id="whoClose">닫기</button></p></dialog>
 <div id="toast" class="toast"></div>
 <script type="module">
-import { GAME, REGIONS, REG, CAT, PHASE_LABEL, esc, mmss, sum, isTradePhase, timeLeft, tradeOpen, teamStatus, ranking, stars, starText, createTransport, buildGame, defaultNick, setNick, cancelTrade, newId } from './core.js';
+import { GAME, REGIONS, REG, CAT, AMBIG, PHASE_LABEL, esc, mmss, sum, isTradePhase, timeLeft, tradeOpen, teamStatus, ranking, stars, starText, createTransport, buildGame, pickDeck, restockPick, poolOf, defaultNick, setNick, cancelTrade, newId } from './core.js';
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const C = { state: null, players: {}, inv: {}, teams: {}, win: {}, log: {}, meta: {}, seen: {} };
@@ -115,7 +115,7 @@ const now = () => Date.now(), S = () => C.state;
 function toast(t, err) { const el = $('toast'); el.textContent = t; el.className = `toast on${err ? ' err' : ''}`; clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove('on'), 2600); }
 let audio; function beep(k) { try { audio ??= new (window.AudioContext || window.webkitAudioContext)(); const seq = { trade: [[660, .07], [880, .1]], dl: [[523, .08], [784, .1]], drum: [[110, .08], [110, .08], [165, .3]], fan: [[523, .12], [659, .12], [784, .12], [1047, .4]], end: [[784, .12], [659, .12], [523, .3]] }[k] || []; let t = audio.currentTime; seq.forEach(([f, d]) => { const o = audio.createOscillator(), g = audio.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g).connect(audio.destination); o.start(t); o.stop(t + d + .02); t += d; }); } catch { } }
 const members = id => Object.values(C.players).filter(p => p.team === id).sort((a, b) => a.no - b.no);
-const fresh = () => ({ phase: 'lobby', roundMin: S()?.roundMin || GAME.roundMin, endsAt: 0, paused: false, left: 0, started: false, hidden: false, teamIds: [], final: null, reveal: 0, extra: 0, seededAt: now() });
+const fresh = () => ({ phase: 'lobby', roundMin: S()?.roundMin || GAME.roundMin, endsAt: 0, paused: false, left: 0, started: false, hidden: false, teamIds: [], deck: [], restockAt: 0, restockNo: 0, final: null, reveal: 0, extra: 0, seededAt: now() });
 
 /* ── 속은 카드: 별점 2점 이하를 준 사람이 받은 카드 ── */
 function fooled() {
@@ -127,22 +127,41 @@ function fooled() {
 /* ── 판 ── */
 async function startGame() {
   const roster = {}; Object.values(C.players).forEach(p => (roster[p.team] ??= []).push(p.id));
-  const g = buildGame(roster), ops = [];
+  const teamIds = REGIONS.map(r => r.id).filter(id => (roster[id] || []).length), deck = pickDeck(teamIds, C.meta.used?.ids || {});
+  const g = buildGame(roster, deck), ops = [];
   g.teamIds.forEach(id => ops.push({ op: 'set', col: 'teams', id, data: { id, label: REG[id].label, emoji: REG[id].emoji, color: REG[id].color, members: roster[id].length, target: g.target[id], got: 0, doneAt: 0 } }));
   Object.values(C.players).forEach(p => ops.push({ op: 'set', col: 'inv', id: p.id, data: { cards: g.hand[p.id] || {}, busy: null, cool: {}, delivered: 0, trades: 0 } }));
-  ops.push({ op: 'update', col: 'state', id: 'main', data: { phase: 'r1', started: true, teamIds: g.teamIds, endsAt: now() + (S().roundMin || GAME.roundMin) * 60000, paused: false, left: 0, hidden: false, final: null, reveal: 0, extra: 0 } });
+  ops.push({ op: 'update', col: 'state', id: 'main', data: { phase: 'r1', started: true, teamIds: g.teamIds, deck, endsAt: now() + (S().roundMin || GAME.roundMin) * 60000, restockAt: now() + GAME.restockSec * 1000, restockNo: 0, paused: false, left: 0, hidden: false, final: null, reveal: 0, extra: 0 } });
   await T.batch(ops);
 }
 async function resetGame(wipe) {
   const ops = [];
   ['inv', 'teams', 'win', 'log'].forEach(col => Object.keys(C[col]).forEach(id => ops.push({ op: 'del', col, id })));
-  if (wipe) { Object.keys(C.players).forEach(id => ops.push({ op: 'del', col: 'players', id })); ops.push({ op: 'del', col: 'meta', id: 'roster' }); }
+  if (wipe) { Object.keys(C.players).forEach(id => ops.push({ op: 'del', col: 'players', id })); ops.push({ op: 'del', col: 'meta', id: 'roster' }); if (confirm('지난 판에 나온 방언 기록도 지울까요? (지우면 다음 판에 처음부터 다시 골라요)')) ops.push({ op: 'del', col: 'meta', id: 'used' }); }
   else Object.values(C.players).forEach(p => ops.push({ op: 'update', col: 'players', id: p.id, data: { rating: { sum: 0, n: 0 } } }));
   ops.push({ op: 'set', col: 'state', id: 'main', data: fresh() });
   await T.batch(ops); prevLog = null; prevDone = {}; opened = new Set();
 }
 /* 늦게 온 학생: 카드가 없으면 다른 지역 카드 4장 */
 let kitT = 0; function kitLate() { clearTimeout(kitT); kitT = setTimeout(async () => { const st = S(); if (!st?.started) return; for (const p of Object.values(C.players).filter(p => !C.inv[p.id])) { const ids = Object.keys(CAT).filter(c => CAT[c].region !== p.team && (st.teamIds || []).includes(CAT[c].region)), cards = {}; for (let i = 0; i < 4 && ids.length; i++) { const c = ids[Math.floor(Math.random() * ids.length)]; cards[c] = (cards[c] || 0) + 1; } try { await T.tx(async t => { const inv = await t.get('inv', p.id); if (inv) return; t.set('inv', p.id, { cards, busy: null, cool: {}, delivered: 0, trades: 0 }); if (!(st.teamIds || []).includes(p.team)) { t.set('teams', p.team, { id: p.team, label: REG[p.team].label, emoji: REG[p.team].emoji, color: REG[p.team].color, members: 1, target: GAME.perPerson, got: 0, doneAt: 0 }); t.update('state', 'main', { teamIds: [...new Set([...(st.teamIds || []), p.team])] }); } }); } catch (e) { console.error(e); } } }, 2500); }
+/* 장날: 라운드 중 restockSec 마다 모두에게 새 카드 1장 (아직 안 나온 방언 먼저) — 한 사람씩 트랜잭션이라 거래와 겹쳐도 안전 */
+let restocking = false;
+async function maybeRestock(st) {
+  if (restocking || !tradeOpen(st) || !st.restockAt || now() < st.restockAt) return;
+  restocking = true;
+  try {
+    const n = (st.restockNo || 0) + 1, deck = [...(st.deck || [])];
+    await T.update('state', 'main', { restockAt: now() + GAME.restockSec * 1000, restockNo: n });
+    for (const p of Object.values(C.players)) {
+      const id = restockPick(p.team, st.teamIds || [], deck, C.meta.used?.ids || {}); if (!id) continue;
+      if (!deck.includes(id)) deck.push(id);
+      try { await T.tx(async t => { const inv = await t.get('inv', p.id); if (!inv) return; t.update('inv', p.id, { cards: { [id]: (inv.cards?.[id] || 0) + 1 }, gift: { no: n, id } }); }); } catch (e) { console.error(e); }
+    }
+    await T.update('state', 'main', { deck });
+    const lid = newId('S'); await T.batch([{ op: 'set', col: 'log', id: lid, data: { id: lid, kind: 'restock', no: n, ts: now() } }]);
+    toast('🎁 장날! 모두에게 새 카드 1장');
+  } finally { restocking = false; }
+}
 /* 오래된 거래창 정리 (요청 15초, 거래창 90초) */
 setInterval(() => { Object.values(C.win).forEach(w => { const t = now(); if ((w.status === 'request' && t - w.created > GAME.reqSec * 1000) || (w.status === 'open' && t - w.updated > GAME.idleSec * 1000)) cancelTrade(T, null, w.id, w.status === 'request' ? '신청 시간이 지났어요' : '거래창이 오래 멈춰서 닫혔어요').catch(() => { }); }); }, 3000);
 
@@ -160,7 +179,8 @@ function paint() {
 function paintLobby(st) {
   const u = new URL('team.html', location.href); if (params.get('demo') === '1') u.searchParams.set('demo', '1');
   $('url').textContent = u.href.replace(/^https?:\/\//, '');
-  $('cnt').innerHTML = `${Object.keys(C.players).length}<small>명 들어왔어요</small>`; $('minVal').textContent = `${st.roundMin}분`;
+  $('cnt').innerHTML = `${Object.keys(C.players).length}<small>명 들어왔어요</small>`;
+  $('poolInfo').innerHTML = `방언 풀 ${Object.keys(CAT).length}개 (${REGIONS.map(r => `${r.label.slice(0, 2)} ${poolOf(r.id).length}`).join(' · ')})<br>한 판에 지역마다 ${GAME.perRegion}개씩, 지난 판에 안 나온 것부터 써요${C.meta.used?.games ? ` · 지금까지 ${C.meta.used.games}판` : ''}${AMBIG.length ? `<br><small>두 지역에 겹쳐서 뺀 표현 ${AMBIG.length}개</small>` : ''}`; $('minVal').textContent = `${st.roundMin}분`;
   $('roster').innerHTML = REGIONS.map(r => { const ms = members(r.id); return `<div class="tcol" style="--rc:${r.color}"><h3>${r.emoji} ${esc(r.label)}<small>${ms.length}명</small></h3>${ms.map(p => `<button class="m${(C.seen[p.id]?.t || 0) > now() - 150000 ? ' on' : ''}" data-p="${esc(p.id)}">${esc(p.name)}</button>`).join('') || '<span class="hint">아직 없어요</span>'}</div>`; }).join('');
 }
 function paintPlay(st) {
@@ -173,11 +193,12 @@ function paintPlay(st) {
 function paintFeed(hid) {
   const items = [
     ...Object.values(C.win).filter(w => w.status === 'done').map(w => ({ id: w.id, ts: w.doneAt, k: 't', w })),
-    ...(hid ? [] : Object.values(C.log).filter(l => l.kind === 'deliver').map(l => ({ id: l.id, ts: l.ts, k: 'd', l })))
+    ...(hid ? [] : Object.values(C.log).filter(l => l.kind === 'deliver').map(l => ({ id: l.id, ts: l.ts, k: 'd', l }))),
+    ...Object.values(C.log).filter(l => l.kind === 'restock').map(l => ({ id: l.id, ts: l.ts, k: 's', l }))
   ].sort((a, b) => b.ts - a.ts);
   const tc = Object.values(C.win).filter(w => w.status === 'done').length; $('fcnt').textContent = `거래 ${tc}건`;
   const ids = new Set(items.map(x => x.id)), fr = prevLog ? items.filter(x => !prevLog.has(x.id)) : []; if (fr.some(x => x.k === 'd')) beep('dl'); else if (fr.length) beep('trade'); prevLog = ids;
-  $('flist').innerHTML = items.slice(0, 16).map(x => { const f = fr.includes(x) ? ' fresh' : ''; if (x.k === 'd') return `<div class="fi dl${f}" style="--fc:${REG[x.l.team].color}">📦 ${esc(x.l.name)} 납품 ${x.l.n}장<div class="w">${REG[x.l.team].emoji} ${esc(REG[x.l.team].label)} 창고로</div></div>`; const w = x.w, ra = w.aRate ? '⭐'.repeat(w.aRate) : '…', rb = w.bRate ? '⭐'.repeat(w.bRate) : '…'; return `<div class="fi${f}" style="--fc:${REG[w.bt].color}"><span style="color:${REG[w.at].color}">${esc(w.an)}</span> ⇄ <span style="color:${REG[w.bt].color}">${esc(w.bn)}</span><div class="w">카드 ${sum(w.aItems)}장 ↔ ${sum(w.bItems)}장 · 별점 ${rb} / ${ra}</div></div>`; }).join('') || '<div class="fi" style="--fc:var(--line);color:var(--muted)">아직 거래가 없어요. 흥정을 시작해요!</div>';
+  $('flist').innerHTML = items.slice(0, 16).map(x => { const f = fr.includes(x) ? ' fresh' : ''; if (x.k === 's') return `<div class="fi${f}" style="--fc:var(--gold)">🎁 장날 ${x.l.no}회 · 모두에게 새 카드 1장</div>`; if (x.k === 'd') return `<div class="fi dl${f}" style="--fc:${REG[x.l.team].color}">📦 ${esc(x.l.name)} 납품 ${x.l.n}장<div class="w">${REG[x.l.team].emoji} ${esc(REG[x.l.team].label)} 창고로</div></div>`; const w = x.w, ra = w.aRate ? '⭐'.repeat(w.aRate) : '…', rb = w.bRate ? '⭐'.repeat(w.bRate) : '…'; return `<div class="fi${f}" style="--fc:${REG[w.bt].color}"><span style="color:${REG[w.at].color}">${esc(w.an)}</span> ⇄ <span style="color:${REG[w.bt].color}">${esc(w.bn)}</span><div class="w">카드 ${sum(w.aItems)}장 ↔ ${sum(w.bItems)}장 · 별점 ${rb} / ${ra}</div></div>`; }).join('') || '<div class="fi" style="--fc:var(--line);color:var(--muted)">아직 거래가 없어요. 흥정을 시작해요!</div>';
 }
 function paintMid() {
   const top = fooled().slice(0, 5);
@@ -201,7 +222,7 @@ function paintEnd(st) {
   $('endTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.pane === endPane)); ['pSum', 'pAward'].forEach(p => $(p).classList.toggle('on', p === endPane));
   const F = st.final, hot = new Set((F?.fooled || []).map(x => x[0]));
   $('endNote').textContent = `${Object.keys(C.players).length}명 · 거래 ${Object.values(C.win).filter(w => w.status === 'done').length}건`;
-  $('ans').innerHTML = REGIONS.map(r => `<div class="col" style="--rc:${r.color}"><h3>${r.emoji} ${esc(r.label)}</h3>${Object.values(CAT).filter(c => c.region === r.id).map(c => `<div class="w${hot.has(c.id) ? ' hot' : ''}">${esc(c.front)}<small>${esc(c.mean)}</small></div>`).join('')}</div>`).join('');
+  $('ans').innerHTML = REGIONS.map(r => `<div class="col" style="--rc:${r.color}"><h3>${r.emoji} ${esc(r.label)}</h3>${Object.values(CAT).filter(c => c.region === r.id && (st.deck || []).includes(c.id)).map(c => `<div class="w${hot.has(c.id) ? ' hot' : ''}">${esc(c.front)}<small>${esc(c.mean)}</small></div>`).join('')}</div>`).join('');
   paintAward(st);
 }
 function paintAward(st) { const el = $('award'), box = { innerHTML: '' }; paintAwardInto(st, box); if (el.dataset.h !== box.innerHTML) { el.dataset.h = box.innerHTML; el.innerHTML = box.innerHTML; } }
@@ -248,7 +269,7 @@ async function act(a) {
     if (a === 'hide') await T.update('state', 'main', { hidden: !st.hidden });
     if (a === 'toMid') { await cancelOpenWins(); await T.update('state', 'main', { phase: 'mid', midAt: now(), paused: false }); opened = new Set(); }
     if (a === 'startR2') await T.update('state', 'main', { phase: 'r2', endsAt: now() + min, paused: false, left: 0, hidden: true });
-    if (a === 'finish') { await cancelOpenWins(); await T.update('state', 'main', { phase: 'end', paused: false, final: computeFinal(st), reveal: 0, extra: 0 }); }
+    if (a === 'finish') { await cancelOpenWins(); await T.update('state', 'main', { phase: 'end', paused: false, final: computeFinal(st), reveal: 0, extra: 0 }); const ids = { ...(C.meta.used?.ids || {}) }; (st.deck || []).forEach(id => ids[id] = (ids[id] || 0) + 1); await T.batch([{ op: 'set', col: 'meta', id: 'used', data: { ids, games: (C.meta.used?.games || 0) + 1 } }]); }
     if (a === 'pSum' || a === 'pAward') { endPane = a; render(); }
     if (a === 'next') { const N = st.final.teams.length, k = Math.min(N, (st.reveal || 0) + 1); await T.update('state', 'main', { reveal: k }); beep(k === N ? 'fan' : 'drum'); }
     if (a === 'back') await T.update('state', 'main', st.extra ? { extra: st.extra - 1 } : { reveal: Math.max(0, (st.reveal || 0) - 1) });
@@ -267,7 +288,8 @@ $('whoKick').addEventListener('click', async () => { if (!confirm('이 학생을
 function tick() {
   const st = S(); if (!st) return; const ms = timeLeft(st), c = $('clock'), l = $('clockLbl'); c.className = ''; l.textContent = '';
   if (ms === null) { c.textContent = st.phase === 'lobby' ? `${st.roundMin}:00` : st.phase === 'mid' ? '🔔' : '끝'; return; }
-  c.textContent = mmss(ms); if (st.paused) { c.className = 'paused'; l.textContent = '잠깐 멈춤'; return; } if (ms <= 0) { c.className = 'over'; l.textContent = st.phase === 'r1' ? '시간 끝! → 중간 점검' : '시간 끝! → 장터 끝'; return; } if (ms <= 30000) c.className = 'hot'; l.textContent = `${PHASE_LABEL[st.phase]} 남은 시간`;
+  maybeRestock(st);
+  c.textContent = mmss(ms); if (st.paused) { c.className = 'paused'; l.textContent = '잠깐 멈춤'; return; } if (ms <= 0) { c.className = 'over'; l.textContent = st.phase === 'r1' ? '시간 끝! → 중간 점검' : '시간 끝! → 장터 끝'; return; } if (ms <= 30000) c.className = 'hot'; const ns = Math.max(0, Math.ceil(((st.restockAt || 0) - now()) / 1000)); l.textContent = `${PHASE_LABEL[st.phase]} 남은 시간 · 다음 장날 ${Math.floor(ns / 60)}:${String(ns % 60).padStart(2, '0')}`;
 }
 setInterval(tick, 250);
 window.addEventListener('db-error', () => { $('badge').textContent = '연결 오류'; $('badge').className = 'badge err on'; });
@@ -281,6 +303,7 @@ try {
   T.watch('win', m => { C.win = m; render(); });
   T.watch('log', m => { C.log = m; render(); });
   T.watch('seen', m => { C.seen = m; });
+  T.watch('meta', m => { C.meta = m; render(); });
   setInterval(render, 15000);
 } catch (e) { console.error(e); $('badge').textContent = '연결하지 못했어요'; $('badge').className = 'badge err on'; }
 </script>
