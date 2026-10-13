@@ -107,7 +107,7 @@ h2.big{font:clamp(30px,5vw,50px)/1.2 "Jua",sans-serif}
   <section id="vGame" class="view">
     <div class="cols">
       <div class="col">
-        <div class="box"><h3>🎯 우리 팀 주문서 <small id="goalSub"></small><span class="r" id="goalPct"></span></h3><div class="bar"><i id="goalBar"></i></div><div class="lab" id="goalTip"></div></div>
+        <div class="box"><h3>🎯 우리 팀이 모은 카드 <small id="goalSub"></small><span class="r" id="goalPct"></span></h3><div class="lab" id="goalTip"></div></div>
         <div class="box"><h3>🃏 내 카드 <small>뒷면(어느 지역 말인지)은 나만 보여요</small></h3><div id="myCards" class="cards"></div>
           <button id="deliverBtn" class="btn ok big">📦 납품하기</button></div>
         <div class="box"><h3>🧾 내 기록</h3><div id="stats" class="stats"></div><div id="hist" class="hist"></div></div>
@@ -139,7 +139,7 @@ h2.big{font:clamp(30px,5vw,50px)/1.2 "Jua",sans-serif}
 <div id="toast" class="toast"></div>
 
 <script type="module">
-import { GAME, REGIONS, REG, CAT, PHASE_LABEL, esc, clone, mmss, sum, cardsOf, isTradePhase, timeLeft, tradeOpen, deliverOpen, closedReason, teamStatus, stars, starText, side, other, createTransport, joinGame, setNick, requestTrade, answerRequest, setItems, confirmTrade, cancelTrade, rateTrade, deliver } from './core.js';
+import { GAME, REGIONS, REG, CAT, PHASE_LABEL, esc, clone, mmss, sum, cardsOf, isTradePhase, timeLeft, tradeOpen, deliverOpen, closedReason, teamStatus, avgText, stars, starText, side, other, createTransport, joinGame, setNick, requestTrade, answerRequest, setItems, confirmTrade, cancelTrade, rateTrade, deliver } from './core.js';
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search), DEMO = params.get('demo') === '1';
 const store = (() => { try { return DEMO ? sessionStorage : localStorage; } catch { return null; } })();
@@ -190,14 +190,14 @@ function paintLobby(p) {
   const r = REG[p.team];
   $('idE').textContent = r.emoji; $('idR').textContent = `${r.label} 상인`;
   if (document.activeElement !== $('nick')) $('nick').value = p.name;
-  $('idLead').innerHTML = `우리 팀 목표: <b>${esc(r.label)} 방언 카드</b>를 모아 납품하기!<br>내가 처음 받는 카드는 전부 <b>다른 지역</b> 카드예요. 친구들과 바꿔요.`;
+  $('idLead').innerHTML = `우리 팀 목표: <b>${esc(r.label)} 방언 카드</b>를 최대한 많이 모아 납품하기!<br>내가 처음 받는 카드는 전부 <b>다른 지역</b> 카드예요. 친구들과 바꿔요.`;
   $('mates').innerHTML = Object.values(C.players).filter(x => x.team === p.team).sort((a, b) => a.no - b.no).map(x => `<span>${esc(x.name)}${x.id === me ? ' (나)' : ''}</span>`).join('');
 }
 function paintGame(st, p) {
   const r = REG[p.team], tm = TM(), s = teamStatus(tm), cards = C.inv?.cards || {}, inWin = myWin();
   $('goalSub').textContent = `${r.label} 방언 · ${tm?.members || ''}명`;
-  $('goalPct').textContent = `${s.got}/${s.target}장 · ${s.pct}%`; $('goalBar').style.width = `${Math.min(100, s.pct)}%`;
-  $('goalTip').textContent = s.done ? '🎉 주문서 완성! 우리 지역 카드를 더 모으면 점수가 계속 올라가요' : `힌트: ${r.label} 말은 ${r.tip}`;
+  $('goalPct').textContent = `${s.got}장 · ${avgText(s)}`;
+  $('goalTip').textContent = `많이 모을수록 점수! 힌트: ${r.label} 말은 ${r.tip}`;
   const list = Object.entries(cards).filter(([, n]) => n > 0).sort((a, b) => (CAT[b[0]].region === p.team) - (CAT[a[0]].region === p.team));
   $('myCards').innerHTML = list.map(([id, n]) => cardHtml(id, n, true, CAT[id].region === p.team ? 'mine' : '')).join('') || `<div class="empty">${C.inv ? '카드가 없어요' : '선생님이 카드를 나눠 주는 중…'}</div>`;
   const dn = cardsOf(cards, p.team);
@@ -222,7 +222,7 @@ function paintGame(st, p) {
 $('regTabs').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) { tabSel = b.dataset.t; beep('tap'); render(); } });
 $('people').addEventListener('click', async e => { const b = e.target.closest('[data-req]'); if (!b || b.disabled || busy) return; busy = true; try { await requestTrade(T, me, b.dataset.req); toast('거래를 신청했어요. 상대가 수락하면 거래창이 열려요'); beep('ding'); } catch (err) { toast(err.message, 'err'); } finally { busy = false; render(); } });
 $('pending').addEventListener('click', async e => { if (e.target.id !== 'reqCancel') return; const w = myWin(); if (w) try { await cancelTrade(T, me, w.id, 'canceled'); toast('신청을 취소했어요'); } catch (err) { toast(err.message, 'err'); } });
-$('deliverBtn').addEventListener('click', async () => { if (busy) return; busy = true; try { const r = await deliver(T, me); toast(`📦 ${r.n}장 납품했어요!${r.done ? ' 우리 팀 주문서 완성!' : ''}`, 'win'); beep('win'); } catch (e) { toast(e.message, 'err'); beep('lost'); } finally { busy = false; render(); } });
+$('deliverBtn').addEventListener('click', async () => { if (busy) return; busy = true; try { const r = await deliver(T, me); toast(`📦 ${r.n}장 납품했어요! 우리 팀 ${r.got}장`, 'win'); beep('win'); } catch (e) { toast(e.message, 'err'); beep('lost'); } finally { busy = false; render(); } });
 
 /* ── 거래 신청 받기 · 거래창 ── */
 let draft = null;   // 내가 올리는 카드 (상대에게 보내기 전 화면 반영용)
@@ -291,7 +291,7 @@ function paintEnd(st, p) {
   const F = st.final, box = $('endBox'); if (!F) { box.innerHTML = '<div class="b2">장터 끝! 결과를 정리하는 중…</div>'; return; }
   const N = F.teams.length, k = Math.min(st.reveal || 0, N), idx = F.teams.findIndex(x => x.id === p.team), mine = F.teams[idx], m = mine?.members.find(x => x.id === me);
   const shown = F.teams.filter((x, i) => i >= N - k);
-  const list = shown.length ? `<div class="list">${shown.map(x => `<div class="${x.id === p.team ? 'mine' : ''}" style="--pc:${x.color}">${x.tie ? '공동 ' : ''}${x.rank}위 ${x.emoji} ${esc(x.label)}<b>${x.pct}%</b></div>`).join('')}</div>` : '';
+  const list = shown.length ? `<div class="list">${shown.map(x => `<div class="${x.id === p.team ? 'mine' : ''}" style="--pc:${x.color}">${x.tie ? '공동 ' : ''}${x.rank}위 ${x.emoji} ${esc(x.label)}<b>${x.got}장</b></div>`).join('')}</div>` : '';
   const prize = who => who && who.id === me;
   if (st.extra >= 1) {
     const tr = F.trust, rich = F.rich;
@@ -300,7 +300,7 @@ function paintEnd(st, p) {
   }
   if (!mine || idx < N - k) { box.innerHTML = `<div class="b1" style="--tc:var(--gold)">🥁</div><div class="b2">시상식 중! 칠판을 보세요</div>${m ? `<div class="me" style="--tc:${REG[p.team].color}">나는 📦 ${m.delivered}장 납품 · ${starText(m.rating)}</div>` : ''}${list}`; return; }
   const mvp = mine.rank === 1 && mine.mvps.some(x => x.id === me);
-  box.innerHTML = `<div class="b1" style="--tc:${mine.color}">${mine.rank === 1 ? '🏆 우승!' : `${mine.tie ? '공동 ' : ''}${mine.rank}위`}</div><div class="b2">${mine.emoji} ${esc(mine.label)} · ${mine.pct}%</div>${m ? `<div class="me" style="--tc:${mine.color}">우리 팀에서 나는 <b>${m.rank}등</b><br>📦 ${m.delivered}장 납품 · ${starText(m.rating)}</div>` : ''}${mvp ? '<div class="prize">👑 우승 팀 MVP!</div>' : ''}${list}`;
+  box.innerHTML = `<div class="b1" style="--tc:${mine.color}">${mine.rank === 1 ? '🏆 우승!' : `${mine.tie ? '공동 ' : ''}${mine.rank}위`}</div><div class="b2">${mine.emoji} ${esc(mine.label)} · ${mine.got}장 모음 (${avgText(mine)})</div>${m ? `<div class="me" style="--tc:${mine.color}">우리 팀에서 나는 <b>${m.rank}등</b><br>📦 ${m.delivered}장 납품 · ${starText(m.rating)}</div>` : ''}${mvp ? '<div class="prize">👑 우승 팀 MVP!</div>' : ''}${list}`;
 }
 
 /* ── 시계 ── */

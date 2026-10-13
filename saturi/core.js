@@ -63,15 +63,16 @@ export function closedReason(st, t = Date.now()) {
   if (t >= (st.endsAt || 0)) return '이번 라운드 시간이 끝났어요';
   return '';
 }
-/* 팀 점수: 납품한 우리 지역 카드 ÷ 주문서 장수 (100%를 넘어 더 모아도 점수) */
-export function teamStatus(tm) { const target = tm?.target || 0, got = tm?.got || 0; return { got, target, done: target > 0 && got >= target, pct: target ? Math.round(got * 100 / target) : 0 }; }
+/* 팀 점수 = 모은(납품한) 우리 지역 카드 수. 팀 인원이 다를 수 있어서 순위는 1인 평균으로(26명이면 한 팀만 6명) */
+export function teamStatus(tm) { const got = tm?.got || 0, members = Math.max(1, tm?.members || 1), avg = Math.round(got / members * 10) / 10; return { got, members, avg }; }
+export const avgText = x => `1인 ${(x.avg ?? 0).toFixed(1)}장`;
 export const activeTeams = (st, teams) => (st?.teamIds || []).map(id => teams?.[id]).filter(Boolean);
 export function ranking(st, teams) {
   const list = activeTeams(st, teams).map(t => ({ id: t.id, team: t, ...teamStatus(t) }));
-  list.sort((a, b) => b.pct - a.pct || (a.team.doneAt || 9e15) - (b.team.doneAt || 9e15) || b.got - a.got);
-  list.forEach((x, i) => { const p = list[i - 1]; x.rank = p && p.pct === x.pct && (p.team.doneAt || 0) === (x.team.doneAt || 0) ? p.rank : i + 1; });
+  list.sort((a, b) => b.avg - a.avg || b.got - a.got);
+  list.forEach((x, i) => { const p = list[i - 1]; x.rank = p && p.avg === x.avg && p.got === x.got ? p.rank : i + 1; });
   list.forEach(x => { x.tie = list.filter(y => y.rank === x.rank).length > 1; });
-  return { list, allDone: list.length > 0 && list.every(x => x.done) };
+  return { list };
 }
 export const stars = r => r?.n ? (r.sum / r.n) : 0;
 export const starText = r => r?.n ? `⭐${stars(r).toFixed(1)}` : '⭐-';
@@ -264,11 +265,11 @@ export async function deliver(T, me) {
     const cards = { ...(inv?.cards || {}) }, moved = {};
     for (const [id, n] of Object.entries(cards)) if (n > 0 && CAT[id]?.region === p.team) { moved[id] = n; cards[id] = 0; }
     const n = sum(moved); if (!n) throw new Error(`${REG[p.team].label} 방언 카드가 없어요. 다른 지역 친구에게서 구해 와요`);
-    const got = (tm?.got || 0) + n, now = Date.now(), done = got >= (tm?.target || 0) && !tm?.doneAt;
+    const got = (tm?.got || 0) + n, now = Date.now();
     t.update('inv', me, { cards, delivered: (inv?.delivered || 0) + n });
-    t.update('teams', p.team, { got, ...(done ? { doneAt: now } : {}) });
+    t.update('teams', p.team, { got });
     const id = newId('D'); t.set('log', id, { id, kind: 'deliver', who: me, name: p.name, team: p.team, cards: moved, n, ts: now });
-    return { n, moved, done };
+    return { n, moved, got };
   });
 }
 
