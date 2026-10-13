@@ -280,10 +280,11 @@ export const needOf = (size, G = GAME) => Math.ceil(size * G.perPerson * G.copie
 export function pickDeck(teamIds, used = {}, G = GAME, rnd = Math.random, sizes = {}) {
   return teamIds.flatMap(r => poolOf(r).map(id => ({ id, k: (used[id] || 0) + rnd() * 0.9 })).sort((a, b) => a.k - b.k).slice(0, Math.max(G.perRegion, needOf(sizes[r] || 0, G))).map(x => x.id));
 }
-/* 장날 새 카드: 그 사람 지역이 아닌 지역 중에서, 아직 이번 판에 안 나온 방언 먼저 */
+/* 장날 새 카드: 그 사람 지역이 아닌 지역 중 이번 판에 가장 적게 나온 지역에서, 아직 안 나온 방언 먼저 */
 export function restockPick(team, teamIds, deck, used = {}, rnd = Math.random) {
   const regs = teamIds.filter(r => r !== team); if (!regs.length) return null;
-  const inDeck = new Set(deck), r = regs[Math.floor(rnd() * regs.length)];
+  const inDeck = new Set(deck), cnt = r => deck.filter(id => CAT[id]?.region === r).length;
+  const low = Math.min(...regs.map(cnt)), cand = regs.filter(x => cnt(x) === low), r = cand[Math.floor(rnd() * cand.length)];   // 이번 판에 가장 적게 나온 지역부터 → 지역별 카드 수가 고르게
   const fresh = poolOf(r).filter(id => !inDeck.has(id)).sort((a, b) => (used[a] || 0) - (used[b] || 0) || rnd() - .5);
   if (fresh.length) return fresh[0];
   const old = deck.filter(id => CAT[id]?.region === r); return old.length ? old[Math.floor(rnd() * old.length)] : null;
