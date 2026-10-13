@@ -37,7 +37,8 @@ h2.big{font:clamp(30px,5vw,50px)/1.2 "Jua",sans-serif}
 /* 카드 */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(130px,16vw,160px),1fr));gap:8px}
 .card{position:relative;border-radius:16px;background:#fff;border:3px solid var(--line);box-shadow:0 3px 0 var(--line);display:flex;flex-direction:column;overflow:hidden;min-height:118px}
-.card .front{flex:1;display:grid;place-items:center;padding:10px 8px 6px;font:clamp(20px,2.6vw,26px)/1.15 "Jua",sans-serif;text-align:center;word-break:keep-all}
+.card .front{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px 6px;font:clamp(20px,2.6vw,26px)/1.15 "Jua",sans-serif;text-align:center;word-break:keep-all}
+.card .front .std{font:clamp(13px,1.6vw,16px)/1.25 "Gowun Dodum",sans-serif;color:#5C5246;background:#F3ECDD;border-radius:999px;padding:2px 10px;max-width:100%}
 .card .back{background:var(--rc);color:#fff;padding:4px 8px;font-size:14px;line-height:1.3;text-align:center}.card .back b{font:400 16px "Jua",sans-serif;margin-right:4px}
 .card .back.hide{background:repeating-linear-gradient(45deg,#C8BBA3 0 8px,#B9AB91 8px 16px);font:400 16px "Jua",sans-serif}
 .card .n{position:absolute;right:6px;top:4px;font:400 16px "Jua",sans-serif;background:var(--ink);color:#fff;border-radius:999px;padding:0 8px}
@@ -107,7 +108,7 @@ h2.big{font:clamp(30px,5vw,50px)/1.2 "Jua",sans-serif}
     <div class="cols">
       <div class="col">
         <div class="box"><h3>🎯 우리 팀 주문서 <small id="goalSub"></small><span class="r" id="goalPct"></span></h3><div class="bar"><i id="goalBar"></i></div><div class="lab" id="goalTip"></div></div>
-        <div class="box"><h3>🃏 내 카드 <small>뒷면(지역·뜻)은 나만 보여요</small></h3><div id="myCards" class="cards"></div>
+        <div class="box"><h3>🃏 내 카드 <small>뒷면(어느 지역 말인지)은 나만 보여요</small></h3><div id="myCards" class="cards"></div>
           <button id="deliverBtn" class="btn ok big">📦 납품하기</button></div>
         <div class="box"><h3>🧾 내 기록</h3><div id="stats" class="stats"></div><div id="hist" class="hist"></div></div>
       </div>
@@ -156,7 +157,7 @@ let audio; function beep(k) { try { audio ??= new (window.AudioContext || window
 function cardHtml(id, n, showBack, extra = '', attrs = '') {
   const c = CAT[id]; if (!c) return '';
   const r = REG[c.region];
-  return `<div class="card ${extra}" style="--rc:${r.color}" ${attrs}>${n > 1 ? `<span class="n">×${n}</span>` : ''}<div class="front">${esc(c.front)}</div>${showBack ? `<div class="back"><b>${r.emoji} ${esc(r.label)}</b>${esc(c.mean)}</div>` : '<div class="back hide">❓ 뒷면은 비밀</div>'}</div>`;
+  return `<div class="card ${extra}" style="--rc:${r.color}" ${attrs}>${n > 1 ? `<span class="n">×${n}</span>` : ''}<div class="front">${esc(c.front)}<span class="std">${esc(c.mean)}</span></div>${showBack ? `<div class="back"><b>${r.emoji} ${esc(r.label)}</b></div>` : '<div class="back hide">❓ 어느 지역일까?</div>'}</div>`;
 }
 const myWin = () => Object.values({ ...C.wa, ...C.wb }).filter(w => w.status === 'request' || w.status === 'open').sort((a, b) => b.created - a.created)[0] || null;
 

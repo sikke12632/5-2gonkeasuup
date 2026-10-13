@@ -51,7 +51,7 @@ button,input,select{font:inherit}button{border:0;cursor:pointer;background:none;
 .mtitle{font:44px "Jua",sans-serif;color:var(--gold);text-align:center}.msub{font-size:22px;color:var(--muted);text-align:center}
 .qcards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
 .qc{background:#fff;border-radius:22px;border:4px solid var(--line);box-shadow:0 5px 0 var(--line);min-height:220px;display:flex;flex-direction:column;overflow:hidden;cursor:pointer}
-.qc .f{flex:1;display:grid;place-items:center;font:40px/1.15 "Jua",sans-serif;padding:12px;text-align:center;word-break:keep-all}
+.qc .f{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font:40px/1.15 "Jua",sans-serif;padding:12px;text-align:center;word-break:keep-all}.qc .f small{font:22px/1.25 "Gowun Dodum",sans-serif;color:#5C5246;background:#F3ECDD;border-radius:999px;padding:3px 14px}
 .qc .b{background:repeating-linear-gradient(45deg,#C8BBA3 0 10px,#B9AB91 10px 20px);color:#fff;padding:10px;font:24px "Jua",sans-serif;text-align:center}
 .qc.open .b{background:var(--rc)}.qc .b small{display:block;font:18px "Gowun Dodum"}.qc .x{font:18px "Jua",sans-serif;color:var(--red);padding:4px}
 .qc.open{animation:flip .8s}@keyframes flip{50%{transform:perspective(800px) rotateY(90deg)}}
@@ -202,7 +202,7 @@ function paintFeed(hid) {
 }
 function paintMid() {
   const top = fooled().slice(0, 5);
-  const qh = top.map(([id, n]) => { const c = CAT[id], r = REG[c.region], o = opened.has(id); return `<div class="qc${o ? ' open' : ''}" style="--rc:${r.color}" data-q="${id}"><div class="x">😱 ${n}번 속음</div><div class="f">${esc(c.front)}</div><div class="b">${o ? `${r.emoji} ${esc(r.label)}<small>${esc(c.mean)}</small>` : '❓ 눌러서 확인'}</div></div>`; }).join('');
+  const qh = top.map(([id, n]) => { const c = CAT[id], r = REG[c.region], o = opened.has(id); return `<div class="qc${o ? ' open' : ''}" style="--rc:${r.color}" data-q="${id}"><div class="x">😱 ${n}번 속음</div><div class="f">${esc(c.front)}<small>${esc(c.mean)}</small></div><div class="b">${o ? `${r.emoji} ${esc(r.label)}` : '❓ 어느 지역일까?'}</div></div>`; }).join('');
   if ($('qcards').dataset.h !== qh) { $('qcards').dataset.h = qh; $('qcards').innerHTML = qh; }
   $('midNote').textContent = top.length ? '"어느 지역 말인 것 같아요?" 먼저 물어보고 뒤집어 보세요' : '아직 별점 테러가 없어요! 모두 정직하게 장사했거나, 아직 거래가 적어요';
 }
