@@ -63,9 +63,22 @@ export function closedReason(st, t = Date.now()) {
   if (t >= (st.endsAt || 0)) return '이번 라운드 시간이 끝났어요';
   return '';
 }
-/* 팀 점수 = 모은(납품한) 우리 지역 카드 수. 팀 인원이 다를 수 있어서 순위는 1인 평균으로(26명이면 한 팀만 6명) */
+/* 카드 점수(1~3점): 판마다 state.val 에 무작위로 정해 둠(말의 뜻과는 상관없는 게임 요소). 없으면 1점 */
+export const valOf = (st, id) => st?.val?.[id] || 1;
+export const ptsOf = (st, cards) => Object.entries(cards || {}).reduce((t, [id, n]) => t + (n > 0 ? n * valOf(st, id) : 0), 0);
+/* 새로 쓰는 방언에 점수 매기기: 지역마다 points 비율에 가장 모자란 점수부터 → 지역끼리 점수 총량이 고르게 */
+export function assignVals(ids, val = {}, G = GAME, rnd = Math.random) {
+  const out = { ...val }, w = G.points || [1, 0, 0], tot = w.reduce((a, b) => a + b, 0);
+  const byReg = {}; ids.filter(id => !out[id] && CAT[id]).forEach(id => (byReg[CAT[id].region] ||= []).push(id));
+  for (const [r, list] of Object.entries(byReg)) {
+    const has = [0, 0, 0]; Object.keys(out).forEach(id => { if (CAT[id]?.region === r) has[out[id] - 1]++; });
+    list.map(id => [id, rnd()]).sort((a, b) => a[1] - b[1]).forEach(([id]) => { const n = has.reduce((a, b) => a + b, 0) + 1, gap = w.map((x, i) => x / tot * n - has[i]), v = gap.indexOf(Math.max(...gap)); out[id] = v + 1; has[v]++; });
+  }
+  return out;
+}
+/* 팀 점수 = 납품한 우리 지역 카드의 점수 합. 팀 인원이 다를 수 있어서 순위는 1인 평균으로(26명이면 한 팀만 6명) */
 export function teamStatus(tm) { const got = tm?.got || 0, members = Math.max(1, tm?.members || 1), avg = Math.round(got / members * 10) / 10; return { got, members, avg }; }
-export const avgText = x => `1인 ${(x.avg ?? 0).toFixed(1)}장`;
+export const avgText = x => `1인 ${(x.avg ?? 0).toFixed(1)}점`;
 export const activeTeams = (st, teams) => (st?.teamIds || []).map(id => teams?.[id]).filter(Boolean);
 export function ranking(st, teams) {
   const list = activeTeams(st, teams).map(t => ({ id: t.id, team: t, ...teamStatus(t) }));
@@ -265,11 +278,11 @@ export async function deliver(T, me) {
     const cards = { ...(inv?.cards || {}) }, moved = {};
     for (const [id, n] of Object.entries(cards)) if (n > 0 && CAT[id]?.region === p.team) { moved[id] = n; cards[id] = 0; }
     const n = sum(moved); if (!n) throw new Error(`${REG[p.team].label} 방언 카드가 없어요. 다른 지역 친구에게서 구해 와요`);
-    const got = (tm?.got || 0) + n, now = Date.now();
-    t.update('inv', me, { cards, delivered: (inv?.delivered || 0) + n });
+    const pts = ptsOf(st, moved), got = (tm?.got || 0) + pts, now = Date.now();
+    t.update('inv', me, { cards, delivered: (inv?.delivered || 0) + n, pts: (inv?.pts || 0) + pts });
     t.update('teams', p.team, { got });
-    const id = newId('D'); t.set('log', id, { id, kind: 'deliver', who: me, name: p.name, team: p.team, cards: moved, n, ts: now });
-    return { n, moved, got };
+    const id = newId('D'); t.set('log', id, { id, kind: 'deliver', who: me, name: p.name, team: p.team, cards: moved, n, pts, ts: now });
+    return { n, pts, moved, got };
   });
 }
 

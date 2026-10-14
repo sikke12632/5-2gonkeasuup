@@ -42,6 +42,7 @@ h2.big{font:clamp(30px,5vw,50px)/1.2 "Jua",sans-serif}
 .card .back{background:var(--rc);color:#fff;padding:4px 8px;font-size:14px;line-height:1.3;text-align:center}.card .back b{font:400 16px "Jua",sans-serif;margin-right:4px}
 .card .back.hide{background:repeating-linear-gradient(45deg,#C8BBA3 0 8px,#B9AB91 8px 16px);font:400 16px "Jua",sans-serif}
 .card .back.peek{background:repeating-linear-gradient(45deg,#5C5246 0 8px,#4A4238 8px 16px);font:400 15px "Jua",sans-serif;padding:8px 6px;cursor:pointer;-webkit-touch-callout:none;touch-action:none}
+.card .pv{display:inline-block;margin-left:6px;background:#fff;color:var(--ink);border-radius:999px;padding:0 8px;font:400 15px "Jua",sans-serif}.card .pv.v3{background:#FFD45C}.card .pv.v2{background:#FFF1C9}
 .card .back.peek .rv{display:none}.card .back.peek.show{background:var(--rc)}.card .back.peek.show .rv{display:inline}.card .back.peek.show .cv{display:none}
 .card .n{position:absolute;right:6px;top:4px;font:400 16px "Jua",sans-serif;background:var(--ink);color:#fff;border-radius:999px;padding:0 8px}
 .card.mine{border-color:var(--ok);box-shadow:0 0 0 3px #BFE3CC}.card.mine::before{content:"납품 가능";position:absolute;left:6px;top:4px;font:400 13px "Jua",sans-serif;background:var(--ok);color:#fff;border-radius:999px;padding:0 7px}
@@ -141,7 +142,7 @@ h2.big{font:clamp(30px,5vw,50px)/1.2 "Jua",sans-serif}
 <div id="toast" class="toast"></div>
 
 <script type="module">
-import { GAME, REGIONS, REG, CAT, PHASE_LABEL, esc, clone, mmss, sum, cardsOf, isTradePhase, timeLeft, tradeOpen, deliverOpen, closedReason, teamStatus, avgText, stars, starText, side, other, createTransport, joinGame, setNick, requestTrade, answerRequest, setItems, confirmTrade, cancelTrade, rateTrade, deliver } from './core.js';
+import { GAME, REGIONS, REG, CAT, PHASE_LABEL, esc, clone, mmss, sum, cardsOf, isTradePhase, timeLeft, tradeOpen, deliverOpen, closedReason, teamStatus, avgText, valOf, ptsOf, stars, starText, side, other, createTransport, joinGame, setNick, requestTrade, answerRequest, setItems, confirmTrade, cancelTrade, rateTrade, deliver } from './core.js';
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search), DEMO = params.get('demo') === '1';
 const store = (() => { try { return DEMO ? sessionStorage : localStorage; } catch { return null; } })();
@@ -159,8 +160,8 @@ let audio; function beep(k) { try { audio ??= new (window.AudioContext || window
 let peekId = null, peekT = 0;
 function cardHtml(id, n, showBack, extra = '', attrs = '') {
   const c = CAT[id]; if (!c) return '';
-  const r = REG[c.region];
-  return `<div class="card ${extra}" style="--rc:${r.color}" ${attrs}>${n > 1 ? `<span class="n">×${n}</span>` : ''}<div class="front">${esc(c.front)}<span class="std">${esc(c.mean)}</span></div>${showBack === 'peek' ? `<div class="back peek${peekId === id ? ' show' : ''}" data-peek="${id}"><span class="cv">👁 꾹 눌러 몰래 보기</span><b class="rv">${r.emoji} ${esc(r.label)}</b></div>` : showBack ? `<div class="back"><b>${r.emoji} ${esc(r.label)}</b></div>` : '<div class="back hide">❓ 어느 지역일까?</div>'}</div>`;
+  const r = REG[c.region], v = valOf(S(), id), pv = `<span class="pv v${v}">${'★'.repeat(v)} ${v}점</span>`;
+  return `<div class="card ${extra}" style="--rc:${r.color}" ${attrs}>${n > 1 ? `<span class="n">×${n}</span>` : ''}<div class="front">${esc(c.front)}<span class="std">${esc(c.mean)}</span></div>${showBack === 'peek' ? `<div class="back peek${peekId === id ? ' show' : ''}" data-peek="${id}"><span class="cv">👁 꾹 눌러 확인</span><span class="rv"><b>${r.emoji} ${esc(r.label)}</b>${pv}</span></div>` : showBack ? `<div class="back"><b>${r.emoji} ${esc(r.label)}</b>${pv}</div>` : '<div class="back hide">❓ 어느 지역일까?</div>'}</div>`;
 }
 const myWin = () => Object.values({ ...C.wa, ...C.wb }).filter(w => w.status === 'request' || w.status === 'open').sort((a, b) => b.created - a.created)[0] || null;
 
@@ -186,28 +187,28 @@ function paint() {
   else { ['ovReq', 'ovWin', 'ovMid'].forEach(id => $(id).classList.remove('on')); if (view !== 'Game' && view !== 'End') $('ovRes').classList.remove('on'); }
   if (view === 'End') { paintEnd(st, p); paintRes(); }
   if (st && st.phase !== lastPhase) { if (lastPhase === 'lobby' && st.phase === 'r1') { toast('장터가 열렸어요! 내 카드를 확인해요', 'win'); beep('win'); } if (lastPhase === 'mid' && st.phase === 'r2') toast('2라운드 시작! 이제 다른 팀 점수는 비밀이에요', 'win'); lastPhase = st.phase; }
-  const gf = C.inv?.gift; if (gf?.no && gf.no !== lastGift) { if (lastGift !== null && CAT[gf.id]) { toast(`🎁 장날! 새 카드 「${CAT[gf.id].front}」가 들어왔어요`, 'win'); beep('ding'); } lastGift = gf.no; } else if (lastGift === null && C.inv) lastGift = gf?.no || 0;
+  const gf = C.inv?.gift; if (gf?.no && gf.no !== lastGift) { if (lastGift !== null && CAT[gf.id]) { toast(`🎁 장날! 새 카드 ${(gf.ids || [gf.id]).filter(id => CAT[id]).map(id => `「${CAT[id].front}」`).join(' ')}가 들어왔어요`, 'win'); beep('ding'); } lastGift = gf.no; } else if (lastGift === null && C.inv) lastGift = gf?.no || 0;
   tick();
 }
 function paintLobby(p) {
   const r = REG[p.team];
   $('idE').textContent = r.emoji; $('idR').textContent = `${r.label} 상인`;
   if (document.activeElement !== $('nick')) $('nick').value = p.name;
-  $('idLead').innerHTML = `우리 팀 목표: <b>${esc(r.label)} 방언 카드</b>를 최대한 많이 모아 납품하기!<br>내가 처음 받는 카드는 전부 <b>다른 지역</b> 카드예요. 친구들과 바꿔요.<br>🤫 카드 뒷면(어느 지역 말인지)은 <b>꾹 누르는 동안만</b> 보여요. 친구가 내 화면을 봐도 모르게!`;
+  $('idLead').innerHTML = `우리 팀 목표: <b>${esc(r.label)} 방언 카드</b>를 최대한 많이 모아 납품하기!<br>내가 처음 받는 카드는 전부 <b>다른 지역</b> 카드예요. 친구들과 바꿔요.<br>🃏 카드마다 <b>1점·2점·3점</b>! 점수 높은 카드를 많이 납품하는 팀이 이겨요.<br>🤫 카드 뒷면(어느 지역 말인지, 몇 점인지)은 <b>꾹 누르는 동안만</b> 보여요. 상대에겐 비밀!`;
   $('mates').innerHTML = Object.values(C.players).filter(x => x.team === p.team).sort((a, b) => a.no - b.no).map(x => `<span>${esc(x.name)}${x.id === me ? ' (나)' : ''}</span>`).join('');
 }
 function paintGame(st, p) {
   const r = REG[p.team], tm = TM(), s = teamStatus(tm), cards = C.inv?.cards || {}, inWin = myWin();
   $('goalSub').textContent = `${r.label} 방언 · ${tm?.members || ''}명`;
-  $('goalPct').textContent = `${s.got}장 · ${avgText(s)}`;
-  $('goalTip').textContent = `많이 모을수록 점수! 힌트: ${r.label} 말은 ${r.tip}`;
+  $('goalPct').textContent = `${s.got}점 · ${avgText(s)}`;
+  $('goalTip').textContent = `카드마다 1·2·3점! 점수 높은 카드를 노려요. 힌트: ${r.label} 말은 ${r.tip}`;
   const list = Object.entries(cards).filter(([, n]) => n > 0).sort((a, b) => CAT[a[0]].front.localeCompare(CAT[b[0]].front, 'ko'));
   $('myCards').innerHTML = list.map(([id, n]) => cardHtml(id, n, 'peek')).join('') || `<div class="empty">${C.inv ? '카드가 없어요' : '선생님이 카드를 나눠 주는 중…'}</div>`;
   $('deliverBtn').disabled = !sum(cards) || !deliverOpen(st) || busy || (inWin && inWin.status === 'open');
   $('deliverBtn').innerHTML = `📦 ${esc(r.label)} 카드 납품하기 <small style="font-size:.7em">(있으면 전부 냄)</small>`;
   const open = tradeOpen(st); $('closed').hidden = open; $('closedMsg').textContent = closedReason(st);
   const dv = C.inv?.delivered || 0, rt = p.rating;
-  $('stats').innerHTML = `<span class="${dv >= GAME.minDeliver ? 'good' : 'low'}">📦 납품 ${dv}장${dv >= GAME.minDeliver ? '' : ` (최소 ${GAME.minDeliver}장)`}</span><span>🤝 거래 ${C.inv?.trades || 0}번</span><span>${starText(rt)} <small>(${rt?.n || 0}명 평가)</small></span><span>🃏 가진 카드 ${sum(cards)}장</span>`;
+  $('stats').innerHTML = `<span class="${dv >= GAME.minDeliver ? 'good' : 'low'}">📦 납품 ${dv}장 · ${C.inv?.pts || 0}점${dv >= GAME.minDeliver ? '' : ` (최소 ${GAME.minDeliver}장)`}</span><span>🤝 거래 ${C.inv?.trades || 0}번</span><span>${starText(rt)} <small>(${rt?.n || 0}명 평가)</small></span><span>🃏 가진 카드 ${sum(cards)}장</span>`;
   const done = Object.values({ ...C.wa, ...C.wb }).filter(w => w.status === 'done').sort((a, b) => b.doneAt - a.doneAt).slice(0, 5);
   $('hist').innerHTML = done.map(w => { const s2 = side(w, me), got = w[(s2 === 'a' ? 'b' : 'a') + 'Items'], gave = w[s2 + 'Items'], mine = w[s2 + 'Rate']; return `<div><b>${esc(s2 === 'a' ? w.bn : w.an)}</b> · 줌 ${Object.keys(gave).map(id => esc(CAT[id]?.front)).join(', ')} → 받음 ${Object.keys(got).map(id => esc(CAT[id]?.front)).join(', ')}${mine ? ` · 내가 준 별점 ${'⭐'.repeat(mine)}` : ''}</div>`; }).join('') || '<div style="background:none;color:var(--muted)">아직 거래가 없어요</div>';
   /* 보낸 신청 */
@@ -224,7 +225,7 @@ function paintGame(st, p) {
 $('regTabs').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) { tabSel = b.dataset.t; beep('tap'); render(); } });
 $('people').addEventListener('click', async e => { const b = e.target.closest('[data-req]'); if (!b || b.disabled || busy) return; busy = true; try { await requestTrade(T, me, b.dataset.req); toast('거래를 신청했어요. 상대가 수락하면 거래창이 열려요'); beep('ding'); } catch (err) { toast(err.message, 'err'); } finally { busy = false; render(); } });
 $('pending').addEventListener('click', async e => { if (e.target.id !== 'reqCancel') return; const w = myWin(); if (w) try { await cancelTrade(T, me, w.id, 'canceled'); toast('신청을 취소했어요'); } catch (err) { toast(err.message, 'err'); } });
-$('deliverBtn').addEventListener('click', async () => { if (busy) return; busy = true; try { const r = await deliver(T, me); toast(`📦 ${r.n}장 납품했어요! 우리 팀 ${r.got}장`, 'win'); beep('win'); } catch (e) { toast(e.message, 'err'); beep('lost'); } finally { busy = false; render(); } });
+$('deliverBtn').addEventListener('click', async () => { if (busy) return; busy = true; try { const r = await deliver(T, me); toast(`📦 ${r.n}장 납품 · +${r.pts}점! 우리 팀 ${r.got}점`, 'win'); beep('win'); } catch (e) { toast(e.message, 'err'); beep('lost'); } finally { busy = false; render(); } });
 
 /* ── 거래 신청 받기 · 거래창 ── */
 let draft = null;   // 내가 올리는 카드 (상대에게 보내기 전 화면 반영용)
@@ -281,7 +282,7 @@ function paintRes() {
   const s = side(w, me), o = s === 'a' ? 'b' : 'a', got = w[o + 'Items'] || {}, myReg = myTeam();
   const hits = Object.entries(got).filter(([id]) => CAT[id].region === myReg).reduce((t, [, n]) => t + n, 0), total = sum(got);
   $('resBox').style.setProperty('--pc', REG[w[o + 't']].color);
-  const html = `<h3>🎴 받은 카드 뒷면 공개!</h3><div class="cards">${Object.entries(got).map(([id, n]) => cardHtml(id, n, true, `flip${CAT[id].region === myReg ? ' mine' : ''}`)).join('')}</div><div class="verdict ${hits ? 'good' : 'bad'}">${hits === total ? '🎉 전부 우리 지역 카드예요!' : hits ? `우리 지역 카드 ${hits}장 · 나머지는 다른 지역` : '😱 우리 지역 카드가 아니에요! 혹시 속았나요?'}</div><p>${esc(w[o + 'n'])}님에게 별점을 주세요 (속았다면 낮게!)</p><div class="starsel">${[1, 2, 3, 4, 5].map(i => `<button data-star="${i}" class="${i <= resStars ? 'on' : ''}">⭐</button>`).join('')}</div><button class="btn big" id="rateBtn" ${resStars ? '' : 'disabled'}>${resStars ? `별점 ${resStars}개 주기` : '⭐을 눌러 골라요'}</button>`;
+  const html = `<h3>🎴 받은 카드 뒷면 공개!</h3><div class="cards">${Object.entries(got).map(([id, n]) => cardHtml(id, n, true, `flip${CAT[id].region === myReg ? ' mine' : ''}`)).join('')}</div><div class="verdict ${hits ? 'good' : 'bad'}">${hits === total ? `🎉 전부 우리 지역 카드예요! (${ptsOf(S(), got)}점어치)` : hits ? `우리 지역 카드 ${hits}장 · 나머지는 다른 지역` : '😱 우리 지역 카드가 아니에요! 혹시 속았나요?'}</div><p>${esc(w[o + 'n'])}님에게 별점을 주세요 (속았다면 낮게!)</p><div class="starsel">${[1, 2, 3, 4, 5].map(i => `<button data-star="${i}" class="${i <= resStars ? 'on' : ''}">⭐</button>`).join('')}</div><button class="btn big" id="rateBtn" ${resStars ? '' : 'disabled'}>${resStars ? `별점 ${resStars}개 주기` : '⭐을 눌러 골라요'}</button>`;
   if ($('resBox').dataset.k !== `${w.id}-${resStars}`) { $('resBox').dataset.k = `${w.id}-${resStars}`; $('resBox').innerHTML = html; }
   $('ovRes').classList.add('on');
 }
@@ -299,16 +300,16 @@ function paintEnd(st, p) {
   const F = st.final, box = $('endBox'); if (!F) { box.innerHTML = '<div class="b2">장터 끝! 결과를 정리하는 중…</div>'; return; }
   const N = F.teams.length, k = Math.min(st.reveal || 0, N), idx = F.teams.findIndex(x => x.id === p.team), mine = F.teams[idx], m = mine?.members.find(x => x.id === me);
   const shown = F.teams.filter((x, i) => i >= N - k);
-  const list = shown.length ? `<div class="list">${shown.map(x => `<div class="${x.id === p.team ? 'mine' : ''}" style="--pc:${x.color}">${x.tie ? '공동 ' : ''}${x.rank}위 ${x.emoji} ${esc(x.label)}<b>${x.got}장</b></div>`).join('')}</div>` : '';
+  const list = shown.length ? `<div class="list">${shown.map(x => `<div class="${x.id === p.team ? 'mine' : ''}" style="--pc:${x.color}">${x.tie ? '공동 ' : ''}${x.rank}위 ${x.emoji} ${esc(x.label)}<b>${x.got}점</b></div>`).join('')}</div>` : '';
   const prize = who => who && who.id === me;
   if (st.extra >= 1) {
     const tr = F.trust, rich = F.rich;
-    box.innerHTML = `${st.extra >= 1 ? `<div class="b2">🤝 신용왕</div><div class="b1" style="--tc:${tr ? REG[tr.team].color : '#888'}">${tr ? esc(tr.name) : '없음'}</div>${tr ? `<div class="b2">⭐${tr.avg.toFixed(1)} · ${tr.n}명 평가</div>` : ''}${prize(tr) ? '<div class="prize">🎉 바로 나예요!</div>' : ''}` : ''}${st.extra >= 2 ? `<div class="b2" style="margin-top:14px">🎁 원 모어 띵! 재산왕</div><div class="b1" style="--tc:${rich ? REG[rich.team].color : '#888'}">${rich ? esc(rich.name) : '없음'}</div>${rich ? `<div class="b2">남은 카드 ${rich.left}장</div>` : ''}${prize(rich) ? '<div class="prize">🎉 바로 나예요!</div>' : ''}` : ''}${list}`;
+    box.innerHTML = `${st.extra >= 1 ? `<div class="b2">🤝 신용왕</div><div class="b1" style="--tc:${tr ? REG[tr.team].color : '#888'}">${tr ? esc(tr.name) : '없음'}</div>${tr ? `<div class="b2">⭐${tr.avg.toFixed(1)} · ${tr.n}명 평가</div>` : ''}${prize(tr) ? '<div class="prize">🎉 바로 나예요!</div>' : ''}` : ''}${st.extra >= 2 ? `<div class="b2" style="margin-top:14px">🎁 원 모어 띵! 재산왕</div><div class="b1" style="--tc:${rich ? REG[rich.team].color : '#888'}">${rich ? esc(rich.name) : '없음'}</div>${rich ? `<div class="b2">남은 카드 ${rich.left}장 · ${rich.leftPts ?? rich.left}점어치</div>` : ''}${prize(rich) ? '<div class="prize">🎉 바로 나예요!</div>' : ''}` : ''}${list}`;
     return;
   }
-  if (!mine || idx < N - k) { box.innerHTML = `<div class="b1" style="--tc:var(--gold)">🥁</div><div class="b2">시상식 중! 칠판을 보세요</div>${m ? `<div class="me" style="--tc:${REG[p.team].color}">나는 📦 ${m.delivered}장 납품 · ${starText(m.rating)}</div>` : ''}${list}`; return; }
+  if (!mine || idx < N - k) { box.innerHTML = `<div class="b1" style="--tc:var(--gold)">🥁</div><div class="b2">시상식 중! 칠판을 보세요</div>${m ? `<div class="me" style="--tc:${REG[p.team].color}">나는 📦 ${m.delivered}장 납품 · ${m.pts ?? m.delivered}점 · ${starText(m.rating)}</div>` : ''}${list}`; return; }
   const mvp = mine.rank === 1 && mine.mvps.some(x => x.id === me);
-  box.innerHTML = `<div class="b1" style="--tc:${mine.color}">${mine.rank === 1 ? '🏆 우승!' : `${mine.tie ? '공동 ' : ''}${mine.rank}위`}</div><div class="b2">${mine.emoji} ${esc(mine.label)} · ${mine.got}장 모음 (${avgText(mine)})</div>${m ? `<div class="me" style="--tc:${mine.color}">우리 팀에서 나는 <b>${m.rank}등</b><br>📦 ${m.delivered}장 납품 · ${starText(m.rating)}</div>` : ''}${mvp ? '<div class="prize">👑 우승 팀 MVP!</div>' : ''}${list}`;
+  box.innerHTML = `<div class="b1" style="--tc:${mine.color}">${mine.rank === 1 ? '🏆 우승!' : `${mine.tie ? '공동 ' : ''}${mine.rank}위`}</div><div class="b2">${mine.emoji} ${esc(mine.label)} · ${mine.got}점 (${avgText(mine)})</div>${m ? `<div class="me" style="--tc:${mine.color}">우리 팀에서 나는 <b>${m.rank}등</b><br>📦 ${m.delivered}장 납품 · ${m.pts ?? m.delivered}점 · ${starText(m.rating)}</div>` : ''}${mvp ? '<div class="prize">👑 우승 팀 MVP!</div>' : ''}${list}`;
 }
 
 /* ── 시계 ── */
