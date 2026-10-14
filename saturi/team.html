@@ -75,6 +75,7 @@ h2.big{font:clamp(30px,5vw,50px)/1.2 "Jua",sans-serif}
 .slot h4{font:clamp(18px,2.3vw,23px) "Jua",sans-serif;display:flex;align-items:center;gap:8px}.slot h4 .st{margin-left:auto;font-size:.8em;padding:2px 10px;border-radius:999px;background:#E6DCC8;color:var(--muted)}.slot.ok h4 .st{background:var(--ok);color:#fff}
 .slot .cards{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.slot .card{min-height:104px}
 .lab{font:clamp(16px,2vw,19px) "Jua",sans-serif;color:var(--muted)}
+.wsub{display:block;font:clamp(17px,2.2vw,22px) "Jua",sans-serif;color:#9A6A00;margin-top:2px}.wsub.none{color:var(--muted)}
 .twin footer{position:sticky;bottom:-10px;background:var(--panel);display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0 14px;border-top:2px solid var(--line);margin-top:auto}
 .twin footer .msg{flex:1;min-width:200px;font:clamp(16px,2vw,20px)/1.4 "Jua",sans-serif;color:var(--muted)}
 .big{min-height:68px;font-size:clamp(22px,3vw,30px);padding:0 28px}
@@ -243,7 +244,8 @@ function paintWin(st, p) {
   if (!w || w.status !== 'open') { $('ovWin').classList.remove('on'); draft = null; return; }
   const s = side(w, me), o = s === 'a' ? 'b' : 'a', mine = w[s + 'Items'] || {}, theirs = w[o + 'Items'] || {}, oname = w[o + 'n'], oteam = w[o + 't'];
   if (!$('ovWin').classList.contains('on')) { $('ovWin').classList.add('on'); $('ovWin').scrollTop = 0; beep('ding'); }
-  $('winTitle').innerHTML = `🤝 ${REG[oteam].emoji} ${esc(oname)} <small style="font-size:.6em;color:var(--muted)">${starText(C.players[other(w, me)]?.rating)}</small> 님과 거래`;
+  const ort = C.players[other(w, me)]?.rating;
+  $('winTitle').innerHTML = `🤝 ${REG[oteam].emoji} ${esc(oname)} 님과 거래${ort?.n ? `<span class="wsub">⭐ 별점 ${stars(ort).toFixed(1)}점 · ${ort.n}명이 평가했어요</span>` : '<span class="wsub none">⭐ 아직 별점을 받은 적이 없어요</span>'}`;
   const idle = Math.max(0, Math.ceil((w.updated + GAME.idleSec * 1000 - now()) / 1000)); $('winTimer').textContent = `${idle}초 동안 아무것도 안 하면 닫혀요`;
   $('themCards').innerHTML = Object.entries(theirs).map(([id, n]) => cardHtml(id, n, false)).join('') || '<div class="empty">아직 안 올렸어요</div>';
   $('meCards').innerHTML = Object.entries(mine).map(([id, n]) => cardHtml(id, n, 'peek')).join('') || '<div class="empty">아래에서 카드를 눌러 올려요</div>';
@@ -303,8 +305,8 @@ function paintEnd(st, p) {
   const list = shown.length ? `<div class="list">${shown.map(x => `<div class="${x.id === p.team ? 'mine' : ''}" style="--pc:${x.color}">${x.tie ? '공동 ' : ''}${x.rank}위 ${x.emoji} ${esc(x.label)}<b>${x.got}점</b></div>`).join('')}</div>` : '';
   const prize = who => who && who.id === me;
   if (st.extra >= 1) {
-    const tr = F.trust, rich = F.rich;
-    box.innerHTML = `${st.extra >= 1 ? `<div class="b2">🤝 신용왕</div><div class="b1" style="--tc:${tr ? REG[tr.team].color : '#888'}">${tr ? esc(tr.name) : '없음'}</div>${tr ? `<div class="b2">⭐${tr.avg.toFixed(1)} · ${tr.n}명 평가</div>` : ''}${prize(tr) ? '<div class="prize">🎉 바로 나예요!</div>' : ''}` : ''}${st.extra >= 2 ? `<div class="b2" style="margin-top:14px">🎁 원 모어 띵! 재산왕</div><div class="b1" style="--tc:${rich ? REG[rich.team].color : '#888'}">${rich ? esc(rich.name) : '없음'}</div>${rich ? `<div class="b2">남은 카드 ${rich.left}장 · ${rich.leftPts ?? rich.left}점어치</div>` : ''}${prize(rich) ? '<div class="prize">🎉 바로 나예요!</div>' : ''}` : ''}${list}`;
+    const rich = F.rich, who = (arr, t, mt = '') => `<div class="b2"${mt}>${t}</div>${arr?.length ? arr.map(x => `<div class="b1" style="--tc:${REG[x.team].color}">${esc(x.name)}</div><div class="b2">⭐${x.avg.toFixed(1)} · ${x.n}명 평가 · 거래 ${x.trades}번</div>${prize(x) ? '<div class="prize">🎉 바로 나예요!</div>' : ''}`).join('') : '<div class="b1" style="--tc:#888">없음</div>'}`;
+    box.innerHTML = `${who(F.best, '🤝 신용왕 · 별점 1등')}${st.extra >= 2 ? who(F.worst, '🦊 여우 상인 · 별점 꼴찌', ' style="margin-top:14px"') : ''}${st.extra >= 3 ? `<div class="b2" style="margin-top:14px">🎁 원 모어 띵! 재산왕</div><div class="b1" style="--tc:${rich ? REG[rich.team].color : '#888'}">${rich ? esc(rich.name) : '없음'}</div>${rich ? `<div class="b2">남은 카드 ${rich.left}장 · ${rich.leftPts ?? rich.left}점어치</div>` : ''}${prize(rich) ? '<div class="prize">🎉 바로 나예요!</div>' : ''}` : ''}${list}`;
     return;
   }
   if (!mine || idx < N - k) { box.innerHTML = `<div class="b1" style="--tc:var(--gold)">🥁</div><div class="b2">시상식 중! 칠판을 보세요</div>${m ? `<div class="me" style="--tc:${REG[p.team].color}">나는 📦 ${m.delivered}장 납품 · ${m.pts ?? m.delivered}점 · ${starText(m.rating)}</div>` : ''}${list}`; return; }

@@ -121,7 +121,7 @@ const fresh = () => ({ phase: 'lobby', roundMin: S()?.roundMin || GAME.roundMin,
 function fooled() {
   const cnt = {};
   Object.values(C.win).filter(w => w.status === 'done').forEach(w => { [['a', 'b'], ['b', 'a']].forEach(([s, o]) => { const r = w[s + 'Rate']; if (r && r <= 2) Object.entries(w[o + 'Items'] || {}).forEach(([id, n]) => cnt[id] = (cnt[id] || 0) + n); }); });
-  return Object.entries(cnt).sort((a, b) => b[1] - a[1]);
+  return Object.entries(cnt).sort((a, b) => b[1] - a[1]).map(([id, n]) => ({ id, n }));
 }
 
 /* ── 판 ── */
@@ -201,7 +201,7 @@ function paintFeed(hid) {
 }
 function paintMid() {
   const top = fooled().slice(0, 5);
-  const qh = top.map(([id, n]) => { const c = CAT[id], r = REG[c.region], o = opened.has(id); return `<div class="qc${o ? ' open' : ''}" style="--rc:${r.color}" data-q="${id}"><div class="x">😱 ${n}번 속음</div><div class="f">${esc(c.front)}<small>${esc(c.mean)}</small></div><div class="b">${o ? `${r.emoji} ${esc(r.label)} · ${valOf(S(), id)}점` : '❓ 어느 지역일까?'}</div></div>`; }).join('');
+  const qh = top.map(({ id, n }) => { const c = CAT[id], r = REG[c.region], o = opened.has(id); return `<div class="qc${o ? ' open' : ''}" style="--rc:${r.color}" data-q="${id}"><div class="x">😱 ${n}번 속음</div><div class="f">${esc(c.front)}<small>${esc(c.mean)}</small></div><div class="b">${o ? `${r.emoji} ${esc(r.label)} · ${valOf(S(), id)}점` : '❓ 어느 지역일까?'}</div></div>`; }).join('');
   if ($('qcards').dataset.h !== qh) { $('qcards').dataset.h = qh; $('qcards').innerHTML = qh; }
   $('midNote').textContent = top.length ? '"어느 지역 말인 것 같아요?" 먼저 물어보고 뒤집어 보세요' : '아직 별점 테러가 없어요! 모두 정직하게 장사했거나, 아직 거래가 적어요';
 }
@@ -212,14 +212,16 @@ function computeFinal(st) {
   const { list } = ranking(st, C.teams);
   const teams = list.map(x => { const ms = members(x.id).map(p => ({ id: p.id, name: p.name, team: x.id, delivered: C.inv[p.id]?.delivered || 0, pts: C.inv[p.id]?.pts || 0, left: sum(C.inv[p.id]?.cards), leftPts: ptsOf(st, C.inv[p.id]?.cards), rating: p.rating || { sum: 0, n: 0 } })).sort((a, b) => b.pts - a.pts); ms.forEach(m => m.rank = 1 + ms.filter(o => o.pts > m.pts).length); return { id: x.id, rank: x.rank, tie: x.tie, got: x.got, avg: x.avg, size: x.members, label: x.team.label, emoji: x.team.emoji, color: x.team.color, members: ms, mvps: ms.filter(m => m.rank === 1 && m.pts > 0) }; });
   const all = teams.flatMap(t => t.members);
-  const rated = n => all.filter(m => m.rating.n >= n).map(m => ({ ...m, avg: stars(m.rating), n: m.rating.n })).sort((a, b) => b.avg - a.avg || b.n - a.n);
-  const trustList = rated(3).length ? rated(3) : rated(2);
+  const rl = all.map(m => ({ id: m.id, name: m.name, team: m.team, avg: Math.round(stars(m.rating) * 100) / 100, n: m.rating.n, trades: C.inv[m.id]?.trades || 0 }));
+  const pool = rl.filter(m => m.n >= 2).length >= 2 ? rl.filter(m => m.n >= 2) : rl.filter(m => m.n >= 1);   // 평가 2명 이상 받은 사람 중에서(없으면 1명 이상)
+  const top = cmp => { const s = [...pool].sort(cmp); return s.filter(x => s.length && x.avg === s[0].avg && x.trades === s[0].trades); };
+  const best = top((a, b) => b.avg - a.avg || b.trades - a.trades), worst = top((a, b) => a.avg - b.avg || b.trades - a.trades);
   const rich = all.filter(m => m.delivered >= GAME.minDeliver).sort((a, b) => b.leftPts - a.leftPts || b.left - a.left)[0] || null;
-  return { teams, trust: trustList[0] || null, rich, fooled: fooled().slice(0, 8) };
+  return { teams, best, worst, rich, fooled: fooled().slice(0, 8) };
 }
 function paintEnd(st) {
   $('endTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.pane === endPane)); ['pSum', 'pAward'].forEach(p => $(p).classList.toggle('on', p === endPane));
-  const F = st.final, hot = new Set((F?.fooled || []).map(x => x[0]));
+  const F = st.final, hot = new Set((F?.fooled || []).map(x => x.id ?? x[0]));
   $('endNote').textContent = `${Object.keys(C.players).length}명 · 거래 ${Object.values(C.win).filter(w => w.status === 'done').length}건`;
   $('ans').innerHTML = REGIONS.map(r => `<div class="col" style="--rc:${r.color}"><h3>${r.emoji} ${esc(r.label)}</h3>${Object.values(CAT).filter(c => c.region === r.id && (st.deck || []).includes(c.id)).map(c => `<div class="w${hot.has(c.id) ? ' hot' : ''}">${esc(c.front)} <b class="pv">${valOf(st, c.id)}점</b><small>${esc(c.mean)}</small></div>`).join('')}</div>`).join('');
   paintAward(st);
@@ -229,10 +231,12 @@ function paintAwardInto(st, el) {
   const F = st.final; if (!F) { el.innerHTML = '<div class="a-q">결과를 정리하는 중…</div>'; return; }
   const N = F.teams.length, k = Math.min(st.reveal || 0, N), medal = { 1: '🥇', 2: '🥈', 3: '🥉' };
   const ml = t => `<div class="ml">${t.members.map(m => `<span><b>${m.rank}</b>${esc(m.name)} <small>📦${m.pts ?? m.delivered}점 · ${starText(m.rating)}</small></span>`).join('')}</div>`;
-  if (st.extra === 1) { const p = F.trust; el.innerHTML = `<div class="a-t">🤝 신용왕</div><div class="a-q">별점을 가장 높게 받은 상인!</div>${p ? `<div class="a-n" style="--rc:${REG[p.team].color}">${esc(p.name)}</div><div class="a-s">${esc(REG[p.team].label)} · ⭐${p.avg.toFixed(1)} (${p.n}명 평가)</div>` : '<div class="a-s">평가를 충분히 받은 사람이 없어요</div>'}`; return; }
-  if (st.extra === 2) { const p = F.rich; el.innerHTML = `<div class="a-t">🎁 원 모어 띵!</div><div class="a-q">재산을 가장 많이 모은 사람!</div>${p ? `<div class="a-n" style="--rc:${REG[p.team].color}">${esc(p.name)}</div><div class="a-s">${esc(REG[p.team].label)} · 남은 카드 ${p.left}장 · ${p.leftPts ?? p.left}점어치 (납품 ${p.delivered}장)</div>` : `<div class="a-s">최소 납품 ${GAME.minDeliver}장을 채운 사람이 없어요</div>`}<div class="hint">최소 납품 ${GAME.minDeliver}장을 채운 사람 중에서 뽑았어요</div>`; return; }
+  const names = (arr, q, t) => arr?.length ? `${arr.map(p => `<div class="a-n" style="--rc:${REG[p.team].color}">${esc(p.name)}</div><div class="a-s">${esc(REG[p.team].label)} · ⭐${p.avg.toFixed(1)} (${p.n}명 평가 · 거래 ${p.trades}번)</div>`).join('')}${arr.length > 1 ? '<div class="hint">별점·거래 수까지 같아서 공동 수상!</div>' : ''}` : '<div class="a-s">평가를 받은 사람이 없어요</div>';
+  if (st.extra === 1) { el.innerHTML = `<div class="a-t">🤝 신용왕 · 별점 1등</div><div class="a-q">별점을 가장 높게 받은 상인! (같으면 거래 많은 사람)</div>${names(F.best)}`; return; }
+  if (st.extra === 2) { el.innerHTML = `<div class="a-t">🦊 여우 상인 · 별점 꼴찌</div><div class="a-q">별점을 가장 낮게 받은 상인! 속임수의 달인? (같으면 거래 많은 사람)</div>${names(F.worst)}`; return; }
+  if (st.extra === 3) { const p = F.rich; el.innerHTML = `<div class="a-t">🎁 원 모어 띵!</div><div class="a-q">재산을 가장 많이 모은 사람!</div>${p ? `<div class="a-n" style="--rc:${REG[p.team].color}">${esc(p.name)}</div><div class="a-s">${esc(REG[p.team].label)} · 남은 카드 ${p.left}장 · ${p.leftPts ?? p.left}점어치 (납품 ${p.delivered}장)</div>` : `<div class="a-s">최소 납품 ${GAME.minDeliver}장을 채운 사람이 없어요</div>`}<div class="hint">최소 납품 ${GAME.minDeliver}장을 채운 사람 중에서 뽑았어요</div>`; return; }
   if (!k) { el.innerHTML = `<div class="a-t">🏆 방언 장터 시상식</div><div class="a-q">${N}등부터 한 팀씩 공개해요</div>`; return; }
-  if (k === N) { const w = F.teams[0]; el.innerHTML = `<div class="a-card" style="--rc:${w.color}"><div class="a-nat">🏆 우승 ${w.emoji} ${esc(w.label)}!</div><div class="a-pct">${w.got}점 · ${avgText(w)}</div>${w.mvps.length ? `<div class="a-mvp"><span>MVP</span>${w.mvps.map(m => `${esc(m.name)} <small>📦 ${m.pts ?? m.delivered}점</small>`).join(' · ')}</div>` : ''}${ml(w)}</div><div class="rest">${F.teams.slice(1).map(t => `<div style="--rc:${t.color}"><b>${medal[t.rank] || ''}${t.tie ? '공동 ' : ''}${t.rank}위</b> ${t.emoji} ${esc(t.label)} <span>${t.got}점</span></div>`).join('')}</div>`; return; }
+  if (k === N) { const w = F.teams[0]; el.innerHTML = `<div class="a-card" style="--rc:${w.color}"><div class="a-nat">🏆 ${w.tie ? "공동 우승" : "우승"} ${w.emoji} ${esc(w.label)}!</div><div class="a-pct">${w.got}점 · ${avgText(w)}</div>${w.mvps.length ? `<div class="a-mvp"><span>MVP</span>${w.mvps.map(m => `${esc(m.name)} <small>📦 ${m.pts ?? m.delivered}점</small>`).join(' · ')}</div>` : ''}${ml(w)}</div><div class="rest">${F.teams.slice(1).map(t => `<div style="--rc:${t.color}"><b>${medal[t.rank] || ''}${t.tie ? '공동 ' : ''}${t.rank}위</b> ${t.emoji} ${esc(t.label)} <span>${t.got}점</span></div>`).join('')}</div>`; return; }
   const cur = F.teams[N - k], before = F.teams.slice(N - k + 1);
   el.innerHTML = `<div class="a-card" style="--rc:${cur.color}"><div class="a-rank">${cur.tie ? '공동 ' : ''}${cur.rank}위</div><div class="a-nat">${cur.emoji} ${esc(cur.label)}</div><div class="a-pct">${cur.got}점 · ${avgText(cur)}</div>${ml(cur)}</div>${before.length ? `<div class="rest">${before.map(t => `<div style="--rc:${t.color}"><b>${t.rank}위</b> ${t.emoji} ${esc(t.label)} <span>${t.got}점</span></div>`).join('')}</div>` : ''}`;
 }
@@ -248,7 +252,7 @@ function paintControls(st) {
   if (ph === 'mid') b.push(['startR2', 'p', '2라운드 시작']);
   if (ph === 'r2') b.push(['finish', 'r', '장터 끝 · 시상']);
   if (['r1', 'mid', 'r2'].includes(ph)) b.push(['hide', 's', st.hidden ? '👁 점수 보이기' : '🙈 점수 가리기']);
-  if (ph === 'end') { const N = st.final?.teams?.length || 0, k = st.reveal || 0; b.push(['pSum', endPane === 'pSum' ? 'p' : 's', '📋 방언 정리'], ['pAward', endPane === 'pAward' ? 'p' : 's', '🏆 시상식']); if (endPane === 'pAward') { if (k > 0 || st.extra) b.push(['back', 'gh', '◀']); if (k < N) b.push(['next', 'g', k ? `다음 공개 ▶ (${N - k}위)` : '시상 시작 🥁']); else if (!st.extra) b.push(['trust', 'g', '🤝 신용왕']); else if (st.extra === 1) b.push(['rich', 'g', '🎁 원 모어 띵!']); } }
+  if (ph === 'end') { const N = st.final?.teams?.length || 0, k = st.reveal || 0; b.push(['pSum', endPane === 'pSum' ? 'p' : 's', '📋 방언 정리'], ['pAward', endPane === 'pAward' ? 'p' : 's', '🏆 시상식']); if (endPane === 'pAward') { if (k > 0 || st.extra) b.push(['back', 'gh', '◀']); if (k < N) b.push(['next', 'g', k ? `다음 공개 ▶ (${N - k}위)` : '시상 시작 🥁']); else if (!st.extra) b.push(['trust', 'g', '🤝 신용왕 (별점 1등)']); else if (st.extra === 1) b.push(['worst', 'g', '🦊 별점 꼴찌']); else if (st.extra === 2) b.push(['rich', 'g', '🎁 원 모어 띵!']); } }
   const html = b.map(([a, c, l]) => { const arm = armed?.a === a && now() < armed.u; return `<button class="ctl ${c}${arm ? ' armed' : ''}" data-a="${a}">${arm ? `한 번 더 누르면 ${l}` : l}</button>`; }).join('') + `<span class="sp"></span><button class="ctl gh" id="resetBtn">초기화 <small>(길게)</small><div class="hold"></div></button>`;
   if ($('controls').dataset.h === html) return; $('controls').dataset.h = html; $('controls').innerHTML = html;
   $('controls').querySelectorAll('[data-a]').forEach(el => el.addEventListener('click', () => act(el.dataset.a)));
@@ -273,7 +277,8 @@ async function act(a) {
     if (a === 'next') { const N = st.final.teams.length, k = Math.min(N, (st.reveal || 0) + 1); await T.update('state', 'main', { reveal: k }); beep(k === N ? 'fan' : 'drum'); }
     if (a === 'back') await T.update('state', 'main', st.extra ? { extra: st.extra - 1 } : { reveal: Math.max(0, (st.reveal || 0) - 1) });
     if (a === 'trust') { await T.update('state', 'main', { extra: 1 }); beep('fan'); }
-    if (a === 'rich') { await T.update('state', 'main', { extra: 2 }); beep('fan'); }
+    if (a === 'worst') { await T.update('state', 'main', { extra: 2 }); beep('drum'); }
+    if (a === 'rich') { await T.update('state', 'main', { extra: 3 }); beep('fan'); }
   } catch (e) { console.error(e); toast(e.message || '실패했어요', true); }
 }
 document.querySelectorAll('[data-min]').forEach(b => b.addEventListener('click', () => { const st = S(); if (st) T.update('state', 'main', { roundMin: Math.max(2, Math.min(20, (st.roundMin || 7) + Number(b.dataset.min))) }); }));

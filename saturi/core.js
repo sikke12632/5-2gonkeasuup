@@ -106,10 +106,11 @@ function mockTransport() {
   const save = d => { localStorage.setItem(key, JSON.stringify(d)); channel.postMessage('change'); emit(); };
   channel.onmessage = emit;
   window.addEventListener('storage', e => { if (e.key === key) emit(); });
+  const check = (v, inArr = false, path = '') => { if (v === undefined) throw new Error(`[데모 검사] Firestore 에 undefined 를 쓸 수 없어요: ${path}`); if (Array.isArray(v)) { if (inArr) throw new Error(`[데모 검사] Firestore 는 배열 안 배열을 못 써요: ${path}`); v.forEach((x, i) => check(x, true, path + '[' + i + ']')); } else if (v && typeof v === 'object') Object.entries(v).forEach(([k, x]) => check(x, false, path + '.' + k)); };
   const ops = d => ({
     get: async (col, id) => clone(d[col]?.[id] ?? null),
-    set: (col, id, data) => { (d[col] ??= {})[id] = clone(data); },
-    update: (col, id, patch) => { (d[col] ??= {})[id] = deepMerge(d[col][id] || {}, patch); },
+    set: (col, id, data) => { check(data, false, col); (d[col] ??= {})[id] = clone(data); },
+    update: (col, id, patch) => { check(patch, false, col); (d[col] ??= {})[id] = deepMerge(d[col][id] || {}, patch); },
     del: (col, id) => { if (d[col]) delete d[col][id]; }
   });
   const sub = fn => { subs.push(fn); fn(load()); return () => { const i = subs.indexOf(fn); if (i >= 0) subs.splice(i, 1); }; };
@@ -126,7 +127,7 @@ async function firestoreTransport() {
   const appMod = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js');
   const fs = await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js');
   const app = appMod.initializeApp(firebaseConfig, 'saturi');
-  const db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() });
+  const db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache(), ignoreUndefinedProperties: true });
   const colRef = col => fs.collection(db, 'trade', ROOM, PREFIX + col);
   const ref = (col, id) => fs.doc(db, 'trade', ROOM, PREFIX + col, id);
   const onErr = err => { console.error(err); window.dispatchEvent(new CustomEvent('db-error', { detail: err })); };
@@ -292,7 +293,7 @@ export async function deliver(T, me) {
    지난 판에 덜 나온 것부터(같으면 무작위) */
 export const needOf = (size, G = GAME) => Math.ceil(size * G.perPerson * G.copies);
 export function pickDeck(teamIds, used = {}, G = GAME, rnd = Math.random, sizes = {}) {
-  return teamIds.flatMap(r => poolOf(r).map(id => ({ id, k: (used[id] || 0) + rnd() * 0.9 })).sort((a, b) => a.k - b.k).slice(0, Math.max(G.perRegion, needOf(sizes[r] || 0, G))).map(x => x.id));
+  return teamIds.flatMap(r => poolOf(r).map(id => ({ id, k: (used[id] || 0) + rnd() * 0.9 })).sort((a, b) => a.k - b.k).slice(0, Math.max(G.perRegion, Math.ceil(needOf(sizes[r] || 0, G) / 2))).map(x => x.id));
 }
 /* 장날 새 카드: 그 사람 지역이 아닌 지역 중 이번 판에 가장 적게 나온 지역에서, 아직 안 나온 방언 먼저 */
 export function restockPick(team, teamIds, deck, used = {}, rnd = Math.random) {
