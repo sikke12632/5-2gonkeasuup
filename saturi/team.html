@@ -41,6 +41,8 @@ h2.big{font:clamp(30px,5vw,50px)/1.2 "Jua",sans-serif}
 .card .front .std{font:clamp(13px,1.6vw,16px)/1.25 "Gowun Dodum",sans-serif;color:#5C5246;background:#F3ECDD;border-radius:999px;padding:2px 10px;max-width:100%}
 .card .back{background:var(--rc);color:#fff;padding:4px 8px;font-size:14px;line-height:1.3;text-align:center}.card .back b{font:400 16px "Jua",sans-serif;margin-right:4px}
 .card .back.hide{background:repeating-linear-gradient(45deg,#C8BBA3 0 8px,#B9AB91 8px 16px);font:400 16px "Jua",sans-serif}
+.card .back.peek{background:repeating-linear-gradient(45deg,#5C5246 0 8px,#4A4238 8px 16px);font:400 15px "Jua",sans-serif;padding:8px 6px;cursor:pointer;-webkit-touch-callout:none;touch-action:none}
+.card .back.peek .rv{display:none}.card .back.peek.show{background:var(--rc)}.card .back.peek.show .rv{display:inline}.card .back.peek.show .cv{display:none}
 .card .n{position:absolute;right:6px;top:4px;font:400 16px "Jua",sans-serif;background:var(--ink);color:#fff;border-radius:999px;padding:0 8px}
 .card.mine{border-color:var(--ok);box-shadow:0 0 0 3px #BFE3CC}.card.mine::before{content:"납품 가능";position:absolute;left:6px;top:4px;font:400 13px "Jua",sans-serif;background:var(--ok);color:#fff;border-radius:999px;padding:0 7px}
 .card.sel{outline:4px solid var(--sea)}.card.all{opacity:.45}.card.sel::after{content:"올림";position:absolute;right:6px;bottom:30px;font:400 13px "Jua",sans-serif;background:var(--sea);color:#fff;border-radius:999px;padding:0 7px}
@@ -108,7 +110,7 @@ h2.big{font:clamp(30px,5vw,50px)/1.2 "Jua",sans-serif}
     <div class="cols">
       <div class="col">
         <div class="box"><h3>🎯 우리 팀이 모은 카드 <small id="goalSub"></small><span class="r" id="goalPct"></span></h3><div class="lab" id="goalTip"></div></div>
-        <div class="box"><h3>🃏 내 카드 <small>뒷면(어느 지역 말인지)은 나만 보여요</small></h3><div id="myCards" class="cards"></div>
+        <div class="box"><h3>🃏 내 카드 <small>아래 띠를 꾹 누르는 동안만 뒷면이 보여요 · 손으로 가리고 몰래!</small></h3><div id="myCards" class="cards"></div>
           <button id="deliverBtn" class="btn ok big">📦 납품하기</button></div>
         <div class="box"><h3>🧾 내 기록</h3><div id="stats" class="stats"></div><div id="hist" class="hist"></div></div>
       </div>
@@ -130,7 +132,7 @@ h2.big{font:clamp(30px,5vw,50px)/1.2 "Jua",sans-serif}
     <div class="slot" id="slotThem"><h4 id="themH">상대가 올린 카드 <span class="st" id="themSt">고르는 중</span></h4><div id="themCards" class="cards"></div></div>
     <div class="slot" id="slotMe"><h4>내가 올린 카드 <span class="st" id="meSt">고르는 중</span></h4><div id="meCards" class="cards"></div></div>
   </div>
-  <div class="lab">▼ 내 카드를 눌러서 올리거나 내려요 (상대에게는 앞면만 보여요)</div>
+  <div class="lab">▼ 카드를 눌러서 올리거나 내려요 · 아래 띠를 꾹 누르면 나만 몰래 뒷면 확인</div>
   <div id="palette" class="cards"></div>
   <footer><div class="msg" id="winMsg"></div><button class="btn ok big" id="okBtn">확인</button></footer>
 </div></div>
@@ -153,11 +155,12 @@ const myTeam = () => P()?.team, TM = () => C.teams[myTeam()];
 function toast(t, cls = '') { const el = $('toast'); el.textContent = t; el.className = `toast on ${cls}`; clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove('on'), cls === 'err' ? 3500 : 2400); }
 let audio; function beep(k) { try { audio ??= new (window.AudioContext || window.webkitAudioContext)(); const seq = { tap: [[660, .05]], win: [[523, .1], [784, .18]], lost: [[300, .2]], ding: [[880, .08], [1175, .12]] }[k] || []; let t = audio.currentTime; seq.forEach(([f, d]) => { const o = audio.createOscillator(), g = audio.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.15, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g).connect(audio.destination); o.start(t); o.stop(t + d + .02); t += d; }); } catch { } }
 
-/* 카드 그리기: showBack=true 면 뒷면(지역·뜻)까지 */
+/* 카드 그리기: showBack=true 면 뒷면(지역) 공개, 'peek' 이면 내 카드라도 꾹 누르는 동안만(옆 친구가 화면을 봐도 모르게) */
+let peekId = null, peekT = 0;
 function cardHtml(id, n, showBack, extra = '', attrs = '') {
   const c = CAT[id]; if (!c) return '';
   const r = REG[c.region];
-  return `<div class="card ${extra}" style="--rc:${r.color}" ${attrs}>${n > 1 ? `<span class="n">×${n}</span>` : ''}<div class="front">${esc(c.front)}<span class="std">${esc(c.mean)}</span></div>${showBack ? `<div class="back"><b>${r.emoji} ${esc(r.label)}</b></div>` : '<div class="back hide">❓ 어느 지역일까?</div>'}</div>`;
+  return `<div class="card ${extra}" style="--rc:${r.color}" ${attrs}>${n > 1 ? `<span class="n">×${n}</span>` : ''}<div class="front">${esc(c.front)}<span class="std">${esc(c.mean)}</span></div>${showBack === 'peek' ? `<div class="back peek${peekId === id ? ' show' : ''}" data-peek="${id}"><span class="cv">👁 꾹 눌러 몰래 보기</span><b class="rv">${r.emoji} ${esc(r.label)}</b></div>` : showBack ? `<div class="back"><b>${r.emoji} ${esc(r.label)}</b></div>` : '<div class="back hide">❓ 어느 지역일까?</div>'}</div>`;
 }
 const myWin = () => Object.values({ ...C.wa, ...C.wb }).filter(w => w.status === 'request' || w.status === 'open').sort((a, b) => b.created - a.created)[0] || null;
 
@@ -190,7 +193,7 @@ function paintLobby(p) {
   const r = REG[p.team];
   $('idE').textContent = r.emoji; $('idR').textContent = `${r.label} 상인`;
   if (document.activeElement !== $('nick')) $('nick').value = p.name;
-  $('idLead').innerHTML = `우리 팀 목표: <b>${esc(r.label)} 방언 카드</b>를 최대한 많이 모아 납품하기!<br>내가 처음 받는 카드는 전부 <b>다른 지역</b> 카드예요. 친구들과 바꿔요.`;
+  $('idLead').innerHTML = `우리 팀 목표: <b>${esc(r.label)} 방언 카드</b>를 최대한 많이 모아 납품하기!<br>내가 처음 받는 카드는 전부 <b>다른 지역</b> 카드예요. 친구들과 바꿔요.<br>🤫 카드 뒷면(어느 지역 말인지)은 <b>꾹 누르는 동안만</b> 보여요. 친구가 내 화면을 봐도 모르게!`;
   $('mates').innerHTML = Object.values(C.players).filter(x => x.team === p.team).sort((a, b) => a.no - b.no).map(x => `<span>${esc(x.name)}${x.id === me ? ' (나)' : ''}</span>`).join('');
 }
 function paintGame(st, p) {
@@ -198,11 +201,10 @@ function paintGame(st, p) {
   $('goalSub').textContent = `${r.label} 방언 · ${tm?.members || ''}명`;
   $('goalPct').textContent = `${s.got}장 · ${avgText(s)}`;
   $('goalTip').textContent = `많이 모을수록 점수! 힌트: ${r.label} 말은 ${r.tip}`;
-  const list = Object.entries(cards).filter(([, n]) => n > 0).sort((a, b) => (CAT[b[0]].region === p.team) - (CAT[a[0]].region === p.team));
-  $('myCards').innerHTML = list.map(([id, n]) => cardHtml(id, n, true, CAT[id].region === p.team ? 'mine' : '')).join('') || `<div class="empty">${C.inv ? '카드가 없어요' : '선생님이 카드를 나눠 주는 중…'}</div>`;
-  const dn = cardsOf(cards, p.team);
-  $('deliverBtn').disabled = !dn || !deliverOpen(st) || busy || (inWin && inWin.status === 'open');
-  $('deliverBtn').innerHTML = dn ? `📦 ${esc(r.label)} 카드 ${dn}장 납품하기` : `📦 납품할 ${esc(r.label)} 카드가 없어요`;
+  const list = Object.entries(cards).filter(([, n]) => n > 0).sort((a, b) => CAT[a[0]].front.localeCompare(CAT[b[0]].front, 'ko'));
+  $('myCards').innerHTML = list.map(([id, n]) => cardHtml(id, n, 'peek')).join('') || `<div class="empty">${C.inv ? '카드가 없어요' : '선생님이 카드를 나눠 주는 중…'}</div>`;
+  $('deliverBtn').disabled = !sum(cards) || !deliverOpen(st) || busy || (inWin && inWin.status === 'open');
+  $('deliverBtn').innerHTML = `📦 ${esc(r.label)} 카드 납품하기 <small style="font-size:.7em">(있으면 전부 냄)</small>`;
   const open = tradeOpen(st); $('closed').hidden = open; $('closedMsg').textContent = closedReason(st);
   const dv = C.inv?.delivered || 0, rt = p.rating;
   $('stats').innerHTML = `<span class="${dv >= GAME.minDeliver ? 'good' : 'low'}">📦 납품 ${dv}장${dv >= GAME.minDeliver ? '' : ` (최소 ${GAME.minDeliver}장)`}</span><span>🤝 거래 ${C.inv?.trades || 0}번</span><span>${starText(rt)} <small>(${rt?.n || 0}명 평가)</small></span><span>🃏 가진 카드 ${sum(cards)}장</span>`;
@@ -243,11 +245,11 @@ function paintWin(st, p) {
   $('winTitle').innerHTML = `🤝 ${REG[oteam].emoji} ${esc(oname)} <small style="font-size:.6em;color:var(--muted)">${starText(C.players[other(w, me)]?.rating)}</small> 님과 거래`;
   const idle = Math.max(0, Math.ceil((w.updated + GAME.idleSec * 1000 - now()) / 1000)); $('winTimer').textContent = `${idle}초 동안 아무것도 안 하면 닫혀요`;
   $('themCards').innerHTML = Object.entries(theirs).map(([id, n]) => cardHtml(id, n, false)).join('') || '<div class="empty">아직 안 올렸어요</div>';
-  $('meCards').innerHTML = Object.entries(mine).map(([id, n]) => cardHtml(id, n, true)).join('') || '<div class="empty">아래에서 카드를 눌러 올려요</div>';
+  $('meCards').innerHTML = Object.entries(mine).map(([id, n]) => cardHtml(id, n, 'peek')).join('') || '<div class="empty">아래에서 카드를 눌러 올려요</div>';
   $('slotThem').classList.toggle('ok', !!w[o + 'Ok']); $('themSt').textContent = w[o + 'Ok'] ? '✔ 확인' : '고르는 중';
   $('slotMe').classList.toggle('ok', !!w[s + 'Ok']); $('meSt').textContent = w[s + 'Ok'] ? '✔ 확인' : '고르는 중';
   const cards = C.inv?.cards || {};
-  $('palette').innerHTML = Object.entries(cards).filter(([, n]) => n > 0).map(([id, n]) => { const up = mine[id] || 0; return cardHtml(id, n - up, true, `${up ? 'sel' : ''}${up >= n ? ' all' : ''}${CAT[id].region === p.team ? ' mine' : ''}`, `data-pick="${id}" data-up="${up}" data-have="${n}"`); }).join('') || '<div class="empty">카드가 없어요</div>';
+  $('palette').innerHTML = Object.entries(cards).filter(([, n]) => n > 0).map(([id, n]) => { const up = mine[id] || 0; return cardHtml(id, n - up, 'peek', `${up ? 'sel' : ''}${up >= n ? ' all' : ''}`, `data-pick="${id}" data-up="${up}" data-have="${n}"`); }).join('') || '<div class="empty">카드가 없어요</div>';
   const both = sum(mine) && sum(theirs);
   $('okBtn').disabled = busy || !both || !!w[s + 'Ok'];
   $('okBtn').textContent = w[s + 'Ok'] ? (w[o + 'Ok'] ? '교환 중…' : '상대 확인 기다리는 중') : '확인';
@@ -255,6 +257,7 @@ function paintWin(st, p) {
 }
 $('reqBox').addEventListener('click', async e => { const b = e.target.closest('[data-ans]'); if (!b || busy) return; const w = myWin(); if (!w) return; busy = true; try { const ok = await answerRequest(T, me, w.id, b.dataset.ans === '1'); toast(ok ? '거래창이 열렸어요!' : '거절했어요'); } catch (err) { toast(err.message, 'err'); } finally { busy = false; render(); } });
 $('palette').addEventListener('click', async e => {
+  if (e.target.closest('[data-peek]')) return;   // 띠를 누른 건 몰래 보기
   const c = e.target.closest('[data-pick]'); if (!c || busy) return; const w = myWin(); if (!w || w.status !== 'open') return;
   const s = side(w, me), items = { ...(w[s + 'Items'] || {}) }, id = c.dataset.pick, up = Number(c.dataset.up), have = Number(c.dataset.have);
   items[id] = up < have ? up + 1 : 0;   // 누를 때마다 한 장씩 더 올리고, 다 올렸으면 내림
@@ -262,6 +265,11 @@ $('palette').addEventListener('click', async e => {
   try { await setItems(T, me, w.id, items); } catch (err) { toast(err.message, 'err'); } finally { busy = false; render(); }
 });
 $('meCards').addEventListener('click', async () => { /* 올린 카드는 아래 목록에서 눌러 내려요 */ });
+/* 몰래 보기: 띠를 누르고 있는 동안만 뒷면(화면이 다시 그려져도 peekId로 유지), 손을 떼거나 4초 지나면 다시 가림 */
+function unpeek() { peekId = null; clearTimeout(peekT); document.querySelectorAll('.back.peek.show').forEach(el => el.classList.remove('show')); }
+document.addEventListener('pointerdown', e => { const b = e.target.closest('[data-peek]'); if (!b) return; e.preventDefault(); peekId = b.dataset.peek; document.querySelectorAll(`[data-peek="${peekId}"]`).forEach(el => el.classList.add('show')); clearTimeout(peekT); peekT = setTimeout(unpeek, 4000); });
+['pointerup', 'pointercancel', 'blur'].forEach(k => window.addEventListener(k, () => { if (peekId) unpeek(); }));
+document.addEventListener('contextmenu', e => { if (e.target.closest('[data-peek]')) e.preventDefault(); });
 $('okBtn').addEventListener('click', async () => { const w = myWin(); if (!w || busy) return; busy = true; try { const r = await confirmTrade(T, me, w.id); if (r.failed) toast('카드가 모자라서 거래가 취소됐어요', 'err'); else if (!r.done) toast('확인! 상대의 확인을 기다려요'); } catch (err) { toast(err.message, 'err'); } finally { busy = false; render(); } });
 $('winCancel').addEventListener('click', async () => { const w = myWin(); if (!w) return; if (!confirm('거래를 취소할까요?')) return; try { await cancelTrade(T, me, w.id, 'canceled'); toast('거래를 취소했어요'); } catch (err) { toast(err.message, 'err'); } });
 
